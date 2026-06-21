@@ -83,3 +83,8 @@ create policy "payments select" on payments for select to authenticated
     where inv.id = invoice_id and o.customer_id = public.current_customer_id()));
 create policy "payments admin" on payments for all to authenticated
   using (public.is_admin()) with check (public.is_admin());
+
+-- ===== REQUIRED after applying this migration =====
+-- Seed the admin allowlist or the new policies lock every admin out:
+--   insert into admin_users (user_id) values ('<your-admin-auth-user-id>');
+-- Find the id in Supabase -> Authentication -> Users (your admin login).
