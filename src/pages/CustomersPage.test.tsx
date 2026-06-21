@@ -27,4 +27,20 @@ describe("CustomersPage", () => {
     wrap(<CustomersPage />);
     expect(screen.getByText("No customers yet")).toBeInTheDocument();
   });
+
+  it("shows loading state", () => {
+    (useCustomers as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: undefined, isLoading: true,
+    });
+    wrap(<CustomersPage />);
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
+  });
+
+  it("add-customer link points to /customers/new", () => {
+    (useCustomers as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: [{ id: "1", name: "Ahmad", phone: "0790000000" }], isLoading: false,
+    });
+    wrap(<CustomersPage />);
+    expect(screen.getByRole("link", { name: "Add customer" })).toHaveAttribute("href", "/customers/new");
+  });
 });

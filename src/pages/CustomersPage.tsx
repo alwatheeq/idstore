@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useCustomers } from "@/features/customers/hooks";
-import { Button } from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/Button";
 
 export function CustomersPage() {
   const { t } = useTranslation();
@@ -13,7 +13,7 @@ export function CustomersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-xl font-bold">{t("customers.title")}</h2>
-        <Link to="/customers/new"><Button>{t("customers.addCustomer")}</Button></Link>
+        <Link to="/customers/new" className={buttonClasses()}>{t("customers.addCustomer")}</Link>
       </div>
 
       <input

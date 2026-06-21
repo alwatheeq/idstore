@@ -1,11 +1,12 @@
-import { forwardRef } from "react";
+import { forwardRef, useId } from "react";
 
 type Props = React.InputHTMLAttributes<HTMLInputElement> & { label: string; error?: string };
 
 export const TextField = forwardRef<HTMLInputElement, Props>(function TextField(
   { label, error, id, ...rest }, ref
 ) {
-  const fieldId = id ?? rest.name;
+  const generated = useId();
+  const fieldId = id ?? rest.name ?? generated;
   return (
     <div className="space-y-1.5">
       <label htmlFor={fieldId} className="block text-sm font-medium">{label}</label>
