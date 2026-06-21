@@ -25,11 +25,11 @@ export async function generateInvoice(orderId: string): Promise<Invoice> {
   return data as Invoice;
 }
 
-export async function getInvoice(id: string): Promise<InvoiceDetailRow> {
+export async function getInvoice(id: string): Promise<InvoiceDetailRow | null> {
   const { data, error } = await supabase.from("invoices")
-    .select("*, service_orders(order_number, customers(name))").eq("id", id).single();
+    .select("*, service_orders(order_number, customers(name))").eq("id", id).maybeSingle();
   if (error) throw error;
-  return data as unknown as InvoiceDetailRow;
+  return (data as unknown as InvoiceDetailRow) ?? null;
 }
 
 export async function listInvoices(status?: string): Promise<InvoiceListRow[]> {
