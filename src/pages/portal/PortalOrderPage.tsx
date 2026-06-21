@@ -6,13 +6,14 @@ import { useInvoiceByOrder } from "@/features/invoices/hooks";
 import { signedMediaUrl } from "@/features/orders/api";
 import { computeOrderTotals } from "@/features/orders/lineMath";
 import { OrderStatusBadge } from "@/features/orders/OrderStatusBadge";
+import { BackLink } from "@/components/ui/BackLink";
 import type { InspectionMedia } from "@/features/orders/types";
 
 function Field({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
-    <div className="flex justify-between gap-4 border-b py-1">
-      <dt className="opacity-60">{label}</dt>
-      <dd>{value ?? "—"}</dd>
+    <div className="flex justify-between gap-4 border-b border-line py-1">
+      <dt className="text-muted">{label}</dt>
+      <dd className="text-ink-2">{value ?? "—"}</dd>
     </div>
   );
 }
@@ -24,20 +25,20 @@ function MediaThumb({ item }: { item: InspectionMedia }) {
     staleTime: 50 * 60 * 1000, // 50 min — well under the 1 h signed URL TTL
   });
 
-  if (isLoading) return <div className="w-28 h-20 bg-gray-100 rounded-lg animate-pulse" />;
+  if (isLoading) return <div className="h-20 w-28 animate-pulse rounded-lg bg-paper-2" />;
   if (!url) return null;
 
   return item.media_type === "video" ? (
     <video
       src={url}
       controls
-      className="w-28 h-20 object-cover rounded-lg border"
+      className="h-20 w-28 rounded-lg border border-line object-cover"
     />
   ) : (
     <img
       src={url}
       alt={item.caption ?? ""}
-      className="w-28 h-20 object-cover rounded-lg border"
+      className="h-20 w-28 rounded-lg border border-line object-cover"
     />
   );
 }
@@ -50,8 +51,8 @@ export function PortalOrderPage() {
   const { data: media } = useMedia(id);
   const { data: invoice } = useInvoiceByOrder(id);
 
-  if (isLoading) return <p className="opacity-70">{t("common.loading")}</p>;
-  if (!order) return <p className="opacity-70">{t("portal.noOrders")}</p>;
+  if (isLoading) return <p className="text-sm text-muted">{t("common.loading")}</p>;
+  if (!order) return <p className="text-sm text-muted">{t("portal.noOrders")}</p>;
 
   const totals = computeOrderTotals(lines ?? []);
   const vehicleLabel = [order.vehicles?.model, order.vehicles?.plate_number]
@@ -61,75 +62,72 @@ export function PortalOrderPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="space-y-2">
-        <Link
-          to={order.vehicle_id ? `/portal/vehicles/${order.vehicle_id}` : "/portal"}
-          className="text-sm opacity-60 hover:opacity-100"
-        >
-          ← {t("actions.back")}
-        </Link>
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="space-y-2 border-b border-line pb-5">
+        <BackLink to={order.vehicle_id ? `/portal/vehicles/${order.vehicle_id}` : "/portal"}>
+          {t("actions.back")}
+        </BackLink>
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <h2 className="text-2xl font-bold">
-              {t("portal.order")} #{order.order_number}
+            <h2 className="text-2xl font-bold tracking-tight text-ink">
+              {t("portal.order")} <span className="num">#{order.order_number}</span>
             </h2>
-            <p className="text-sm opacity-70">{vehicleLabel}</p>
+            <p className="num text-sm text-muted">{vehicleLabel}</p>
           </div>
           <OrderStatusBadge status={order.status} />
         </div>
       </div>
 
       {/* Intake */}
-      <section className="space-y-2">
-        <h3 className="text-lg font-semibold">{t("portal.intake")}</h3>
-        <dl className="grid sm:grid-cols-2 gap-x-8 gap-y-1 text-sm">
+      <section className="card space-y-2 p-5">
+        <h3 className="text-lg font-semibold tracking-tight text-ink">{t("portal.intake")}</h3>
+        <dl className="grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
           <Field label={t("orders.odometer")} value={order.odometer_at_intake} />
           <Field label={t("orders.charge")} value={order.charge_percent} />
           <Field label={t("orders.battery")} value={order.hv_battery_state} />
           <Field label={t("orders.concerns")} value={order.reported_concerns} />
         </dl>
-        {order.intake_notes && (
-          <p className="text-sm opacity-80 pt-1">{order.intake_notes}</p>
-        )}
+        {order.intake_notes && <p className="pt-1 text-sm text-ink-2">{order.intake_notes}</p>}
       </section>
 
       {/* Line items */}
       <section className="space-y-3">
-        <h3 className="text-lg font-semibold">{t("portal.items")}</h3>
+        <h3 className="text-lg font-semibold tracking-tight text-ink">{t("portal.items")}</h3>
         {!lines || lines.length === 0 ? (
-          <p className="opacity-70">{t("orders.noLines")}</p>
+          <div className="card grid place-items-center p-12 text-sm text-muted">
+            {t("orders.noLines")}
+          </div>
         ) : (
           <>
-            <ul className="border rounded-xl divide-y text-sm">
+            <ul className="card divide-y divide-line overflow-hidden text-sm">
               {lines.map((l) => (
                 <li
                   key={l.id}
-                  className="flex items-center justify-between gap-4 px-5 py-3"
+                  className="flex items-center justify-between gap-4 px-4 py-3.5"
                 >
-                  <span className="flex-1">{l.description}</span>
-                  <span className="opacity-60 whitespace-nowrap">
+                  <span className="flex-1 text-ink">{l.description}</span>
+                  <span className="num whitespace-nowrap text-muted">
                     {l.quantity} × {l.unit_price.toFixed(3)}
                   </span>
-                  <span className="font-medium whitespace-nowrap">
+                  <span className="num whitespace-nowrap font-medium text-ink">
                     {l.line_total.toFixed(3)} JOD
                   </span>
                 </li>
               ))}
             </ul>
-            <div className="text-sm space-y-1 max-w-xs ms-auto">
+            <div className="ms-auto max-w-xs space-y-1 text-sm">
               <div className="flex justify-between gap-4">
-                <span className="opacity-60">{t("orders.subtotal")}</span>
-                <span>{totals.subtotal.toFixed(3)}</span>
+                <span className="text-muted">{t("orders.subtotal")}</span>
+                <span className="num text-ink-2">{totals.subtotal.toFixed(3)}</span>
               </div>
               {totals.discountTotal > 0 && (
                 <div className="flex justify-between gap-4">
-                  <span className="opacity-60">{t("orders.discountTotal")}</span>
-                  <span>{totals.discountTotal.toFixed(3)}</span>
+                  <span className="text-muted">{t("orders.discountTotal")}</span>
+                  <span className="num text-ink-2">{totals.discountTotal.toFixed(3)}</span>
                 </div>
               )}
-              <div className="flex justify-between gap-4 font-semibold">
+              <div className="flex justify-between gap-4 font-semibold text-ink">
                 <span>{t("orders.grandTotal")}</span>
-                <span>{totals.total.toFixed(3)} JOD</span>
+                <span className="num">{totals.total.toFixed(3)} JOD</span>
               </div>
             </div>
           </>
@@ -138,9 +136,11 @@ export function PortalOrderPage() {
 
       {/* Photos */}
       <section className="space-y-3">
-        <h3 className="text-lg font-semibold">{t("portal.photos")}</h3>
+        <h3 className="text-lg font-semibold tracking-tight text-ink">{t("portal.photos")}</h3>
         {!media || media.length === 0 ? (
-          <p className="opacity-70">{t("orders.noMedia")}</p>
+          <div className="card grid place-items-center p-12 text-sm text-muted">
+            {t("orders.noMedia")}
+          </div>
         ) : (
           <div className="flex flex-wrap gap-3">
             {media.map((item) => (
@@ -155,9 +155,10 @@ export function PortalOrderPage() {
         <section>
           <Link
             to={`/portal/invoices/${invoice.id}`}
-            className="inline-block border rounded-xl px-5 py-3 text-sm font-medium hover:shadow-md transition-shadow"
+            className="card inline-flex items-center gap-2 px-5 py-3 text-sm font-medium text-ink transition-colors hover:bg-paper-2"
           >
-            {t("portal.invoice")} #{invoice.invoice_number} →
+            {t("portal.invoice")} <span className="num">#{invoice.invoice_number}</span>
+            <span className="rtl-flip" aria-hidden>→</span>
           </Link>
         </section>
       )}

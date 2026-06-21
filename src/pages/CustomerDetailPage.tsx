@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button, buttonClasses } from "@/components/ui/Button";
+import { BackLink } from "@/components/ui/BackLink";
+import { Link } from "react-router-dom";
 import { VehicleForm } from "@/features/customers/VehicleForm";
 import type { Vehicle } from "@/features/customers/types";
 import {
@@ -29,25 +31,22 @@ export function CustomerDetailPage() {
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  if (isLoading) return <p className="opacity-70">{t("common.loading")}</p>;
-  if (!customer) return <p className="opacity-70">{t("customers.notFound")}</p>;
+  if (isLoading) return <p className="text-sm text-muted">{t("common.loading")}</p>;
+  if (!customer) return <p className="text-sm text-muted">{t("customers.notFound")}</p>;
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <Link to="/customers" className="text-sm opacity-60 hover:opacity-100">
-            ← {t("actions.back")}
-          </Link>
-          <h2 className="text-2xl font-bold">{customer.name}</h2>
-          <p className="opacity-70 text-sm">
-            {customer.phone ?? ""} {customer.email ? `· ${customer.email}` : ""}
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-line pb-5">
+        <div className="space-y-2">
+          <BackLink to="/customers">{t("actions.back")}</BackLink>
+          <h2 className="text-2xl font-bold tracking-tight text-ink">{customer.name}</h2>
+          <p className="text-sm text-muted">
+            <span className="num">{customer.phone ?? ""}</span>
+            {customer.email ? ` · ${customer.email}` : ""}
           </p>
-          {customer.notes && (
-            <p className="opacity-80 text-sm pt-1">{customer.notes}</p>
-          )}
+          {customer.notes && <p className="pt-1 text-sm text-ink-2">{customer.notes}</p>}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-shrink-0 gap-2">
           <Link to={`/customers/${id}/edit`} className={buttonClasses("ghost")}>
             {t("actions.edit")}
           </Link>
@@ -67,7 +66,7 @@ export function CustomerDetailPage() {
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">{t("vehicles.title")}</h3>
+          <h3 className="text-lg font-semibold tracking-tight text-ink">{t("vehicles.title")}</h3>
           {!adding && (
             <Button
               onClick={() => {
@@ -81,21 +80,27 @@ export function CustomerDetailPage() {
         </div>
 
         {adding && (
-          <VehicleForm
-            submitting={createVehicle.isPending}
-            onCancel={() => setAdding(false)}
-            onSubmit={(payload) =>
-              createVehicle.mutate(payload, { onSuccess: () => setAdding(false) })
-            }
-          />
+          <div className="card p-5">
+            <VehicleForm
+              submitting={createVehicle.isPending}
+              onCancel={() => setAdding(false)}
+              onSubmit={(payload) =>
+                createVehicle.mutate(payload, { onSuccess: () => setAdding(false) })
+              }
+            />
+          </div>
         )}
 
         {!vehicles || vehicles.length === 0 ? (
-          !adding && <p className="opacity-70">{t("vehicles.empty")}</p>
+          !adding && (
+            <div className="card grid place-items-center p-10 text-sm text-muted">
+              {t("vehicles.empty")}
+            </div>
+          )
         ) : (
           <ul className="space-y-3">
             {vehicles.map((v: Vehicle) => (
-              <li key={v.id} className="border rounded-xl p-4">
+              <li key={v.id} className="card p-5">
                 {editingId === v.id ? (
                   <VehicleForm
                     defaultValues={v}
@@ -110,20 +115,22 @@ export function CustomerDetailPage() {
                   />
                 ) : (
                   <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-0.5">
-                      <p className="font-medium">
+                    <div className="space-y-1">
+                      <p className="font-medium text-ink">
                         {v.model ?? "—"}{" "}
-                        {v.model_year ? `(${v.model_year})` : ""}
+                        {v.model_year ? <span className="num text-muted">({v.model_year})</span> : ""}
                       </p>
-                      <p className="text-sm opacity-70">
-                        {v.plate_number ?? ""}
-                        {v.vin ? ` · ${v.vin}` : ""}
-                        {v.current_odometer != null
-                          ? ` · ${v.current_odometer} km`
-                          : ""}
+                      <p className="text-sm text-muted">
+                        <span className="num">{v.plate_number ?? ""}</span>
+                        {v.vin ? <> · <span className="num">{v.vin}</span></> : ""}
+                        {v.current_odometer != null ? (
+                          <> · <span className="num">{v.current_odometer}</span> km</>
+                        ) : (
+                          ""
+                        )}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-shrink-0 gap-2">
                       <Button
                         variant="ghost"
                         onClick={() => {
@@ -136,8 +143,7 @@ export function CustomerDetailPage() {
                       <Button
                         variant="danger"
                         onClick={() => {
-                          if (confirm(t("actions.confirmDelete")))
-                            deleteVehicle.mutate(v.id);
+                          if (confirm(t("actions.confirmDelete"))) deleteVehicle.mutate(v.id);
                         }}
                       >
                         {t("actions.delete")}

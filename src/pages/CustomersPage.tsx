@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useCustomers } from "@/features/customers/hooks";
 import { buttonClasses } from "@/components/ui/Button";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 export function CustomersPage() {
   const { t } = useTranslation();
@@ -11,13 +12,18 @@ export function CustomersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-xl font-bold">{t("customers.title")}</h2>
-        <Link to="/customers/new" className={buttonClasses()}>{t("customers.addCustomer")}</Link>
-      </div>
+      <PageHeader
+        title={t("customers.title")}
+        eyebrow={t("nav.customers")}
+        actions={
+          <Link to="/customers/new" className={buttonClasses()}>
+            {t("customers.addCustomer")}
+          </Link>
+        }
+      />
 
       <input
-        className="w-full max-w-sm border rounded-lg px-3 py-2"
+        className="w-full max-w-sm rounded-xl border border-line-strong bg-surface px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-muted/60 focus:border-volt-deep"
         placeholder={t("customers.searchPlaceholder")}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
@@ -25,16 +31,21 @@ export function CustomersPage() {
       />
 
       {isLoading ? (
-        <p className="opacity-70">{t("common.loading")}</p>
+        <p className="text-sm text-muted">{t("common.loading")}</p>
       ) : !customers || customers.length === 0 ? (
-        <p className="opacity-70">{t("customers.empty")}</p>
+        <div className="card grid place-items-center p-12 text-sm text-muted">
+          {t("customers.empty")}
+        </div>
       ) : (
-        <ul className="divide-y border rounded-lg">
+        <ul className="card divide-y divide-line overflow-hidden">
           {customers.map((c) => (
             <li key={c.id}>
-              <Link to={`/customers/${c.id}`} className="flex justify-between px-4 py-3 hover:bg-gray-50">
-                <span className="font-medium">{c.name}</span>
-                <span className="opacity-60 text-sm">{c.phone ?? ""}</span>
+              <Link
+                to={`/customers/${c.id}`}
+                className="flex items-center justify-between gap-4 px-4 py-3.5 transition-colors hover:bg-paper-2"
+              >
+                <span className="font-medium text-ink">{c.name}</span>
+                <span className="num text-sm text-muted">{c.phone ?? ""}</span>
               </Link>
             </li>
           ))}

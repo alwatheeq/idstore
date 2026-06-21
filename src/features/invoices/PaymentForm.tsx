@@ -16,7 +16,7 @@ export function PaymentForm({ submitting, onSubmit, onCancel }: Props) {
   });
   const methodOpts = (["cash", "card", "transfer"] as const).map((m) => ({ value: m, label: t(`paymentMethod.${m}`) }));
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="border rounded-xl p-4 bg-gray-50/50 space-y-3 max-w-md">
+    <form onSubmit={handleSubmit(onSubmit)} className="card max-w-md space-y-5 p-5">
       <TextField label={t("invoices.amount")} inputMode="numeric" {...register("amount")} error={errors.amount?.message} />
       <Select label={t("invoices.method")} options={methodOpts} {...register("method")} />
       <TextField label={t("invoices.note")} {...register("note")} error={errors.note?.message} />

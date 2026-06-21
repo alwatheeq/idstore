@@ -10,18 +10,22 @@ export function AppLayout() {
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <div className="flex-1">
-        <header className="flex justify-end items-center gap-3 p-3 border-b">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-20 flex items-center justify-end gap-3 border-b border-line bg-paper/80 px-6 py-3 backdrop-blur-md">
           <LanguageToggle />
           <button
             type="button"
-            className="text-xs opacity-70 hover:opacity-100"
+            className="rounded-full px-3 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-paper-2 hover:text-ink"
             onClick={() => void signOut()}
           >
             {t("auth.signOut")}
           </button>
         </header>
-        <main className="p-6"><Outlet /></main>
+        <main className="flex-1 px-6 py-8 lg:px-10">
+          <div className="mx-auto max-w-6xl animate-fade-up">
+            <Outlet />
+          </div>
+        </main>
       </div>
     </div>
   );

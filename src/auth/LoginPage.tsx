@@ -30,37 +30,71 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <form onSubmit={submit} className="w-full max-w-sm space-y-4 border rounded-2xl p-8">
-        <div className="flex justify-between items-center">
-          <h1 className="text-xl font-bold">{t("app.name")}</h1>
-          <LanguageToggle />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-6">
+      {/* ambient volt glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-40 start-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-volt/20 blur-[120px]"
+      />
+      <div className="absolute end-6 top-6 z-10">
+        <LanguageToggle />
+      </div>
+
+      <form
+        onSubmit={submit}
+        className="card relative z-10 w-full max-w-sm animate-fade-up space-y-7 p-8"
+      >
+        <div className="flex items-center gap-3">
+          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-ink text-xl text-volt shadow-card">
+            ⚡
+          </span>
+          <div className="leading-tight">
+            <h1 className="text-lg font-bold tracking-tight text-ink">{t("app.name")}</h1>
+            <p className="micro mt-1">{t("app.subtitle")}</p>
+          </div>
         </div>
-        <div className="space-y-2">
-          <label htmlFor="email" className="block text-sm">{t("auth.email")}</label>
-          <input
-            id="email"
-            className="w-full border rounded-lg px-3 py-2"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+
+        <div className="charge animate-charge-in">
+          <span style={{ width: "100%" }} />
         </div>
-        <div className="space-y-2">
-          <label htmlFor="password" className="block text-sm">{t("auth.password")}</label>
-          <input
-            id="password"
-            className="w-full border rounded-lg px-3 py-2"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <label htmlFor="email" className="block text-sm font-medium text-ink-2">
+              {t("auth.email")}
+            </label>
+            <input
+              id="email"
+              className="w-full rounded-xl border border-line-strong bg-surface px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-volt-deep"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="password" className="block text-sm font-medium text-ink-2">
+              {t("auth.password")}
+            </label>
+            <input
+              id="password"
+              className="w-full rounded-xl border border-line-strong bg-surface px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-volt-deep"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        {error && (
+          <p className="rounded-xl border border-danger/30 bg-danger-soft px-3.5 py-2.5 text-sm font-medium text-danger">
+            {error}
+          </p>
+        )}
+
         <button
-          className="w-full rounded-lg bg-blue-600 text-white py-2"
+          className="w-full rounded-xl bg-ink py-2.5 text-sm font-semibold text-paper shadow-card transition-[background-color,transform] duration-150 hover:bg-black active:translate-y-px disabled:opacity-50"
           type="submit"
           disabled={submitting}
         >

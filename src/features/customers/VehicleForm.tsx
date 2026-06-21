@@ -58,8 +58,8 @@ export function VehicleForm({ defaultValues, submitting, onSubmit, onCancel }: P
   });
 
   return (
-    <form onSubmit={handleSubmit((data) => onSubmit(data))} className="border rounded-xl p-5 space-y-4">
-      <div className="grid sm:grid-cols-2 gap-4">
+    <form onSubmit={handleSubmit((data) => onSubmit(data))} className="card p-5 space-y-5">
+      <div className="grid gap-5 sm:grid-cols-2">
         <TextField
           label={t("vehicles.plate")}
           {...register("plate_number")}

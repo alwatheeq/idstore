@@ -6,23 +6,25 @@ export function PortalHomePage() {
   const { t } = useTranslation();
   const { data: vehicles, isLoading } = useMyVehicles();
 
-  if (isLoading) return <p className="opacity-70">{t("common.loading")}</p>;
+  if (isLoading) return <p className="text-sm text-muted">{t("common.loading")}</p>;
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">{t("portal.myVehicles")}</h2>
+      <h2 className="text-2xl font-bold tracking-tight text-ink">{t("portal.myVehicles")}</h2>
       {!vehicles || vehicles.length === 0 ? (
-        <p className="opacity-70">{t("portal.noVehicles")}</p>
+        <div className="card grid place-items-center p-12 text-sm text-muted">
+          {t("portal.noVehicles")}
+        </div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           {vehicles.map((v) => (
             <Link
               key={v.id}
               to={`/portal/vehicles/${v.id}`}
-              className="block border rounded-xl p-5 space-y-1 hover:shadow-md transition-shadow"
+              className="card space-y-1 p-5 transition-colors hover:bg-paper-2"
             >
-              <p className="font-semibold">{v.model ?? "—"}</p>
-              <p className="text-sm opacity-60">{v.plate_number ?? "—"}</p>
+              <p className="font-semibold text-ink">{v.model ?? "—"}</p>
+              <p className="num text-sm text-muted">{v.plate_number ?? "—"}</p>
             </Link>
           ))}
         </div>

@@ -2,5 +2,108 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: light dark; }
-body { margin: 0; }
+/* ============================================================
+   VOLT INSTRUMENT — design tokens
+   Light "technical paper" canvas · graphite ink · electric-lime
+   accent. IBM Plex superfamily (Sans / Sans Arabic / Mono).
+   ============================================================ */
+:root {
+  --paper: #fafaf7;
+  --paper-2: #f1f1ea;
+  --surface: #ffffff;
+  --ink: #15171c;
+  --ink-2: #3a3d44;
+  --muted: #6b6f76;
+  --line: rgba(21, 23, 28, 0.1);
+  --line-strong: rgba(21, 23, 28, 0.18);
+  --volt: #aee82b;
+  --volt-deep: #6c9a00;
+}
+
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--paper);
+    /* faint blueprint dot-grid for "technical paper" depth */
+    background-image: radial-gradient(rgba(21, 23, 28, 0.045) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: "IBM Plex Sans", "IBM Plex Sans Arabic", system-ui, sans-serif;
+    font-feature-settings: "cv05", "ss01";
+  }
+
+  /* Arabic prefers its native Plex cut first */
+  :lang(ar) body,
+  [dir="rtl"] body {
+    font-family: "IBM Plex Sans Arabic", "IBM Plex Sans", system-ui, sans-serif;
+  }
+
+  ::selection {
+    background: rgba(174, 232, 43, 0.4);
+    color: var(--ink);
+  }
+
+  /* one consistent electric focus ring everywhere */
+  :focus-visible {
+    outline: 2px solid var(--volt-deep);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* tabular figures so columns of money/IDs line up */
+  .num,
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* mirror directional glyphs (back arrows, chevrons) under RTL */
+  [dir="rtl"] .rtl-flip {
+    transform: scaleX(-1);
+  }
+}
+
+@layer components {
+  /* Elevated surface — the workhorse container */
+  .card {
+    @apply rounded-2xl border bg-surface shadow-card;
+    border-color: var(--line);
+  }
+
+  /* ALL-CAPS technical micro-label (KPI captions, table heads, field groups) */
+  .micro {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-muted;
+  }
+
+  /* Mono readout for money / IDs / plates / dates */
+  .num {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Status pill */
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+
+  /* Volt "charge bar" track used on KPI cards */
+  .charge {
+    @apply relative h-1.5 overflow-hidden rounded-full;
+    background: var(--paper-2);
+  }
+  .charge > span {
+    @apply absolute inset-y-0 start-0 rounded-full;
+    background: linear-gradient(90deg, var(--volt-deep), var(--volt));
+  }
+}

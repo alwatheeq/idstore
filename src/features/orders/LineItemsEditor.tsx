@@ -59,9 +59,9 @@ function LineForm({ defaultValues, submitting, onSubmit, onCancel }: FormProps) 
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="border rounded-xl p-4 bg-gray-50/50 space-y-3"
+      className="space-y-3 rounded-xl border border-line bg-paper-2 p-4"
     >
-      <div className="grid sm:grid-cols-2 gap-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <Select
           label={t("orders.lineType")}
           options={typeOpts}
@@ -125,7 +125,7 @@ export function LineItemsEditor({ orderId }: { orderId: string }) {
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">{t("orders.lines")}</h3>
+        <h3 className="text-lg font-semibold tracking-tight text-ink">{t("orders.lines")}</h3>
         {!adding && (
           <Button
             onClick={() => {
@@ -149,13 +149,15 @@ export function LineItemsEditor({ orderId }: { orderId: string }) {
       )}
 
       {lines && lines.length === 0 && !adding && (
-        <p className="opacity-70">{t("orders.noLines")}</p>
+        <div className="card grid place-items-center p-10 text-sm text-muted">
+          {t("orders.noLines")}
+        </div>
       )}
 
       {lines && lines.length > 0 && (
-        <div className="border rounded-lg divide-y">
+        <div className="card divide-y divide-line overflow-hidden">
           {lines.map((l: ServiceOrderLine) => (
-            <div key={l.id} className="p-3">
+            <div key={l.id} className="p-3 transition-colors hover:bg-paper-2">
               {editingId === l.id ? (
                 <LineForm
                   defaultValues={l}
@@ -170,14 +172,14 @@ export function LineItemsEditor({ orderId }: { orderId: string }) {
                 />
               ) : (
                 <div className="flex items-center justify-between gap-4 text-sm">
-                  <span className="flex-1">
+                  <span className="flex-1 text-ink">
                     {l.description}{" "}
-                    <span className="opacity-50">· {t(`lineType.${l.line_type}`)}</span>
+                    <span className="text-muted">· {t(`lineType.${l.line_type}`)}</span>
                   </span>
-                  <span className="opacity-70">
+                  <span className="num text-muted">
                     {l.quantity} × {fmt(l.unit_price)}
                   </span>
-                  <span className="font-medium">{fmt(l.line_total)}</span>
+                  <span className="num font-medium text-ink">{fmt(l.line_total)}</span>
                   <span className="flex gap-2">
                     <Button
                       variant="ghost"
@@ -207,18 +209,18 @@ export function LineItemsEditor({ orderId }: { orderId: string }) {
       )}
 
       {(lines?.length ?? 0) > 0 && (
-        <dl className="max-w-xs ms-auto space-y-1 text-sm">
+        <dl className="ms-auto max-w-xs space-y-1 text-sm">
           <div className="flex justify-between">
-            <dt className="opacity-60">{t("orders.subtotal")}</dt>
-            <dd>{fmt(totals.subtotal)}</dd>
+            <dt className="text-muted">{t("orders.subtotal")}</dt>
+            <dd className="num text-ink">{fmt(totals.subtotal)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="opacity-60">{t("orders.discountTotal")}</dt>
-            <dd>{fmt(totals.discountTotal)}</dd>
+            <dt className="text-muted">{t("orders.discountTotal")}</dt>
+            <dd className="num text-ink">{fmt(totals.discountTotal)}</dd>
           </div>
-          <div className="flex justify-between font-semibold">
+          <div className="flex justify-between font-semibold text-ink">
             <dt>{t("orders.grandTotal")}</dt>
-            <dd>{fmt(totals.total)} JOD</dd>
+            <dd className="num">{fmt(totals.total)} JOD</dd>
           </div>
         </dl>
       )}

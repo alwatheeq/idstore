@@ -6,6 +6,7 @@ import { ORDER_STATUSES } from "@/features/orders/status";
 import { OrderStatusBadge } from "@/features/orders/OrderStatusBadge";
 import { buttonClasses } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
+import { PageHeader } from "@/components/ui/PageHeader";
 import type { OrderStatus } from "@/features/orders/types";
 
 export function ServiceOrdersPage() {
@@ -20,10 +21,15 @@ export function ServiceOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-xl font-bold">{t("orders.title")}</h2>
-        <Link to="/orders/new" className={buttonClasses()}>{t("orders.newOrder")}</Link>
-      </div>
+      <PageHeader
+        title={t("orders.title")}
+        eyebrow={t("nav.orders")}
+        actions={
+          <Link to="/orders/new" className={buttonClasses()}>
+            {t("orders.newOrder")}
+          </Link>
+        }
+      />
 
       <div className="max-w-xs">
         <Select
@@ -35,21 +41,27 @@ export function ServiceOrdersPage() {
       </div>
 
       {isLoading ? (
-        <p className="opacity-70">{t("common.loading")}</p>
+        <p className="text-sm text-muted">{t("common.loading")}</p>
       ) : !orders || orders.length === 0 ? (
-        <p className="opacity-70">{t("orders.empty")}</p>
+        <div className="card grid place-items-center p-12 text-sm text-muted">
+          {t("orders.empty")}
+        </div>
       ) : (
-        <ul className="divide-y border rounded-lg">
+        <ul className="card divide-y divide-line overflow-hidden">
           {orders.map((o) => {
             const veh = [o.vehicles?.model, o.vehicles?.plate_number].filter(Boolean).join(" ");
             return (
               <li key={o.id}>
-                <Link to={`/orders/${o.id}`} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-gray-50">
-                  <span className="font-medium">
-                    #{o.order_number}{veh ? ` · ${veh}` : ""}
+                <Link
+                  to={`/orders/${o.id}`}
+                  className="flex items-center justify-between gap-4 px-4 py-3.5 transition-colors hover:bg-paper-2"
+                >
+                  <span className="font-medium text-ink">
+                    <span className="num text-muted">#{o.order_number}</span>
+                    {veh ? ` · ${veh}` : ""}
                   </span>
                   <span className="flex items-center gap-3">
-                    <span className="opacity-60 text-sm">{o.customers?.name ?? ""}</span>
+                    <span className="text-sm text-muted">{o.customers?.name ?? ""}</span>
                     <OrderStatusBadge status={o.status} />
                   </span>
                 </Link>

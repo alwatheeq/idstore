@@ -35,26 +35,53 @@ export function PortalLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <form onSubmit={submit} className="w-full max-w-sm space-y-4 border rounded-2xl p-8">
-        <div className="flex justify-between items-center">
-          <h1 className="text-xl font-bold">{t("portal.title")}</h1>
-          <LanguageToggle />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-6">
+      {/* ambient volt glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-40 start-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-volt/20 blur-[120px]"
+      />
+      <div className="absolute end-6 top-6 z-10">
+        <LanguageToggle />
+      </div>
+
+      <form
+        onSubmit={submit}
+        className="card relative z-10 w-full max-w-sm animate-fade-up space-y-7 p-8"
+      >
+        <div className="flex items-center gap-3">
+          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-ink text-xl text-volt shadow-card">
+            ⚡
+          </span>
+          <div className="leading-tight">
+            <h1 className="text-lg font-bold tracking-tight text-ink">{t("portal.title")}</h1>
+          </div>
         </div>
-        <TextField
-          label={t("portal.phone")}
-          inputMode="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
-        <TextField
-          label={t("portal.pin")}
-          inputMode="numeric"
-          type="password"
-          value={pin}
-          onChange={(e) => setPin(e.target.value)}
-        />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        <div className="charge animate-charge-in">
+          <span style={{ width: "100%" }} />
+        </div>
+
+        <div className="space-y-5">
+          <TextField
+            label={t("portal.phone")}
+            inputMode="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+          <TextField
+            label={t("portal.pin")}
+            inputMode="numeric"
+            type="password"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+          />
+        </div>
+        {error && (
+          <p className="rounded-xl border border-danger/30 bg-danger-soft px-3.5 py-2.5 text-sm font-medium text-danger">
+            {error}
+          </p>
+        )}
         <Button type="submit" disabled={submitting} className="w-full">
           {t("portal.login")}
         </Button>

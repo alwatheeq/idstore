@@ -2,15 +2,16 @@ import { useTranslation } from "react-i18next";
 import type { PaymentStatus } from "@/lib/money";
 
 const colors: Record<PaymentStatus, string> = {
-  unpaid: "bg-red-100 text-red-700",
-  partial: "bg-amber-100 text-amber-700",
-  paid: "bg-green-100 text-green-700",
+  unpaid: "bg-danger-soft text-danger",
+  partial: "bg-warn-soft text-warn",
+  paid: "bg-ok-soft text-ok",
 };
 
 export function InvoiceStatusBadge({ status }: { status: PaymentStatus }) {
   const { t } = useTranslation();
   return (
-    <span className={`inline-block text-xs font-medium px-2.5 py-1 rounded-full ${colors[status]}`}>
+    <span className={`badge ${colors[status]}`}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" aria-hidden />
       {t(`paymentStatus.${status}`)}
     </span>
   );

@@ -4,6 +4,7 @@ import { useOrder, useAdvanceStatus, useApproveOrder } from "@/features/orders/h
 import { OrderStatusBadge } from "@/features/orders/OrderStatusBadge";
 import { canAdvance } from "@/features/orders/status";
 import { Button, buttonClasses } from "@/components/ui/Button";
+import { BackLink } from "@/components/ui/BackLink";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/auth/useAuth";
 import { LineItemsEditor } from "@/features/orders/LineItemsEditor";
@@ -12,9 +13,9 @@ import { useInvoiceByOrder, useGenerateInvoice } from "@/features/invoices/hooks
 
 function Field({ label, value }: { label: string; value: string | number | null }) {
   return (
-    <div className="flex justify-between gap-4 border-b py-1">
-      <dt className="opacity-60">{label}</dt>
-      <dd>{value ?? "—"}</dd>
+    <div className="flex justify-between gap-4 border-b border-line py-1.5">
+      <dt className="text-muted">{label}</dt>
+      <dd className="num text-ink">{value ?? "—"}</dd>
     </div>
   );
 }
@@ -31,8 +32,8 @@ export function OrderDetailPage() {
   const { data: invoice } = useInvoiceByOrder(id);
   const generate = useGenerateInvoice();
 
-  if (isLoading) return <p className="opacity-70">{t("common.loading")}</p>;
-  if (!order) return <p className="opacity-70">{t("orders.notFound")}</p>;
+  if (isLoading) return <p className="text-sm text-muted">{t("common.loading")}</p>;
+  if (!order) return <p className="text-sm text-muted">{t("orders.notFound")}</p>;
 
   const email = session?.user?.email ?? "admin";
   const vehicle = [order.vehicles?.model, order.vehicles?.plate_number].filter(Boolean).join(" ");
@@ -40,20 +41,18 @@ export function OrderDetailPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <Link to="/orders" className="text-sm opacity-60 hover:opacity-100">
-            ← {t("actions.back")}
-          </Link>
-          <h2 className="text-2xl font-bold">
-            {t("orders.order")} #{order.order_number}
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-line pb-5">
+        <div className="space-y-2">
+          <BackLink to="/orders">{t("actions.back")}</BackLink>
+          <h2 className="text-2xl font-bold tracking-tight text-ink">
+            {t("orders.order")} <span className="num">#{order.order_number}</span>
           </h2>
-          <p className="opacity-70 text-sm">
+          <p className="text-sm text-muted">
             {vehicle}
             {order.customers?.name ? ` · ${order.customers.name}` : ""}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-shrink-0 items-center gap-3">
           <OrderStatusBadge status={order.status} />
           {order.status === "awaiting_approval" ? (
             <Button
@@ -90,19 +89,19 @@ export function OrderDetailPage() {
         </div>
       </div>
 
-      <section className="space-y-2">
-        <h3 className="text-lg font-semibold">{t("orders.intake")}</h3>
-        <dl className="grid sm:grid-cols-2 gap-x-8 gap-y-1 text-sm">
+      <section className="card space-y-3 p-5">
+        <h3 className="text-lg font-semibold tracking-tight text-ink">{t("orders.intake")}</h3>
+        <dl className="grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
           <Field label={t("orders.odometer")} value={order.odometer_at_intake} />
           <Field label={t("orders.charge")} value={order.charge_percent} />
           <Field label={t("orders.battery")} value={order.hv_battery_state} />
           <Field label={t("orders.concerns")} value={order.reported_concerns} />
         </dl>
         {order.intake_notes && (
-          <p className="text-sm opacity-80 pt-1">{order.intake_notes}</p>
+          <p className="pt-1 text-sm text-ink-2">{order.intake_notes}</p>
         )}
         {order.approved_at && (
-          <p className="text-xs opacity-60">
+          <p className="micro">
             {t("orders.approvedAt")}: {order.approved_by}
           </p>
         )}

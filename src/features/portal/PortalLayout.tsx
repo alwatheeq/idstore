@@ -8,22 +8,25 @@ export function PortalLayout() {
   const { signOut } = useAuth();
   return (
     <div className="min-h-screen">
-      <header className="flex items-center justify-between gap-3 p-4 border-b">
-        <Link to="/portal" className="font-extrabold">
-          ⚡ {t("portal.title")}
+      <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-line bg-paper/80 px-6 py-3 backdrop-blur-md">
+        <Link to="/portal" className="flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-ink text-lg text-volt shadow-card">
+            ⚡
+          </span>
+          <span className="font-bold tracking-tight text-ink">{t("portal.title")}</span>
         </Link>
         <div className="flex items-center gap-3">
           <LanguageToggle />
           <button
             type="button"
-            className="text-xs opacity-70 hover:opacity-100"
+            className="rounded-full px-3 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-paper-2 hover:text-ink"
             onClick={() => void signOut()}
           >
             {t("portal.signOut")}
           </button>
         </div>
       </header>
-      <main className="p-4 sm:p-6 max-w-3xl mx-auto">
+      <main className="mx-auto max-w-3xl animate-fade-up px-6 py-8">
         <Outlet />
       </main>
     </div>

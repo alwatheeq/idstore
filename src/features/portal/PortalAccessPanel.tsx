@@ -19,30 +19,30 @@ export function PortalAccessPanel({ customer }: { customer: Customer }) {
 
   if (customer.auth_user_id) {
     return (
-      <section className="border rounded-xl p-4 space-y-1">
-        <h3 className="font-semibold">{t("portal.access")}</h3>
-        <p className="text-sm text-green-700">{t("portal.linked")}</p>
+      <section className="card space-y-3 p-5">
+        <div className="micro">{t("portal.access")}</div>
+        <span className="badge bg-ok-soft text-ok">{t("portal.linked")}</span>
       </section>
     );
   }
 
   if (!customer.phone) {
     return (
-      <section className="border rounded-xl p-4 space-y-1">
-        <h3 className="font-semibold">{t("portal.access")}</h3>
-        <p className="text-sm opacity-70">{t("portal.needPhone")}</p>
+      <section className="card space-y-3 p-5">
+        <div className="micro">{t("portal.access")}</div>
+        <span className="badge bg-warn-soft text-warn">{t("portal.needPhone")}</span>
       </section>
     );
   }
 
   return (
-    <section className="border rounded-xl p-4 space-y-3 max-w-md">
-      <h3 className="font-semibold">{t("portal.access")}</h3>
-      <p className="text-sm opacity-70">{t("portal.notLinked")}</p>
+    <section className="card max-w-md space-y-4 p-5">
+      <div className="micro">{t("portal.access")}</div>
+      <p className="text-sm text-muted">{t("portal.notLinked")}</p>
       {created ? (
-        <p className="text-sm">
+        <p className="text-sm text-ink-2">
           {t("portal.pinShown")}{" "}
-          <strong className="text-lg tracking-widest">{pin}</strong>
+          <strong className="num text-lg tracking-widest text-ink">{pin}</strong>
         </p>
       ) : (
         <>

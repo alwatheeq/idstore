@@ -22,10 +22,10 @@ function MediaThumb({
     queryFn: () => signedMediaUrl(item.storage_path),
   });
   return (
-    <div className="relative border rounded-lg overflow-hidden group">
-      <div className="aspect-square bg-gray-100 flex items-center justify-center">
+    <div className="group relative overflow-hidden rounded-xl border border-line">
+      <div className="flex aspect-square items-center justify-center bg-paper-2">
         {!url ? (
-          <span className="opacity-40 text-xs">…</span>
+          <span className="text-xs text-muted">…</span>
         ) : item.media_type === "video" ? (
           <video
             src={url}
@@ -41,7 +41,7 @@ function MediaThumb({
         type="button"
         onClick={onDelete}
         disabled={isPendingDelete}
-        className="absolute top-1 end-1 bg-red-600 text-white text-xs rounded px-2 py-0.5 opacity-0 group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-50"
+        className="absolute top-1 end-1 rounded-lg bg-danger px-2 py-0.5 text-xs font-semibold text-surface opacity-0 transition-opacity group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-50"
       >
         {t("actions.delete")}
       </button>
@@ -67,7 +67,7 @@ export function InspectionMedia({ orderId }: { orderId: string }) {
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">{t("orders.media")}</h3>
+        <h3 className="text-lg font-semibold tracking-tight text-ink">{t("orders.media")}</h3>
         <span>
           <Button onClick={() => inputRef.current?.click()} disabled={upload.isPending}>
             {t("orders.upload")}
@@ -83,9 +83,11 @@ export function InspectionMedia({ orderId }: { orderId: string }) {
         </span>
       </div>
       {!media || media.length === 0 ? (
-        <p className="opacity-70">{t("orders.noMedia")}</p>
+        <div className="card grid place-items-center p-10 text-sm text-muted">
+          {t("orders.noMedia")}
+        </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {media.map((m: Media) => (
             <MediaThumb
               key={m.id}
