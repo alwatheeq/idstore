@@ -7,6 +7,7 @@ import i18n from "@/i18n";
 import { DirectionProvider } from "@/providers/DirectionProvider";
 import { AuthProvider } from "@/auth/AuthProvider";
 import { ToastProvider } from "@/components/ui/Toast";
+import { ModelImagesProvider } from "@/features/vehicles/ModelImagesContext";
 import App from "@/App";
 import "./index.css";
 
@@ -21,9 +22,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <ToastProvider>
-              <BrowserRouter>
-                <App />
-              </BrowserRouter>
+              <ModelImagesProvider>
+                <BrowserRouter>
+                  <App />
+                </BrowserRouter>
+              </ModelImagesProvider>
             </ToastProvider>
           </AuthProvider>
         </QueryClientProvider>

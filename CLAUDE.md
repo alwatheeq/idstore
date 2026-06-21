@@ -38,7 +38,8 @@ Vite + React 19 + TypeScript (strict, `verbatimModuleSyntax`) · Supabase (Postg
 ## Database / migrations — DO NOT auto-apply to prod
 - Migrations live in `supabase/migrations/`. **Applying them to the live DB is a human-authorized step** — the auto-classifier blocks prod writes on vague prompts; ask for explicit authorization, or have the user run the SQL. (Project ref `hbsbbsbezqlxqslkwquy`; env var is `VITE_SUPABASE_PUBLISHABLE_KEY`, not `ANON_KEY`.)
 - **Applied to prod:** `0001`, `0002_invoices_unique_order.sql`, `0003_customer_portal_rls.sql` (the `admin_users` seed was bundled into the 0003 apply via `insert ... select id from auth.users`, since there was a single auth user = the admin).
-- **Pending application:** `0004_software_updates.sql` (adds `vehicles.target_software_version` + `vehicle_software_updates` table + per-customer RLS). Until applied, software-update **write/history** paths 404; the dashboard KPI and `/software` worklist still work (they only read `vehicles`).
+- **Applied to prod:** also `0004_software_updates.sql`.
+- **Pending application:** `0005_vehicle_model_images.sql` (public `vehicle-models` storage bucket + `vehicle_model_images` table + storage/RLS policies). Until applied, Settings vehicle-image upload/display 404s; everywhere else shows the neutral car placeholder.
 
 ## Working style
 - Branch per module/sub-project; merge to `main` and push to GitHub (`alwatheeq/idstore`) when done. Don't commit/push unless asked.

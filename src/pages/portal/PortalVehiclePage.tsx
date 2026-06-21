@@ -6,6 +6,7 @@ import { BackLink } from "@/components/ui/BackLink";
 import { useVehicleUpdates } from "@/features/software/hooks";
 import { SoftwareHistory } from "@/features/software/SoftwareHistory";
 import { isUpdateDue } from "@/features/software/due";
+import { VehicleImage } from "@/features/vehicles/VehicleImage";
 
 export function PortalVehiclePage() {
   const { t } = useTranslation();
@@ -19,12 +20,15 @@ export function PortalVehiclePage() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2 border-b border-line pb-5">
-        <BackLink to="/portal">{t("actions.back")}</BackLink>
-        <h2 className="text-2xl font-bold tracking-tight text-ink">{vehicle.model ?? "—"}</h2>
-        <p className="num text-sm text-muted">
-          {[vehicle.plate_number, vehicle.vin].filter(Boolean).join(" · ")}
-        </p>
+      <div className="flex items-start gap-4 border-b border-line pb-5">
+        <VehicleImage model={vehicle.model} className="h-20 w-28 flex-shrink-0" />
+        <div className="space-y-2">
+          <BackLink to="/portal">{t("actions.back")}</BackLink>
+          <h2 className="text-2xl font-bold tracking-tight text-ink">{vehicle.model ?? "—"}</h2>
+          <p className="num text-sm text-muted">
+            {[vehicle.plate_number, vehicle.vin].filter(Boolean).join(" · ")}
+          </p>
+        </div>
       </div>
 
       <section className="space-y-4">

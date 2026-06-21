@@ -9,6 +9,13 @@
     "software": "Software",
     "settings": "Settings"
   },
+  "settings": {
+    "vehicleImages": "Vehicle images",
+    "vehicleImagesHint": "Upload a photo for each model. It appears for every vehicle of that model across the app and customer portal.",
+    "defaultModel": "Default (other models)",
+    "uploadImage": "Upload image",
+    "replaceImage": "Replace image"
+  },
   "auth": { "login": "Log in", "email": "Email", "password": "Password", "signOut": "Sign out", "error": { "failed": "Login failed. Please check your email and password." } },
   "common": { "language": "العربية", "loading": "Loading…" },
   "actions": {
@@ -42,6 +49,9 @@
     "plate": "Plate number",
     "vin": "VIN",
     "model": "Model",
+    "modelOther": "Other",
+    "modelCustom": "Custom model",
+    "modelCustomPlaceholder": "Enter model name",
     "year": "Year",
     "color": "Color",
     "odometer": "Odometer (km)",

@@ -5,6 +5,7 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { BackLink } from "@/components/ui/BackLink";
 import { Link } from "react-router-dom";
 import { VehicleForm } from "@/features/customers/VehicleForm";
+import { VehicleImage } from "@/features/vehicles/VehicleImage";
 import type { Vehicle } from "@/features/customers/types";
 import {
   useCustomer,
@@ -115,20 +116,27 @@ export function CustomerDetailPage() {
                   />
                 ) : (
                   <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-1">
-                      <p className="font-medium text-ink">
-                        {v.model ?? "—"}{" "}
-                        {v.model_year ? <span className="num text-muted">({v.model_year})</span> : ""}
-                      </p>
-                      <p className="text-sm text-muted">
-                        <span className="num">{v.plate_number ?? ""}</span>
-                        {v.vin ? <> · <span className="num">{v.vin}</span></> : ""}
-                        {v.current_odometer != null ? (
-                          <> · <span className="num">{v.current_odometer}</span> km</>
-                        ) : (
-                          ""
-                        )}
-                      </p>
+                    <div className="flex min-w-0 items-start gap-4">
+                      <VehicleImage model={v.model} className="h-14 w-20 flex-shrink-0" />
+                      <div className="space-y-1">
+                        <p className="font-medium text-ink">
+                          {v.model ?? "—"}{" "}
+                          {v.model_year ? (
+                            <span className="num text-muted">({v.model_year})</span>
+                          ) : (
+                            ""
+                          )}
+                        </p>
+                        <p className="text-sm text-muted">
+                          <span className="num">{v.plate_number ?? ""}</span>
+                          {v.vin ? <> · <span className="num">{v.vin}</span></> : ""}
+                          {v.current_odometer != null ? (
+                            <> · <span className="num">{v.current_odometer}</span> km</>
+                          ) : (
+                            ""
+                          )}
+                        </p>
+                      </div>
                     </div>
                     <div className="flex flex-shrink-0 gap-2">
                       <Link to={`/vehicles/${v.id}`} className={buttonClasses("ghost")}>

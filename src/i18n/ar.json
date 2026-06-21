@@ -9,6 +9,13 @@
     "software": "البرمجيات",
     "settings": "الإعدادات"
   },
+  "settings": {
+    "vehicleImages": "صور المركبات",
+    "vehicleImagesHint": "ارفع صورة لكل طراز. ستظهر لكل مركبة من هذا الطراز في التطبيق وبوابة العملاء.",
+    "defaultModel": "الافتراضي (الطُرز الأخرى)",
+    "uploadImage": "رفع صورة",
+    "replaceImage": "استبدال الصورة"
+  },
   "auth": { "login": "تسجيل الدخول", "email": "البريد الإلكتروني", "password": "كلمة المرور", "signOut": "تسجيل الخروج", "error": { "failed": "فشل تسجيل الدخول. يرجى التحقق من البريد الإلكتروني وكلمة المرور." } },
   "common": { "language": "English", "loading": "جارٍ التحميل…" },
   "actions": {
@@ -42,6 +49,9 @@
     "plate": "رقم اللوحة",
     "vin": "رقم الهيكل",
     "model": "الطراز",
+    "modelOther": "أخرى",
+    "modelCustom": "طراز مخصص",
+    "modelCustomPlaceholder": "أدخل اسم الطراز",
     "year": "السنة",
     "color": "اللون",
     "odometer": "العداد (كم)",

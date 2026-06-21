@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMyVehicles } from "./portalData";
+import { VehicleImage } from "@/features/vehicles/VehicleImage";
 
 export function PortalHomePage() {
   const { t } = useTranslation();
@@ -21,10 +22,13 @@ export function PortalHomePage() {
             <Link
               key={v.id}
               to={`/portal/vehicles/${v.id}`}
-              className="card space-y-1 p-5 transition-colors hover:bg-paper-2"
+              className="card flex items-center gap-4 p-5 transition-colors hover:bg-paper-2"
             >
-              <p className="font-semibold text-ink">{v.model ?? "—"}</p>
-              <p className="num text-sm text-muted">{v.plate_number ?? "—"}</p>
+              <VehicleImage model={v.model} className="h-14 w-20 flex-shrink-0" />
+              <div className="min-w-0 space-y-1">
+                <p className="font-semibold text-ink">{v.model ?? "—"}</p>
+                <p className="num text-sm text-muted">{v.plate_number ?? "—"}</p>
+              </div>
             </Link>
           ))}
         </div>
