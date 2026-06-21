@@ -26,3 +26,7 @@ export interface InspectionMedia {
   id: string; service_order_id: string; media_type: "photo" | "video";
   storage_path: string; caption: string | null; created_at: string;
 }
+export type OrderDetailRow = ServiceOrder & {
+  customers: { name: string; phone: string | null; email: string | null } | null;
+  vehicles: { model: string | null; plate_number: string | null; vin: string | null } | null;
+};

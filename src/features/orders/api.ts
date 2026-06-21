@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { getDefaultBranchId } from "@/lib/branch";
 import { lineTotalForPayload } from "./lineMath";
-import type { ServiceOrder, ServiceOrderLine, InspectionMedia, OrderStatus, OrderListRow } from "./types";
+import type { ServiceOrder, ServiceOrderLine, InspectionMedia, OrderStatus, OrderListRow, OrderDetailRow } from "./types";
 import type { IntakePayload, LinePayload } from "./schema";
 
 const BUCKET = "inspection-media";
@@ -15,10 +15,12 @@ export async function listOrders(status?: OrderStatus): Promise<OrderListRow[]> 
   if (error) throw error;
   return data as unknown as OrderListRow[];
 }
-export async function getOrder(id: string): Promise<ServiceOrder> {
-  const { data, error } = await supabase.from("service_orders").select("*").eq("id", id).single();
+export async function getOrder(id: string): Promise<OrderDetailRow> {
+  const { data, error } = await supabase.from("service_orders")
+    .select("*, customers(name, phone, email), vehicles(model, plate_number, vin)")
+    .eq("id", id).single();
   if (error) throw error;
-  return data as ServiceOrder;
+  return data as unknown as OrderDetailRow;
 }
 export async function createOrder(payload: IntakePayload): Promise<ServiceOrder> {
   const branch_id = await getDefaultBranchId();
