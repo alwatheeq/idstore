@@ -81,7 +81,10 @@
     "upload": "رفع",
     "noMedia": "لا توجد صور أو فيديو بعد",
     "notFound": "أمر الصيانة غير موجود",
-    "approvedAt": "اعتُمد"
+    "approvedAt": "اعتُمد",
+    "discountType": "نوع الخصم",
+    "discountValue": "قيمة الخصم",
+    "noLines": "لا توجد بنود بعد"
   },
   "status": {
     "appointment": "موعد",

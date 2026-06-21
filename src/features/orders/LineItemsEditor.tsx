@@ -85,12 +85,12 @@ function LineForm({ defaultValues, submitting, onSubmit, onCancel }: FormProps) 
           error={errors.unit_price?.message}
         />
         <Select
-          label={t("orders.discount")}
+          label={t("orders.discountType")}
           options={discOpts}
           {...register("discount_type")}
         />
         <TextField
-          label={t("orders.discount")}
+          label={t("orders.discountValue")}
           inputMode="numeric"
           {...register("discount_value")}
           error={errors.discount_value?.message}
@@ -146,6 +146,10 @@ export function LineItemsEditor({ orderId }: { orderId: string }) {
             create.mutate(p, { onSuccess: () => setAdding(false), onError: onErr })
           }
         />
+      )}
+
+      {lines && lines.length === 0 && !adding && (
+        <p className="opacity-70">{t("orders.noLines")}</p>
       )}
 
       {lines && lines.length > 0 && (

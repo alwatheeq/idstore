@@ -81,7 +81,10 @@
     "upload": "Upload",
     "noMedia": "No photos or video yet",
     "notFound": "Service order not found",
-    "approvedAt": "Approved"
+    "approvedAt": "Approved",
+    "discountType": "Discount type",
+    "discountValue": "Discount value",
+    "noLines": "No line items yet"
   },
   "status": {
     "appointment": "Appointment",
