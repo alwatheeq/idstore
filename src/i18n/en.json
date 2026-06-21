@@ -9,5 +9,43 @@
     "settings": "Settings"
   },
   "auth": { "login": "Log in", "email": "Email", "password": "Password", "signOut": "Sign out", "error": { "failed": "Login failed. Please check your email and password." } },
-  "common": { "language": "العربية", "loading": "Loading…" }
+  "common": { "language": "العربية", "loading": "Loading…" },
+  "actions": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "search": "Search",
+    "back": "Back",
+    "confirmDelete": "Are you sure you want to delete this?"
+  },
+  "customers": {
+    "title": "Customers",
+    "addCustomer": "Add customer",
+    "newCustomer": "New customer",
+    "editCustomer": "Edit customer",
+    "name": "Name",
+    "phone": "Phone",
+    "email": "Email",
+    "notes": "Notes",
+    "empty": "No customers yet",
+    "searchPlaceholder": "Search by name…",
+    "details": "Customer details"
+  },
+  "vehicles": {
+    "title": "Vehicles",
+    "addVehicle": "Add vehicle",
+    "editVehicle": "Edit vehicle",
+    "plate": "Plate number",
+    "vin": "VIN",
+    "model": "Model",
+    "year": "Year",
+    "color": "Color",
+    "odometer": "Odometer (km)",
+    "battery": "HV battery state",
+    "software": "Software version",
+    "notes": "Notes",
+    "empty": "No vehicles for this customer yet"
+  }
 }

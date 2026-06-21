@@ -9,5 +9,43 @@
     "settings": "الإعدادات"
   },
   "auth": { "login": "تسجيل الدخول", "email": "البريد الإلكتروني", "password": "كلمة المرور", "signOut": "تسجيل الخروج", "error": { "failed": "فشل تسجيل الدخول. يرجى التحقق من البريد الإلكتروني وكلمة المرور." } },
-  "common": { "language": "English", "loading": "جارٍ التحميل…" }
+  "common": { "language": "English", "loading": "جارٍ التحميل…" },
+  "actions": {
+    "add": "إضافة",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "search": "بحث",
+    "back": "رجوع",
+    "confirmDelete": "هل أنت متأكد من الحذف؟"
+  },
+  "customers": {
+    "title": "العملاء",
+    "addCustomer": "إضافة عميل",
+    "newCustomer": "عميل جديد",
+    "editCustomer": "تعديل العميل",
+    "name": "الاسم",
+    "phone": "الهاتف",
+    "email": "البريد الإلكتروني",
+    "notes": "ملاحظات",
+    "empty": "لا يوجد عملاء بعد",
+    "searchPlaceholder": "ابحث بالاسم…",
+    "details": "بيانات العميل"
+  },
+  "vehicles": {
+    "title": "المركبات",
+    "addVehicle": "إضافة مركبة",
+    "editVehicle": "تعديل المركبة",
+    "plate": "رقم اللوحة",
+    "vin": "رقم الهيكل",
+    "model": "الطراز",
+    "year": "السنة",
+    "color": "اللون",
+    "odometer": "العداد (كم)",
+    "battery": "حالة بطارية الجهد العالي",
+    "software": "إصدار البرمجيات",
+    "notes": "ملاحظات",
+    "empty": "لا توجد مركبات لهذا العميل بعد"
+  }
 }
