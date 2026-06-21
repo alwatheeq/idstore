@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -7,6 +7,7 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 export function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,8 +20,13 @@ export function LoginPage() {
     setError(null);
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
     setSubmitting(false);
-    if (authError) setError(t("auth.error.failed"));
-    else void navigate("/", { replace: true });
+    if (authError) {
+      setError(t("auth.error.failed"));
+    } else {
+      const from =
+        (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/";
+      void navigate(from, { replace: true });
+    }
   };
 
   return (

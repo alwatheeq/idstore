@@ -40,7 +40,11 @@ describe("App routing", () => {
   });
 
   it("Test A: authenticated user at '/' sees dashboard heading and sidebar nav", async () => {
-    vi.mocked(useAuth).mockReturnValue({ session: { user: {} } as never, loading: false });
+    vi.mocked(useAuth).mockReturnValue({
+      session: { user: {} } as never,
+      loading: false,
+      signOut: vi.fn(),
+    });
 
     renderApp(["/"]);
 
@@ -51,7 +55,7 @@ describe("App routing", () => {
   });
 
   it("Test B: unauthenticated user at '/' is redirected to login", async () => {
-    vi.mocked(useAuth).mockReturnValue({ session: null, loading: false });
+    vi.mocked(useAuth).mockReturnValue({ session: null, loading: false, signOut: vi.fn() });
 
     renderApp(["/"]);
 

@@ -9,6 +9,7 @@ export function LanguageToggle() {
   };
   return (
     <button
+      type="button"
       onClick={toggle}
       className="text-xs border rounded-full px-3 py-1 opacity-80 hover:opacity-100"
     >

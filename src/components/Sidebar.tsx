@@ -12,7 +12,7 @@ const items = [
 export function Sidebar() {
   const { t } = useTranslation();
   return (
-    <nav className="flex flex-col gap-1 p-3 w-52 border-e min-h-screen">
+    <nav aria-label={t("nav.main")} className="flex flex-col gap-1 p-3 w-52 border-e min-h-screen">
       <div className="px-2 py-3">
         <div className="font-extrabold">⚡ {t("app.name")}</div>
         <div className="text-xs opacity-60">{t("app.subtitle")}</div>

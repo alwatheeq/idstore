@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { RequireAuth } from "@/auth/RequireAuth";
 import { LoginPage } from "@/auth/LoginPage";
 import { AppLayout } from "@/components/AppLayout";
@@ -19,6 +19,7 @@ export default function App() {
           <Route path="/customers" element={<CustomersPage />} />
           <Route path="/invoices" element={<InvoicesPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Route>
     </Routes>

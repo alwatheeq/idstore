@@ -1,6 +1,7 @@
 {
   "app": { "name": "Watheeq EV", "subtitle": "Service Center" },
   "nav": {
+    "main": "Main navigation",
     "dashboard": "Dashboard",
     "orders": "Service Orders",
     "customers": "Customers & Vehicles",
