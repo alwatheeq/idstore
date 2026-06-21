@@ -29,7 +29,7 @@ export function CustomerDetailPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   if (isLoading) return <p className="opacity-70">{t("common.loading")}</p>;
-  if (!customer) return <p className="opacity-70">{t("customers.empty")}</p>;
+  if (!customer) return <p className="opacity-70">{t("customers.notFound")}</p>;
 
   return (
     <div className="space-y-8">

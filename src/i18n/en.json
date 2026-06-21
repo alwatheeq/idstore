@@ -30,6 +30,7 @@
     "email": "Email",
     "notes": "Notes",
     "empty": "No customers yet",
+    "notFound": "Customer not found",
     "searchPlaceholder": "Search by name…",
     "details": "Customer details"
   },
