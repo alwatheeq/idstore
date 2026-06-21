@@ -7,7 +7,15 @@ import type { InspectionMedia as Media } from "./types";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 
-function MediaThumb({ item, onDelete }: { item: Media; onDelete: () => void }) {
+function MediaThumb({
+  item,
+  onDelete,
+  isPendingDelete,
+}: {
+  item: Media;
+  onDelete: () => void;
+  isPendingDelete: boolean;
+}) {
   const { t } = useTranslation();
   const { data: url } = useQuery({
     queryKey: ["signed", item.storage_path],
@@ -19,15 +27,21 @@ function MediaThumb({ item, onDelete }: { item: Media; onDelete: () => void }) {
         {!url ? (
           <span className="opacity-40 text-xs">…</span>
         ) : item.media_type === "video" ? (
-          <video src={url} controls className="w-full h-full object-cover" />
+          <video
+            src={url}
+            controls
+            className="w-full h-full object-cover"
+            aria-label={item.caption ?? t("orders.media")}
+          />
         ) : (
-          <img src={url} alt={item.caption ?? ""} className="w-full h-full object-cover" />
+          <img src={url} alt={item.caption ?? t("orders.media")} className="w-full h-full object-cover" />
         )}
       </div>
       <button
         type="button"
         onClick={onDelete}
-        className="absolute top-1 end-1 bg-red-600 text-white text-xs rounded px-2 py-0.5 opacity-0 group-hover:opacity-100"
+        disabled={isPendingDelete}
+        className="absolute top-1 end-1 bg-red-600 text-white text-xs rounded px-2 py-0.5 opacity-0 group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-50"
       >
         {t("actions.delete")}
       </button>
@@ -76,6 +90,7 @@ export function InspectionMedia({ orderId }: { orderId: string }) {
             <MediaThumb
               key={m.id}
               item={m}
+              isPendingDelete={del.isPending}
               onDelete={() => {
                 if (confirm(t("actions.confirmDelete"))) del.mutate(m, { onError: onErr });
               }}
