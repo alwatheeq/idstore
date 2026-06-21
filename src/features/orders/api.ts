@@ -86,7 +86,8 @@ export async function signedMediaUrl(path: string): Promise<string> {
   return data.signedUrl;
 }
 export async function deleteMedia(m: InspectionMedia): Promise<void> {
-  await supabase.storage.from(BUCKET).remove([m.storage_path]);
+  const { error: storageError } = await supabase.storage.from(BUCKET).remove([m.storage_path]);
+  if (storageError) throw storageError;
   const { error } = await supabase.from("inspection_media").delete().eq("id", m.id);
   if (error) throw error;
 }

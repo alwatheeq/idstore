@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "./api";
 import { nextStatus } from "./status";
-import type { OrderStatus } from "./types";
+import type { OrderStatus, InspectionMedia } from "./types";
 import type { IntakePayload, LinePayload } from "./schema";
 
 export function useOrders(status?: OrderStatus) {
@@ -78,7 +78,7 @@ export function useUploadMedia(orderId: string) {
 export function useDeleteMedia(orderId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (m: import("./types").InspectionMedia) => api.deleteMedia(m),
+    mutationFn: (m: InspectionMedia) => api.deleteMedia(m),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["media", orderId] }),
   });
 }
