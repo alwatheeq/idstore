@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
+import { BrandLogo } from "./BrandLogo";
 
 const icon = (path: ReactNode) => (
   <svg
@@ -76,14 +77,8 @@ export function Sidebar() {
       aria-label={t("nav.main")}
       className="sticky top-0 flex h-screen w-60 shrink-0 flex-col gap-1 border-e bg-surface p-4"
     >
-      <div className="mb-4 flex items-center gap-3 px-2 py-3">
-        <span className="grid h-10 w-10 place-items-center rounded-xl bg-ink text-lg text-volt shadow-card">
-          ⚡
-        </span>
-        <div className="leading-tight">
-          <div className="font-bold tracking-tight text-ink">{t("app.name")}</div>
-          <div className="micro mt-0.5">{t("app.subtitle")}</div>
-        </div>
+      <div className="mb-4 px-2 py-3">
+        <BrandLogo className="w-40 text-ink" />
       </div>
 
       {items.map((it) => (

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export function LoginPage() {
   const { t } = useTranslation();
@@ -44,15 +45,7 @@ export function LoginPage() {
         onSubmit={submit}
         className="card relative z-10 w-full max-w-sm animate-fade-up space-y-7 p-8"
       >
-        <div className="flex items-center gap-3">
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-ink text-xl text-volt shadow-card">
-            ⚡
-          </span>
-          <div className="leading-tight">
-            <h1 className="text-lg font-bold tracking-tight text-ink">{t("app.name")}</h1>
-            <p className="micro mt-1">{t("app.subtitle")}</p>
-          </div>
-        </div>
+        <BrandLogo className="mx-auto w-56 text-ink" />
 
         <div className="charge animate-charge-in">
           <span style={{ width: "100%" }} />

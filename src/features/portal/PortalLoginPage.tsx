@@ -6,6 +6,7 @@ import { phoneToEmail } from "@/lib/phone";
 import { TextField } from "@/components/ui/TextField";
 import { Button } from "@/components/ui/Button";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export function PortalLoginPage() {
   const { t } = useTranslation();
@@ -49,13 +50,9 @@ export function PortalLoginPage() {
         onSubmit={submit}
         className="card relative z-10 w-full max-w-sm animate-fade-up space-y-7 p-8"
       >
-        <div className="flex items-center gap-3">
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-ink text-xl text-volt shadow-card">
-            ⚡
-          </span>
-          <div className="leading-tight">
-            <h1 className="text-lg font-bold tracking-tight text-ink">{t("portal.title")}</h1>
-          </div>
+        <div className="space-y-2 text-center">
+          <BrandLogo className="mx-auto w-56 text-ink" />
+          <p className="micro">{t("portal.title")}</p>
         </div>
 
         <div className="charge animate-charge-in">
