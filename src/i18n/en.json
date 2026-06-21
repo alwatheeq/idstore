@@ -1,0 +1,12 @@
+{
+  "app": { "name": "Watheeq EV", "subtitle": "Service Center" },
+  "nav": {
+    "dashboard": "Dashboard",
+    "orders": "Service Orders",
+    "customers": "Customers & Vehicles",
+    "invoices": "Invoices",
+    "settings": "Settings"
+  },
+  "auth": { "login": "Log in", "email": "Email", "password": "Password", "signOut": "Sign out" },
+  "common": { "language": "العربية" }
+}

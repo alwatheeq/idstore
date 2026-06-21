@@ -12,9 +12,12 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@radix-ui/react-direction": "^1.1.2",
     "@supabase/supabase-js": "^2.108.2",
+    "i18next": "^26.3.1",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "react-i18next": "^17.0.8"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
