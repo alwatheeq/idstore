@@ -33,16 +33,25 @@ describe("RequireRole", () => {
     setup("/portal");
     expect(screen.getByText("PORTAL LOGIN")).toBeInTheDocument();
   });
+
   it("renders the outlet for a matching role", () => {
     mockAuth({ session: { user: { id: "u" } }, loading: false });
     mockRole({ loading: false, role: "customer", customerId: "c1" });
     setup("/portal");
     expect(screen.getByText("PORTAL HOME")).toBeInTheDocument();
   });
+
   it("redirects a mismatched role to its own home (admin -> /)", () => {
     mockAuth({ session: { user: { id: "u" } }, loading: false });
     mockRole({ loading: false, role: "admin", customerId: null });
     setup("/portal");
     expect(screen.getByText("ADMIN HOME")).toBeInTheDocument();
+  });
+
+  it("redirects an orphan/unauthorized user (role: none) to the login path", () => {
+    mockAuth({ session: { user: { id: "u" } }, loading: false });
+    mockRole({ loading: false, role: "none", customerId: null });
+    setup("/portal");
+    expect(screen.getByText("PORTAL LOGIN")).toBeInTheDocument();
   });
 });
