@@ -10,8 +10,6 @@ create table admin_users (
   created_at timestamptz not null default now()
 );
 alter table admin_users enable row level security;
-create policy "admin_users readable by admins" on admin_users for select to authenticated
-  using (exists (select 1 from admin_users a where a.user_id = auth.uid()));
 
 -- 3) Helper functions (security definer; bypass RLS for the role checks)
 create or replace function public.is_admin() returns boolean
@@ -22,6 +20,13 @@ create or replace function public.current_customer_id() returns uuid
   language sql stable security definer set search_path = '' as $$
   select id from public.customers where auth_user_id = auth.uid();
 $$;
+
+-- admin_users self-select must use is_admin() (security definer, bypasses RLS).
+-- Inlining "select 1 from admin_users" in admin_users's own policy causes
+-- "infinite recursion detected in policy for relation admin_users".
+-- Defined after is_admin() so the function exists when the policy is created.
+create policy "admin_users readable by admins" on admin_users for select to authenticated
+  using (public.is_admin());
 
 -- 4) Drop the Phase-1 blanket policies
 drop policy "authenticated full access" on branches;
