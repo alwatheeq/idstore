@@ -7,9 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 
 function genPin(): string {
-  let s = "";
-  for (let i = 0; i < 6; i++) s += Math.floor(Math.random() * 10).toString();
-  return s;
+  return Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => (b % 10).toString()).join("");
 }
 
 export function PortalAccessPanel({ customer }: { customer: Customer }) {
@@ -51,6 +49,7 @@ export function PortalAccessPanel({ customer }: { customer: Customer }) {
           <TextField
             label={t("portal.setPin")}
             inputMode="numeric"
+            maxLength={6}
             value={pin}
             onChange={(e) => setPin(e.target.value)}
           />

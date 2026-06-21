@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
 import { PortalAccessPanel } from "./PortalAccessPanel";
+import { useProvisionPortalLogin } from "@/features/portal/hooks";
 import type { Customer } from "@/features/customers/types";
 
 vi.mock("@/features/portal/hooks", () => ({
@@ -64,6 +66,28 @@ describe("PortalAccessPanel", () => {
     wrap(<PortalAccessPanel customer={customer} />);
     expect(
       screen.getByRole("button", { name: "Create portal login" }),
+    ).toBeInTheDocument();
+  });
+
+  it("reveals PIN after successful provisioning", async () => {
+    vi.mocked(useProvisionPortalLogin).mockReturnValue({
+      mutate: (_args: unknown, opts: { onSuccess?: () => void } = {}) =>
+        opts.onSuccess?.(),
+      isPending: false,
+    } as ReturnType<typeof useProvisionPortalLogin>);
+
+    const customer: Customer = {
+      ...base,
+      id: "c",
+      auth_user_id: null,
+      phone: "079",
+    };
+    wrap(<PortalAccessPanel customer={customer} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Create portal login" }));
+
+    expect(
+      screen.getByText("Share this PIN with the customer:"),
     ).toBeInTheDocument();
   });
 });
