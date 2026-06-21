@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
@@ -15,6 +16,7 @@ export function IntakeForm({ submitting, onSubmit, onCancel }: Props) {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<IntakeFormValues, unknown, IntakePayload>({
     resolver: zodResolver(intakeSchema),
@@ -32,6 +34,12 @@ export function IntakeForm({ submitting, onSubmit, onCancel }: Props) {
   const customerId = watch("customer_id");
   const { data: customers } = useCustomers();
   const { data: vehicles } = useVehicles(customerId || undefined);
+
+  // Reset vehicle selection whenever the customer changes so a stale vehicle_id
+  // from the previous customer cannot be submitted with the new customer.
+  useEffect(() => {
+    setValue("vehicle_id", "");
+  }, [customerId, setValue]);
 
   const customerOptions = [
     { value: "", label: "—" },

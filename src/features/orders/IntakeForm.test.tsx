@@ -4,9 +4,15 @@ import userEvent from "@testing-library/user-event";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
 import { IntakeForm } from "@/features/orders/IntakeForm";
+import * as hooks from "@/features/customers/hooks";
 
 vi.mock("@/features/customers/hooks", () => ({
-  useCustomers: vi.fn(() => ({ data: [{ id: "c1", name: "Ahmad" }] })),
+  useCustomers: vi.fn(() => ({
+    data: [
+      { id: "c1", name: "Ahmad" },
+      { id: "c2", name: "Sara" },
+    ],
+  })),
   useVehicles: vi.fn(() => ({ data: [] })),
 }));
 
@@ -37,5 +43,26 @@ describe("IntakeForm", () => {
     wrap(<IntakeForm onSubmit={vi.fn()} onCancel={onCancel} />);
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it("resets vehicle selection when the customer changes", async () => {
+    // Simulate Customer 1 having vehicle v1, Customer 2 having no vehicles.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(hooks.useVehicles).mockImplementation((id) =>
+      (id === "c1"
+        ? { data: [{ id: "v1", model: "Golf", plate_number: "123" }] }
+        : { data: [] }) as any
+    );
+
+    wrap(<IntakeForm onSubmit={vi.fn()} onCancel={() => {}} />);
+
+    // Pick Customer 1 then its vehicle.
+    await userEvent.selectOptions(screen.getByLabelText("Customer"), "c1");
+    await userEvent.selectOptions(screen.getByLabelText("Vehicle"), "v1");
+    expect(screen.getByLabelText("Vehicle")).toHaveValue("v1");
+
+    // Switch to Customer 2 — vehicle should be cleared.
+    await userEvent.selectOptions(screen.getByLabelText("Customer"), "c2");
+    expect(screen.getByLabelText("Vehicle")).toHaveValue("");
   });
 });
