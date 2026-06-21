@@ -13,7 +13,7 @@ describe("phoneToEmail", () => {
     const a = phoneToEmail("+962 790000000");
     const b = phoneToEmail("962790000000");
     expect(a).toBe(b);
-    expect(a).toBe("962790000000@portal.idstore");
+    expect(a).toBe("962790000000@portal.idstore.com");
   });
   it("throws on a number with no digits", () => {
     expect(() => phoneToEmail("   ")).toThrow();

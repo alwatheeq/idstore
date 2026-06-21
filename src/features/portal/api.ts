@@ -8,7 +8,8 @@ const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 /**
  * Create a portal auth account for a customer and link it. Uses a throwaway client
  * (persistSession:false) so the admin's session is NOT replaced by the new signUp.
- * Requires "Confirm email" OFF in Supabase Auth. Throws on failure.
+ * Requires "Confirm email" OFF in Supabase Auth, and a real-TLD synthetic email
+ * domain (see phoneToEmail — GoTrue rejects made-up TLDs). Throws on failure.
  */
 export async function provisionPortalLogin(customerId: string, phone: string, pin: string): Promise<void> {
   const email = phoneToEmail(phone);
