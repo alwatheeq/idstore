@@ -12,6 +12,9 @@ vi.mock("@/features/orders/hooks", () => ({
   useCreateLine: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateLine: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useDeleteLine: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useMedia: vi.fn(() => ({ data: [] })),
+  useUploadMedia: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useDeleteMedia: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/auth/useAuth", () => ({
