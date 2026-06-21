@@ -6,6 +6,7 @@ import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
 import { DirectionProvider } from "@/providers/DirectionProvider";
 import { AuthProvider } from "@/auth/AuthProvider";
+import { ToastProvider } from "@/components/ui/Toast";
 import App from "@/App";
 import "./index.css";
 
@@ -19,9 +20,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <DirectionProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <BrowserRouter>
-              <App />
-            </BrowserRouter>
+            <ToastProvider>
+              <BrowserRouter>
+                <App />
+              </BrowserRouter>
+            </ToastProvider>
           </AuthProvider>
         </QueryClientProvider>
       </DirectionProvider>
