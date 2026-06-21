@@ -14,6 +14,16 @@ type Props = {
   onCancel: () => void;
 };
 
+/** Map a Customer (which uses null for optional fields) to the string-based form input shape. */
+function toFormValues(c: Customer): CustomerFormValues {
+  return {
+    name: c.name,
+    phone: c.phone ?? "",
+    email: c.email ?? "",
+    notes: c.notes ?? "",
+  };
+}
+
 export function CustomerForm({ defaultValues, submitting, onSubmit, onCancel }: Props) {
   const { t } = useTranslation();
   const {
@@ -22,12 +32,18 @@ export function CustomerForm({ defaultValues, submitting, onSubmit, onCancel }: 
     formState: { errors },
   } = useForm<CustomerFormValues, unknown, CustomerPayload>({
     resolver: zodResolver(customerSchema),
+    // Static initial values keep inputs controlled from the first render.
     defaultValues: {
       name: defaultValues?.name ?? "",
       phone: defaultValues?.phone ?? "",
       email: defaultValues?.email ?? "",
       notes: defaultValues?.notes ?? "",
     },
+    // `values` re-populates the form whenever the async Customer data arrives
+    // (react-hook-form calls reset() internally on each new reference).
+    // Without this, editing an existing customer would show a blank form until
+    // the user refreshed, because defaultValues is only read at mount time.
+    values: defaultValues ? toFormValues(defaultValues) : undefined,
   });
 
   return (
