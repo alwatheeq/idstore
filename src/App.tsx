@@ -12,11 +12,19 @@ import { CustomerFormPage } from "@/pages/CustomerFormPage";
 import { InvoicesPage } from "@/pages/InvoicesPage";
 import { InvoiceDetailPage } from "@/pages/InvoiceDetailPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { PortalLoginPage } from "@/features/portal/PortalLoginPage";
+import { PortalLayout } from "@/features/portal/PortalLayout";
+import { PortalHomePage } from "@/pages/portal/PortalHomePage";
+import { PortalVehiclePage } from "@/pages/portal/PortalVehiclePage";
+import { PortalOrderPage } from "@/pages/portal/PortalOrderPage";
+import { PortalInvoicesPage } from "@/pages/portal/PortalInvoicesPage";
+import { PortalInvoicePage } from "@/pages/portal/PortalInvoicePage";
 
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/portal/login" element={<PortalLoginPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
@@ -31,6 +39,13 @@ export default function App() {
           <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+        <Route element={<PortalLayout />}>
+          <Route path="/portal" element={<PortalHomePage />} />
+          <Route path="/portal/vehicles/:id" element={<PortalVehiclePage />} />
+          <Route path="/portal/orders/:id" element={<PortalOrderPage />} />
+          <Route path="/portal/invoices" element={<PortalInvoicesPage />} />
+          <Route path="/portal/invoices/:id" element={<PortalInvoicePage />} />
         </Route>
       </Route>
     </Routes>
