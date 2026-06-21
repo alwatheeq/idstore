@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { RequireAuth } from "@/auth/RequireAuth";
+import { RequireRole } from "@/auth/RequireRole";
 import { LoginPage } from "@/auth/LoginPage";
 import { AppLayout } from "@/components/AppLayout";
 import { DashboardPage } from "@/pages/DashboardPage";
@@ -23,9 +23,12 @@ import { PortalInvoicePage } from "@/pages/portal/PortalInvoicePage";
 export default function App() {
   return (
     <Routes>
+      {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/portal/login" element={<PortalLoginPage />} />
-      <Route element={<RequireAuth />}>
+
+      {/* Admin group — requires role="admin" */}
+      <Route element={<RequireRole role="admin" loginPath="/login" />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/orders" element={<ServiceOrdersPage />} />
@@ -38,8 +41,11 @@ export default function App() {
           <Route path="/invoices" element={<InvoicesPage />} />
           <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
+      </Route>
+
+      {/* Portal group — requires role="customer" */}
+      <Route element={<RequireRole role="customer" loginPath="/portal/login" />}>
         <Route element={<PortalLayout />}>
           <Route path="/portal" element={<PortalHomePage />} />
           <Route path="/portal/vehicles/:id" element={<PortalVehiclePage />} />
@@ -48,6 +54,9 @@ export default function App() {
           <Route path="/portal/invoices/:id" element={<PortalInvoicePage />} />
         </Route>
       </Route>
+
+      {/* Catch-all */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

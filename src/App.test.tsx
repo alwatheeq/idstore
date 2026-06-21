@@ -27,7 +27,13 @@ vi.mock("@/auth/useAuth", () => ({
   useAuth: vi.fn(),
 }));
 
+// Mock useRole so RequireRole can be controlled in tests
+vi.mock("@/auth/useRole", () => ({
+  useRole: vi.fn(),
+}));
+
 import { useAuth } from "@/auth/useAuth";
+import { useRole } from "@/auth/useRole";
 
 function renderApp(initialEntries: string[]) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -47,12 +53,13 @@ describe("App routing", () => {
     await i18n.changeLanguage("en");
   });
 
-  it("Test A: authenticated user at '/' sees dashboard heading and sidebar nav", async () => {
+  it("Test A: authenticated admin at '/' sees dashboard heading and sidebar nav", async () => {
     vi.mocked(useAuth).mockReturnValue({
-      session: { user: {} } as never,
+      session: { user: { id: "u" } } as never,
       loading: false,
       signOut: vi.fn(),
     });
+    vi.mocked(useRole).mockReturnValue({ loading: false, role: "admin", customerId: null });
 
     renderApp(["/"]);
 
@@ -62,12 +69,29 @@ describe("App routing", () => {
     expect(screen.getByText(/Service Orders/)).toBeInTheDocument();
   });
 
-  it("Test B: unauthenticated user at '/' is redirected to login", async () => {
+  it("Test B: unauthenticated user at '/' is redirected to admin login", async () => {
     vi.mocked(useAuth).mockReturnValue({ session: null, loading: false, signOut: vi.fn() });
+    vi.mocked(useRole).mockReturnValue({ loading: false, role: undefined, customerId: null });
 
     renderApp(["/"]);
 
     // Login page renders
     expect(await screen.findByRole("button", { name: "Log in" })).toBeInTheDocument();
+  });
+
+  it("Test C: authenticated customer at '/' is NOT shown the admin dashboard", async () => {
+    vi.mocked(useAuth).mockReturnValue({
+      session: { user: { id: "c1" } } as never,
+      loading: false,
+      signOut: vi.fn(),
+    });
+    vi.mocked(useRole).mockReturnValue({ loading: false, role: "customer", customerId: "c1" });
+
+    renderApp(["/"]);
+
+    // RequireRole(role="admin") redirects customers to /portal.
+    // The admin Dashboard heading must NOT appear.
+    const heading = screen.queryByRole("heading", { name: "Dashboard" });
+    expect(heading).not.toBeInTheDocument();
   });
 });
