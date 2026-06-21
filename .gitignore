@@ -20,3 +20,6 @@ dist-ssr/
 
 # installed agent skills (tool-managed, like node_modules)
 .agents/
+
+# installed-skills lockfile (companion to .agents/)
+skills-lock.json
