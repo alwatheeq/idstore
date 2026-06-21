@@ -10,6 +10,7 @@ import { CustomersPage } from "@/pages/CustomersPage";
 import { CustomerDetailPage } from "@/pages/CustomerDetailPage";
 import { CustomerFormPage } from "@/pages/CustomerFormPage";
 import { InvoicesPage } from "@/pages/InvoicesPage";
+import { InvoiceDetailPage } from "@/pages/InvoiceDetailPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/customers/:id" element={<CustomerDetailPage />} />
           <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
           <Route path="/invoices" element={<InvoicesPage />} />
+          <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
