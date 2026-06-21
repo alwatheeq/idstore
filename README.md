@@ -41,7 +41,7 @@ Fill in your values from Supabase → Project Settings → API:
 
 ```
 VITE_SUPABASE_URL=https://<your-project>.supabase.co
-VITE_SUPABASE_ANON_KEY=<your-anon-key>
+VITE_SUPABASE_PUBLISHABLE_KEY=<your-publishable-key>
 ```
 
 > **Note:** the app throws at startup if these variables are missing.
