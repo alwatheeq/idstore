@@ -8,6 +8,10 @@ vi.mock("@/features/orders/hooks", () => ({
   useOrder: vi.fn(),
   useAdvanceStatus: vi.fn(),
   useApproveOrder: vi.fn(),
+  useLines: vi.fn(() => ({ data: [] })),
+  useCreateLine: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useUpdateLine: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useDeleteLine: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }));
 
 vi.mock("@/auth/useAuth", () => ({

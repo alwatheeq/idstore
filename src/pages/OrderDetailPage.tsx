@@ -6,6 +6,7 @@ import { canAdvance } from "@/features/orders/status";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/auth/useAuth";
+import { LineItemsEditor } from "@/features/orders/LineItemsEditor";
 
 function Field({ label, value }: { label: string; value: string | number | null }) {
   return (
@@ -86,7 +87,7 @@ export function OrderDetailPage() {
         )}
       </section>
 
-      {/* LineItemsEditor (next unit) mounts here */}
+      <LineItemsEditor orderId={id} />
       {/* InspectionMedia (next unit) mounts here */}
     </div>
   );
