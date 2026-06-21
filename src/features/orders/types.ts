@@ -18,6 +18,10 @@ export interface ServiceOrderLine {
   quantity: number; unit_price: number; discount_type: DiscountType; discount_value: number;
   line_total: number; created_at: string;
 }
+export type OrderListRow = ServiceOrder & {
+  customers: { name: string } | null;
+  vehicles: { plate_number: string | null; model: string | null } | null;
+};
 export interface InspectionMedia {
   id: string; service_order_id: string; media_type: "photo" | "video";
   storage_path: string; caption: string | null; created_at: string;
