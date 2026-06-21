@@ -52,11 +52,12 @@ create table service_orders (
   id uuid primary key default gen_random_uuid(),
   branch_id uuid not null references branches(id),
   vehicle_id uuid not null references vehicles(id),
+  -- customer_id is intentionally denormalized (also on vehicles) for fast listing; app keeps it consistent.
   customer_id uuid not null references customers(id),
   order_number bigint generated always as identity,
   status order_status not null default 'intake',
   odometer_at_intake int,
-  charge_percent int,
+  charge_percent int check (charge_percent between 0 and 100),
   hv_battery_state text,
   reported_concerns text,
   intake_notes text,
@@ -85,11 +86,12 @@ create table service_order_lines (
   service_order_id uuid not null references service_orders(id) on delete cascade,
   line_type line_type not null default 'service',
   description text not null,
-  quantity numeric not null default 1,
-  unit_price numeric not null default 0,
+  quantity numeric not null default 1 check (quantity > 0),
+  unit_price numeric(12,3) not null default 0 check (unit_price >= 0),
   discount_type discount_type not null default 'none',
-  discount_value numeric not null default 0,
-  line_total numeric not null default 0,
+  discount_value numeric(12,3) not null default 0 check (discount_value >= 0),
+  -- line_total is maintained by the application (see src/lib/money.ts computeLineTotal); not a generated column.
+  line_total numeric(12,3) not null default 0,
   created_at timestamptz not null default now()
 );
 
@@ -99,9 +101,9 @@ create table invoices (
   service_order_id uuid not null references service_orders(id),
   invoice_number bigint generated always as identity,
   currency text not null default 'JOD',
-  subtotal numeric not null default 0,
-  discount_total numeric not null default 0,
-  total numeric not null default 0,
+  subtotal numeric(12,3) not null default 0,
+  discount_total numeric(12,3) not null default 0,
+  total numeric(12,3) not null default 0,
   payment_status payment_status not null default 'unpaid',
   issued_at timestamptz not null default now()
 );
@@ -110,7 +112,7 @@ create table invoices (
 create table payments (
   id uuid primary key default gen_random_uuid(),
   invoice_id uuid not null references invoices(id) on delete cascade,
-  amount numeric not null,
+  amount numeric(12,3) not null check (amount > 0),
   method payment_method not null default 'cash',
   note text,
   paid_at timestamptz not null default now()
@@ -127,6 +129,16 @@ create trigger trg_vehicles_updated before update on vehicles
   for each row execute function set_updated_at();
 create trigger trg_orders_updated before update on service_orders
   for each row execute function set_updated_at();
+
+-- ===== Indexes (FK + primary filter columns; Postgres does not auto-index FKs) =====
+create index idx_service_orders_status      on service_orders (status);
+create index idx_service_orders_vehicle_id  on service_orders (vehicle_id);
+create index idx_service_orders_customer_id on service_orders (customer_id);
+create index idx_vehicles_customer_id       on vehicles (customer_id);
+create index idx_service_order_lines_order  on service_order_lines (service_order_id);
+create index idx_inspection_media_order     on inspection_media (service_order_id);
+create index idx_invoices_service_order     on invoices (service_order_id);
+create index idx_payments_invoice           on payments (invoice_id);
 
 -- ===== Row Level Security (Phase 1: any authenticated user has full access) =====
 alter table branches enable row level security;
@@ -159,3 +171,7 @@ create policy "authenticated read media" on storage.objects for select to authen
   using (bucket_id = 'inspection-media');
 create policy "authenticated write media" on storage.objects for insert to authenticated
   with check (bucket_id = 'inspection-media');
+create policy "authenticated update media" on storage.objects for update to authenticated
+  using (bucket_id = 'inspection-media') with check (bucket_id = 'inspection-media');
+create policy "authenticated delete media" on storage.objects for delete to authenticated
+  using (bucket_id = 'inspection-media');
