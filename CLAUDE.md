@@ -37,7 +37,8 @@ Vite + React 19 + TypeScript (strict, `verbatimModuleSyntax`) · Supabase (Postg
 
 ## Database / migrations — DO NOT auto-apply to prod
 - Migrations live in `supabase/migrations/`. **Applying them to the live DB is a human-authorized step** — the auto-classifier blocks prod writes on vague prompts; ask for explicit authorization, or have the user run the SQL. (Project ref `hbsbbsbezqlxqslkwquy`; env var is `VITE_SUPABASE_PUBLISHABLE_KEY`, not `ANON_KEY`.)
-- **Pending application:** `0002_invoices_unique_order.sql` and `0003_customer_portal_rls.sql` are committed but may not be applied yet. `0003` REQUIRES seeding `admin_users` with the admin's auth uid in the same session, or admins get locked out.
+- **Applied to prod:** `0001`, `0002_invoices_unique_order.sql`, `0003_customer_portal_rls.sql` (the `admin_users` seed was bundled into the 0003 apply via `insert ... select id from auth.users`, since there was a single auth user = the admin).
+- **Pending application:** `0004_software_updates.sql` (adds `vehicles.target_software_version` + `vehicle_software_updates` table + per-customer RLS). Until applied, software-update **write/history** paths 404; the dashboard KPI and `/software` worklist still work (they only read `vehicles`).
 
 ## Working style
 - Branch per module/sub-project; merge to `main` and push to GitHub (`alwatheeq/idstore`) when done. Don't commit/push unless asked.
@@ -45,4 +46,4 @@ Vite + React 19 + TypeScript (strict, `verbatimModuleSyntax`) · Supabase (Postg
 - Each module = its own spec → plan → reviewed build (see `docs/superpowers/{specs,plans}/`).
 
 ## Phase status
-Phase 1 (operational core) complete: CRM, Service Orders + intake/inspection, Invoicing, Dashboard. Phase 2: Customer Portal done; Notifications (WhatsApp) and Software-update tracking remain. Phase 3: accounting, inventory.
+Phase 1 (operational core) complete: CRM, Service Orders + intake/inspection, Invoicing, Dashboard. Phase 2: Customer Portal done; Software-update tracking done (code merged; migration `0004` pending prod apply); Notifications (WhatsApp) remain. Phase 3: accounting, inventory. UI uses the "Volt Instrument" design system (see `src/index.css` tokens).

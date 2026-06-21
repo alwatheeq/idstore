@@ -22,6 +22,13 @@ export async function getOrder(id: string): Promise<OrderDetailRow> {
   if (error) throw error;
   return data as unknown as OrderDetailRow;
 }
+export async function listOrdersByVehicle(vehicleId: string): Promise<{ id: string; order_number: number }[]> {
+  const { data, error } = await supabase.from("service_orders")
+    .select("id, order_number").eq("vehicle_id", vehicleId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data as { id: string; order_number: number }[];
+}
 export async function createOrder(payload: IntakePayload): Promise<ServiceOrder> {
   const branch_id = await getDefaultBranchId();
   const { data, error } = await supabase.from("service_orders")

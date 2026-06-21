@@ -22,6 +22,7 @@ export interface Vehicle {
   current_odometer: number | null;
   hv_battery_state: string | null;
   software_version: string | null;
+  target_software_version: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;

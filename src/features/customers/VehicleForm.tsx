@@ -26,6 +26,7 @@ function toVehicleFormValues(v: Vehicle): VehicleFormValues {
     current_odometer: v.current_odometer ?? "",
     hv_battery_state: v.hv_battery_state ?? "",
     software_version: v.software_version ?? "",
+    target_software_version: v.target_software_version ?? "",
     notes: v.notes ?? "",
   };
 }
@@ -48,6 +49,7 @@ export function VehicleForm({ defaultValues, submitting, onSubmit, onCancel }: P
       current_odometer: defaultValues?.current_odometer ?? "",
       hv_battery_state: defaultValues?.hv_battery_state ?? "",
       software_version: defaultValues?.software_version ?? "",
+      target_software_version: defaultValues?.target_software_version ?? "",
       notes: defaultValues?.notes ?? "",
     },
     // `values` re-populates the form whenever async Vehicle data arrives
@@ -101,6 +103,11 @@ export function VehicleForm({ defaultValues, submitting, onSubmit, onCancel }: P
           label={t("vehicles.software")}
           {...register("software_version")}
           error={errors.software_version?.message}
+        />
+        <TextField
+          label={t("vehicles.targetSoftware")}
+          {...register("target_software_version")}
+          error={errors.target_software_version?.message}
         />
       </div>
       <TextField

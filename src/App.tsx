@@ -9,6 +9,8 @@ import { OrderDetailPage } from "@/pages/OrderDetailPage";
 import { CustomersPage } from "@/pages/CustomersPage";
 import { CustomerDetailPage } from "@/pages/CustomerDetailPage";
 import { CustomerFormPage } from "@/pages/CustomerFormPage";
+import { VehicleDetailPage } from "@/pages/VehicleDetailPage";
+import { SoftwarePage } from "@/pages/SoftwarePage";
 import { InvoicesPage } from "@/pages/InvoicesPage";
 import { InvoiceDetailPage } from "@/pages/InvoiceDetailPage";
 import { SettingsPage } from "@/pages/SettingsPage";
@@ -38,6 +40,8 @@ export default function App() {
           <Route path="/customers/new" element={<CustomerFormPage />} />
           <Route path="/customers/:id" element={<CustomerDetailPage />} />
           <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
+          <Route path="/vehicles/:id" element={<VehicleDetailPage />} />
+          <Route path="/software" element={<SoftwarePage />} />
           <Route path="/invoices" element={<InvoicesPage />} />
           <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />

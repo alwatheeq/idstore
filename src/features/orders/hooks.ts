@@ -10,6 +10,13 @@ export function useOrders(status?: OrderStatus) {
 export function useOrder(id: string | undefined) {
   return useQuery({ queryKey: ["order", id], queryFn: () => api.getOrder(id!), enabled: !!id });
 }
+export function useOrdersByVehicle(vehicleId: string | undefined) {
+  return useQuery({
+    queryKey: ["orders-by-vehicle", vehicleId],
+    queryFn: () => api.listOrdersByVehicle(vehicleId!),
+    enabled: !!vehicleId,
+  });
+}
 export function useCreateOrder() {
   const qc = useQueryClient();
   return useMutation({

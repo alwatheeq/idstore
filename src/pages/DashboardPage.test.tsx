@@ -8,9 +8,11 @@ import type { InvoiceListRow } from "@/features/invoices/types";
 
 vi.mock("@/features/orders/hooks", () => ({ useOrders: vi.fn() }));
 vi.mock("@/features/invoices/hooks", () => ({ useInvoices: vi.fn() }));
+vi.mock("@/features/software/hooks", () => ({ useDueVehicles: vi.fn() }));
 
 import { useOrders } from "@/features/orders/hooks";
 import { useInvoices } from "@/features/invoices/hooks";
+import { useDueVehicles } from "@/features/software/hooks";
 import { DashboardPage } from "@/pages/DashboardPage";
 
 const wrap = (ui: React.ReactNode) =>
@@ -61,6 +63,7 @@ const makeInvoice = (over: Partial<InvoiceListRow>): InvoiceListRow => ({
 describe("DashboardPage", () => {
   beforeEach(async () => {
     await i18n.changeLanguage("en");
+    (useDueVehicles as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ data: [] });
   });
 
   it("shows KPI counts and a board column for active orders", () => {

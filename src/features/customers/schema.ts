@@ -74,6 +74,7 @@ export const vehicleSchema = z.object({
   current_odometer: optionalInt,
   hv_battery_state: optionalText,
   software_version: optionalText,
+  target_software_version: optionalText,
   notes: optionalText,
 });
 

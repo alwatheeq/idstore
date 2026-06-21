@@ -48,6 +48,10 @@ export function useVehicles(customerId: string | undefined) {
   });
 }
 
+export function useVehicle(id: string | undefined) {
+  return useQuery({ queryKey: ["vehicle", id], queryFn: () => api.getVehicle(id!), enabled: !!id });
+}
+
 export function useCreateVehicle(customerId: string) {
   const qc = useQueryClient();
   return useMutation({

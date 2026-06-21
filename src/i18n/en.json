@@ -6,6 +6,7 @@
     "orders": "Service Orders",
     "customers": "Customers & Vehicles",
     "invoices": "Invoices",
+    "software": "Software",
     "settings": "Settings"
   },
   "auth": { "login": "Log in", "email": "Email", "password": "Password", "signOut": "Sign out", "error": { "failed": "Login failed. Please check your email and password." } },
@@ -46,6 +47,7 @@
     "odometer": "Odometer (km)",
     "battery": "HV battery state",
     "software": "Software version",
+    "targetSoftware": "Target software version",
     "notes": "Notes",
     "empty": "No vehicles for this customer yet"
   },
@@ -114,7 +116,25 @@
   "dashboard": {
     "title": "Dashboard", "carsInWorkshop": "Cars in workshop", "awaitingApproval": "Awaiting approval",
     "readyForHandover": "Ready for handover", "invoicedToday": "Invoiced today",
-    "byStage": "Workshop by stage", "empty": "No active orders"
+    "byStage": "Workshop by stage", "empty": "No active orders", "updatesDue": "Updates due"
+  },
+  "software": {
+    "title": "Software",
+    "due": "Update due",
+    "updateAvailable": "Update available",
+    "currentVersion": "Current version",
+    "targetVersion": "Target version",
+    "targetHint": "Set the target version on the vehicle's edit form.",
+    "logUpdate": "Log update",
+    "fromVersion": "From version",
+    "toVersion": "To version",
+    "appliedAt": "Applied on",
+    "linkOrder": "Link to service order",
+    "noOrder": "No order",
+    "alsoSetCurrent": "Also set this as the vehicle's current version",
+    "noHistory": "No software updates recorded yet",
+    "allUpToDate": "All vehicles are up to date",
+    "vehicleNotFound": "Vehicle not found"
   },
   "portal": {
     "title": "My Portal", "login": "Sign in", "phone": "Phone number", "pin": "PIN",

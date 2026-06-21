@@ -131,6 +131,9 @@ export function CustomerDetailPage() {
                       </p>
                     </div>
                     <div className="flex flex-shrink-0 gap-2">
+                      <Link to={`/vehicles/${v.id}`} className={buttonClasses("ghost")}>
+                        {t("software.title")}
+                      </Link>
                       <Button
                         variant="ghost"
                         onClick={() => {

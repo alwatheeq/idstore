@@ -5,19 +5,21 @@ import { useInvoices } from "@/features/invoices/hooks";
 import { statusLabel } from "@/features/orders/status";
 import { computeDashboard } from "@/features/dashboard/stats";
 import { KpiCard } from "@/features/dashboard/KpiCard";
+import { useDueVehicles } from "@/features/software/hooks";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 export function DashboardPage() {
   const { t } = useTranslation();
   const { data: orders, isLoading } = useOrders();
   const { data: invoices } = useInvoices();
+  const { data: due } = useDueVehicles();
   const stats = computeDashboard(orders ?? [], invoices ?? [], new Date());
 
   return (
     <div className="space-y-8">
       <PageHeader title={t("dashboard.title")} eyebrow={t("app.subtitle")} />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <KpiCard label={t("dashboard.carsInWorkshop")} value={stats.carsInWorkshop} />
         <KpiCard label={t("dashboard.awaitingApproval")} value={stats.awaitingApproval} />
         <KpiCard label={t("dashboard.readyForHandover")} value={stats.readyForHandover} />
@@ -26,6 +28,9 @@ export function DashboardPage() {
           value={`${stats.invoicedToday.toFixed(3)} JOD`}
           accent
         />
+        <Link to="/software" className="block rounded-2xl transition-transform hover:-translate-y-0.5">
+          <KpiCard label={t("dashboard.updatesDue")} value={due?.length ?? 0} accent={(due?.length ?? 0) > 0} />
+        </Link>
       </div>
 
       <section className="space-y-4">

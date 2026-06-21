@@ -43,6 +43,12 @@ export async function listVehicles(customerId: string): Promise<Vehicle[]> {
   return data as Vehicle[];
 }
 
+export async function getVehicle(id: string): Promise<Vehicle> {
+  const { data, error } = await supabase.from("vehicles").select("*").eq("id", id).single();
+  if (error) throw error;
+  return data as Vehicle;
+}
+
 export async function createVehicle(customerId: string, payload: VehiclePayload): Promise<Vehicle> {
   const branch_id = await getDefaultBranchId();
   const { data, error } = await supabase
