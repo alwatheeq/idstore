@@ -29,6 +29,14 @@ describe("computeLineTotal", () => {
   it("handles zero unit price", () => {
     expect(computeLineTotal({ quantity: 5, unitPrice: 0, discountType: "percent", discountValue: 50 })).toBe(0);
   });
+
+  // Fix I-3: non-finite inputs must not propagate NaN/Infinity
+  it("returns 0 for a NaN unitPrice (non-finite guard)", () => {
+    expect(computeLineTotal({ quantity: 2, unitPrice: NaN, discountType: "none", discountValue: 0 })).toBe(0);
+  });
+  it("returns 0 for an Infinity quantity (non-finite guard)", () => {
+    expect(computeLineTotal({ quantity: Infinity, unitPrice: 5, discountType: "none", discountValue: 0 })).toBe(0);
+  });
 });
 
 describe("computeInvoiceTotals", () => {
@@ -48,6 +56,20 @@ describe("computeInvoiceTotals", () => {
     const lines = [{ quantity: 4, unitPrice: 25.500, discountType: "none" as const, discountValue: 0 }];
     expect(computeInvoiceTotals(lines)).toEqual({ subtotal: 102, discountTotal: 0, total: 102 });
   });
+
+  // Regression: invoice total must equal the sum of per-line rounded totals (I-2).
+  // Two lines of unitPrice 1.0015 each round individually to 1.002, summing to 2.004.
+  // The old aggregate approach would compute round3(2*1.0015)=2.003 and return that,
+  // which is off by 0.001. The new code sums computeLineTotal per line, so total = 2.004.
+  it("reconciles total with sum of per-line rounded totals (regression for aggregate penny-off)", () => {
+    const lines = [
+      { quantity: 1, unitPrice: 1.0015, discountType: "none" as const, discountValue: 0 },
+      { quantity: 1, unitPrice: 1.0015, discountType: "none" as const, discountValue: 0 },
+    ];
+    const { total } = computeInvoiceTotals(lines);
+    // Each line rounds to 1.002; correct sum is 2.004, not the aggregate 2.003
+    expect(total).toBe(2.004);
+  });
 });
 
 describe("derivePaymentStatus", () => {
@@ -61,5 +83,10 @@ describe("derivePaymentStatus", () => {
   });
   it("is unpaid when paidSum is negative (data integrity guard)", () => {
     expect(derivePaymentStatus(100, -5)).toBe("unpaid");
+  });
+
+  // Fix I-3: non-finite inputs must not crash and must return a safe status
+  it("returns unpaid when both total and paidSum are NaN (non-finite guard)", () => {
+    expect(derivePaymentStatus(NaN, NaN)).toBe("unpaid");
   });
 });
