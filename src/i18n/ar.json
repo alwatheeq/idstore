@@ -7,6 +7,6 @@
     "invoices": "الفواتير",
     "settings": "الإعدادات"
   },
-  "auth": { "login": "تسجيل الدخول", "email": "البريد الإلكتروني", "password": "كلمة المرور", "signOut": "تسجيل الخروج" },
-  "common": { "language": "English" }
+  "auth": { "login": "تسجيل الدخول", "email": "البريد الإلكتروني", "password": "كلمة المرور", "signOut": "تسجيل الخروج", "error": { "failed": "فشل تسجيل الدخول. يرجى التحقق من البريد الإلكتروني وكلمة المرور." } },
+  "common": { "language": "English", "loading": "جارٍ التحميل…" }
 }

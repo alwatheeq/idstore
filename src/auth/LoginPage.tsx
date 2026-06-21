@@ -10,12 +10,16 @@ export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
     setError(null);
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-    if (authError) setError(authError.message);
+    setSubmitting(false);
+    if (authError) setError(t("auth.error.failed"));
     else void navigate("/", { replace: true });
   };
 
@@ -49,7 +53,11 @@ export function LoginPage() {
           />
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <button className="w-full rounded-lg bg-blue-600 text-white py-2" type="submit">
+        <button
+          className="w-full rounded-lg bg-blue-600 text-white py-2"
+          type="submit"
+          disabled={submitting}
+        >
           {t("auth.login")}
         </button>
       </form>
