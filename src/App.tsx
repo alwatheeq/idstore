@@ -4,6 +4,7 @@ import { LoginPage } from "@/auth/LoginPage";
 import { AppLayout } from "@/components/AppLayout";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { ServiceOrdersPage } from "@/pages/ServiceOrdersPage";
+import { NewOrderPage } from "@/pages/NewOrderPage";
 import { OrderDetailPage } from "@/pages/OrderDetailPage";
 import { CustomersPage } from "@/pages/CustomersPage";
 import { CustomerDetailPage } from "@/pages/CustomerDetailPage";
@@ -19,6 +20,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/orders" element={<ServiceOrdersPage />} />
+          <Route path="/orders/new" element={<NewOrderPage />} />
           <Route path="/orders/:id" element={<OrderDetailPage />} />
           <Route path="/customers" element={<CustomersPage />} />
           <Route path="/customers/new" element={<CustomerFormPage />} />
