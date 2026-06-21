@@ -42,6 +42,7 @@ describe("CustomerForm", () => {
       phone: "+962790000001",
       email: "khalid@example.com",
       notes: "VIP",
+      auth_user_id: null,
       created_at: "2024-01-01T00:00:00Z",
       updated_at: "2024-01-01T00:00:00Z",
     };
