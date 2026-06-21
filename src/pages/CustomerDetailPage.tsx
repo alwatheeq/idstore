@@ -12,6 +12,7 @@ import {
   useUpdateVehicle,
   useDeleteVehicle,
 } from "@/features/customers/hooks";
+import { PortalAccessPanel } from "@/features/portal/PortalAccessPanel";
 
 export function CustomerDetailPage() {
   const { t } = useTranslation();
@@ -149,6 +150,8 @@ export function CustomerDetailPage() {
           </ul>
         )}
       </section>
+
+      <PortalAccessPanel customer={customer} />
     </div>
   );
 }
