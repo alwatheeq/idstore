@@ -1,13 +1,14 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useOrder, useAdvanceStatus, useApproveOrder } from "@/features/orders/hooks";
 import { OrderStatusBadge } from "@/features/orders/OrderStatusBadge";
 import { canAdvance } from "@/features/orders/status";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/auth/useAuth";
 import { LineItemsEditor } from "@/features/orders/LineItemsEditor";
 import { InspectionMedia } from "@/features/orders/InspectionMedia";
+import { useInvoiceByOrder, useGenerateInvoice } from "@/features/invoices/hooks";
 
 function Field({ label, value }: { label: string; value: string | number | null }) {
   return (
@@ -23,9 +24,12 @@ export function OrderDetailPage() {
   const { id = "" } = useParams();
   const toast = useToast();
   const { session } = useAuth();
+  const navigate = useNavigate();
   const { data: order, isLoading } = useOrder(id);
   const advance = useAdvanceStatus(id);
   const approve = useApproveOrder(id);
+  const { data: invoice } = useInvoiceByOrder(id);
+  const generate = useGenerateInvoice();
 
   if (isLoading) return <p className="opacity-70">{t("common.loading")}</p>;
   if (!order) return <p className="opacity-70">{t("orders.notFound")}</p>;
@@ -67,6 +71,22 @@ export function OrderDetailPage() {
               {t("orders.advance")}
             </Button>
           ) : null}
+          {invoice ? (
+            <Link to={`/invoices/${invoice.id}`} className={buttonClasses("ghost")}>{t("invoices.view")}</Link>
+          ) : (
+            <Button
+              variant="ghost"
+              disabled={generate.isPending}
+              onClick={() =>
+                generate.mutate(id, {
+                  onSuccess: (inv) => navigate(`/invoices/${inv.id}`),
+                  onError: () => toast.show(t("errors.saveFailed")),
+                })
+              }
+            >
+              {t("invoices.generate")}
+            </Button>
+          )}
         </div>
       </div>
 

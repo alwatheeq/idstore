@@ -4,6 +4,11 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { I18nextProvider } from "react-i18next";
 import i18n from "@/i18n";
 
+vi.mock("@/features/invoices/hooks", () => ({
+  useInvoiceByOrder: () => ({ data: null }),
+  useGenerateInvoice: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 vi.mock("@/features/orders/hooks", () => ({
   useOrder: vi.fn(),
   useAdvanceStatus: vi.fn(),
