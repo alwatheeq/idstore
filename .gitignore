@@ -17,3 +17,6 @@ dist-ssr/
 
 # brainstorm visual-companion artifacts
 .superpowers/
+
+# installed agent skills (tool-managed, like node_modules)
+.agents/
