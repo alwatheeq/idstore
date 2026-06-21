@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { phoneToEmail } from "@/lib/phone";
@@ -85,6 +85,13 @@ export function PortalLoginPage() {
         <Button type="submit" disabled={submitting} className="w-full">
           {t("portal.login")}
         </Button>
+
+        <Link
+          to="/login"
+          className="block text-center text-sm font-medium text-muted transition-colors hover:text-ink"
+        >
+          {t("portal.staffLogin")}
+        </Link>
       </form>
     </div>
   );
