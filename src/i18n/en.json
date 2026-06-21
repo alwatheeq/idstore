@@ -100,5 +100,15 @@
   },
   "lineType": { "service": "Service", "part": "Part", "fee": "Fee" },
   "discountType": { "none": "None", "amount": "Amount", "percent": "Percent" },
-  "errors": { "saveFailed": "Could not save. Please try again." }
+  "errors": { "saveFailed": "Could not save. Please try again." },
+  "invoices": {
+    "title": "Invoices", "invoice": "Invoice", "generate": "Generate invoice", "view": "View invoice",
+    "empty": "No invoices yet", "notFound": "Invoice not found", "forOrder": "For order",
+    "subtotal": "Subtotal", "discountTotal": "Discount", "total": "Total", "issued": "Issued",
+    "payments": "Payments", "recordPayment": "Record payment", "amount": "Amount", "method": "Method",
+    "note": "Note", "paid": "Paid", "balance": "Balance due", "noPayments": "No payments recorded yet",
+    "filterByStatus": "Filter by payment status", "allStatuses": "All"
+  },
+  "paymentMethod": { "cash": "Cash", "card": "Card", "transfer": "Transfer" },
+  "paymentStatus": { "unpaid": "Unpaid", "partial": "Partial", "paid": "Paid" }
 }

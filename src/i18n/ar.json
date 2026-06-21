@@ -100,5 +100,15 @@
   },
   "lineType": { "service": "خدمة", "part": "قطعة", "fee": "رسوم" },
   "discountType": { "none": "بدون", "amount": "مبلغ", "percent": "نسبة" },
-  "errors": { "saveFailed": "تعذّر الحفظ. حاول مرة أخرى." }
+  "errors": { "saveFailed": "تعذّر الحفظ. حاول مرة أخرى." },
+  "invoices": {
+    "title": "الفواتير", "invoice": "فاتورة", "generate": "إنشاء فاتورة", "view": "عرض الفاتورة",
+    "empty": "لا توجد فواتير بعد", "notFound": "الفاتورة غير موجودة", "forOrder": "للأمر",
+    "subtotal": "المجموع الفرعي", "discountTotal": "الخصم", "total": "الإجمالي", "issued": "تاريخ الإصدار",
+    "payments": "المدفوعات", "recordPayment": "تسجيل دفعة", "amount": "المبلغ", "method": "طريقة الدفع",
+    "note": "ملاحظة", "paid": "المدفوع", "balance": "المتبقي", "noPayments": "لم تُسجّل أي مدفوعات بعد",
+    "filterByStatus": "تصفية حسب حالة الدفع", "allStatuses": "الكل"
+  },
+  "paymentMethod": { "cash": "نقدًا", "card": "بطاقة", "transfer": "تحويل" },
+  "paymentStatus": { "unpaid": "غير مدفوعة", "partial": "مدفوعة جزئيًا", "paid": "مدفوعة" }
 }
