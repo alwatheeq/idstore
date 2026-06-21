@@ -110,5 +110,10 @@
     "filterByStatus": "تصفية حسب حالة الدفع", "allStatuses": "الكل"
   },
   "paymentMethod": { "cash": "نقدًا", "card": "بطاقة", "transfer": "تحويل" },
-  "paymentStatus": { "unpaid": "غير مدفوعة", "partial": "مدفوعة جزئيًا", "paid": "مدفوعة" }
+  "paymentStatus": { "unpaid": "غير مدفوعة", "partial": "مدفوعة جزئيًا", "paid": "مدفوعة" },
+  "dashboard": {
+    "title": "لوحة التحكم", "carsInWorkshop": "مركبات في الورشة", "awaitingApproval": "بانتظار الموافقة",
+    "readyForHandover": "جاهزة للتسليم", "invoicedToday": "فواتير اليوم",
+    "byStage": "الورشة حسب المرحلة", "empty": "لا توجد أوامر نشطة"
+  }
 }

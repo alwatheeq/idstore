@@ -110,5 +110,10 @@
     "filterByStatus": "Filter by payment status", "allStatuses": "All"
   },
   "paymentMethod": { "cash": "Cash", "card": "Card", "transfer": "Transfer" },
-  "paymentStatus": { "unpaid": "Unpaid", "partial": "Partial", "paid": "Paid" }
+  "paymentStatus": { "unpaid": "Unpaid", "partial": "Partial", "paid": "Paid" },
+  "dashboard": {
+    "title": "Dashboard", "carsInWorkshop": "Cars in workshop", "awaitingApproval": "Awaiting approval",
+    "readyForHandover": "Ready for handover", "invoicedToday": "Invoiced today",
+    "byStage": "Workshop by stage", "empty": "No active orders"
+  }
 }
