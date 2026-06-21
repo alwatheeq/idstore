@@ -33,4 +33,10 @@ describe("ServiceOrdersPage", () => {
     wrap(<ServiceOrdersPage />);
     expect(screen.getByText("No service orders yet")).toBeInTheDocument();
   });
+
+  it("shows the loading state", () => {
+    (useOrders as unknown as ReturnType<typeof vi.fn>).mockReturnValue({ data: undefined, isLoading: true });
+    wrap(<ServiceOrdersPage />);
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
+  });
 });

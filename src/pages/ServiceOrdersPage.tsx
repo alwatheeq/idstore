@@ -27,7 +27,7 @@ export function ServiceOrdersPage() {
 
       <div className="max-w-xs">
         <Select
-          label={t("orders.allStatuses")}
+          label={t("orders.filterByStatus")}
           options={statusOptions}
           value={status}
           onChange={(e) => setStatus(e.target.value as OrderStatus | "")}
@@ -40,19 +40,22 @@ export function ServiceOrdersPage() {
         <p className="opacity-70">{t("orders.empty")}</p>
       ) : (
         <ul className="divide-y border rounded-lg">
-          {orders.map((o) => (
-            <li key={o.id}>
-              <Link to={`/orders/${o.id}`} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-gray-50">
-                <span className="font-medium">
-                  #{o.order_number} · {o.vehicles?.model ?? ""} {o.vehicles?.plate_number ?? ""}
-                </span>
-                <span className="flex items-center gap-3">
-                  <span className="opacity-60 text-sm">{o.customers?.name ?? ""}</span>
-                  <OrderStatusBadge status={o.status} />
-                </span>
-              </Link>
-            </li>
-          ))}
+          {orders.map((o) => {
+            const veh = [o.vehicles?.model, o.vehicles?.plate_number].filter(Boolean).join(" ");
+            return (
+              <li key={o.id}>
+                <Link to={`/orders/${o.id}`} className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-gray-50">
+                  <span className="font-medium">
+                    #{o.order_number}{veh ? ` · ${veh}` : ""}
+                  </span>
+                  <span className="flex items-center gap-3">
+                    <span className="opacity-60 text-sm">{o.customers?.name ?? ""}</span>
+                    <OrderStatusBadge status={o.status} />
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
