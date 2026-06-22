@@ -7,12 +7,14 @@ import { OrderStatusBadge } from "@/features/orders/OrderStatusBadge";
 import { buttonClasses } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { useActiveBranch } from "@/features/branches/ActiveBranchContext";
 import type { OrderStatus } from "@/features/orders/types";
 
 export function ServiceOrdersPage() {
   const { t } = useTranslation();
   const [status, setStatus] = useState<OrderStatus | "">("");
   const { data: orders, isLoading } = useOrders(status || undefined);
+  const { isAll } = useActiveBranch();
 
   const statusOptions = [
     { value: "", label: t("orders.allStatuses") },
@@ -25,9 +27,13 @@ export function ServiceOrdersPage() {
         title={t("orders.title")}
         eyebrow={t("nav.orders")}
         actions={
-          <Link to="/orders/new" className={buttonClasses()}>
-            {t("orders.newOrder")}
-          </Link>
+          isAll ? (
+            <span className="text-xs font-medium text-muted">{t("branch.pickToCreate")}</span>
+          ) : (
+            <Link to="/orders/new" className={buttonClasses()}>
+              {t("orders.newOrder")}
+            </Link>
+          )
         }
       />
 

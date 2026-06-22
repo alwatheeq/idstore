@@ -1,10 +1,10 @@
 import { supabase } from "@/lib/supabase";
-import { getDefaultBranchId } from "@/lib/branch";
 import type { Customer, Vehicle } from "./types";
 import type { CustomerPayload, VehiclePayload } from "./schema";
 
-export async function listCustomers(search = ""): Promise<Customer[]> {
+export async function listCustomers(search = "", branchId?: string | null): Promise<Customer[]> {
   let q = supabase.from("customers").select("*").order("created_at", { ascending: false });
+  if (branchId) q = q.eq("branch_id", branchId);
   if (search.trim()) q = q.ilike("name", `%${search.trim()}%`);
   const { data, error } = await q;
   if (error) throw error;
@@ -17,9 +17,9 @@ export async function getCustomer(id: string): Promise<Customer> {
   return data as Customer;
 }
 
-export async function createCustomer(payload: CustomerPayload): Promise<Customer> {
-  const branch_id = await getDefaultBranchId();
-  const { data, error } = await supabase.from("customers").insert({ ...payload, branch_id }).select().single();
+export async function createCustomer(payload: CustomerPayload, branchId: string): Promise<Customer> {
+  const { data, error } = await supabase
+    .from("customers").insert({ ...payload, branch_id: branchId }).select().single();
   if (error) throw error;
   return data as Customer;
 }
@@ -49,10 +49,13 @@ export async function getVehicle(id: string): Promise<Vehicle> {
   return data as Vehicle;
 }
 
-export async function createVehicle(customerId: string, payload: VehiclePayload): Promise<Vehicle> {
-  const branch_id = await getDefaultBranchId();
+export async function createVehicle(
+  customerId: string,
+  payload: VehiclePayload,
+  branchId: string,
+): Promise<Vehicle> {
   const { data, error } = await supabase
-    .from("vehicles").insert({ ...payload, customer_id: customerId, branch_id }).select().single();
+    .from("vehicles").insert({ ...payload, customer_id: customerId, branch_id: branchId }).select().single();
   if (error) throw error;
   return data as Vehicle;
 }

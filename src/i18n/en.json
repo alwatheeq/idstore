@@ -14,7 +14,21 @@
     "vehicleImagesHint": "Upload a photo for each model. It appears for every vehicle of that model across the app and customer portal.",
     "defaultModel": "Default (other models)",
     "uploadImage": "Upload image",
-    "replaceImage": "Replace image"
+    "replaceImage": "Replace image",
+    "branches": "Branches",
+    "branchesHint": "Add and manage your service-center branches."
+  },
+  "branch": {
+    "all": "All branches",
+    "switch": "Switch branch",
+    "name": "Branch name",
+    "code": "Code",
+    "phone": "Phone",
+    "address": "Address",
+    "active": "Active",
+    "inactive": "Inactive",
+    "add": "Add branch",
+    "pickToCreate": "Select a branch to add"
   },
   "auth": { "login": "Log in", "email": "Email", "password": "Password", "signOut": "Sign out", "customerLogin": "Customer? Sign in with phone + PIN", "error": { "failed": "Login failed. Please check your email and password." } },
   "common": { "language": "العربية", "loading": "Loading…" },

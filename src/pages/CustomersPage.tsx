@@ -4,11 +4,13 @@ import { useTranslation } from "react-i18next";
 import { useCustomers } from "@/features/customers/hooks";
 import { buttonClasses } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { useActiveBranch } from "@/features/branches/ActiveBranchContext";
 
 export function CustomersPage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const { data: customers, isLoading } = useCustomers(search);
+  const { isAll } = useActiveBranch();
 
   return (
     <div className="space-y-6">
@@ -16,9 +18,13 @@ export function CustomersPage() {
         title={t("customers.title")}
         eyebrow={t("nav.customers")}
         actions={
-          <Link to="/customers/new" className={buttonClasses()}>
-            {t("customers.addCustomer")}
-          </Link>
+          isAll ? (
+            <span className="text-xs font-medium text-muted">{t("branch.pickToCreate")}</span>
+          ) : (
+            <Link to="/customers/new" className={buttonClasses()}>
+              {t("customers.addCustomer")}
+            </Link>
+          )
         }
       />
 

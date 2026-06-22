@@ -1,10 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "./api";
+import { useActiveBranch } from "@/features/branches/ActiveBranchContext";
 import type { PaymentPayload } from "./schema";
 import type { Payment } from "./types";
 
 export function useInvoices(status?: string) {
-  return useQuery({ queryKey: ["invoices", status ?? "all"], queryFn: () => api.listInvoices(status) });
+  const { branchId } = useActiveBranch();
+  return useQuery({
+    queryKey: ["invoices", branchId, status ?? "all"],
+    queryFn: () => api.listInvoices(status, branchId),
+  });
 }
 export function useInvoice(id: string | undefined) {
   return useQuery({ queryKey: ["invoice", id], queryFn: () => api.getInvoice(id!), enabled: !!id });

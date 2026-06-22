@@ -25,7 +25,7 @@ export function CustomerDetailPage() {
   const { data: customer, isLoading } = useCustomer(id);
   const deleteCustomer = useDeleteCustomer();
   const { data: vehicles } = useVehicles(id);
-  const createVehicle = useCreateVehicle(id);
+  const createVehicle = useCreateVehicle(id, customer?.branch_id ?? "");
   const updateVehicle = useUpdateVehicle(id);
   const deleteVehicle = useDeleteVehicle(id);
 

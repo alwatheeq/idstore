@@ -1,12 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "./api";
 import { nextStatus } from "./status";
+import { useActiveBranch } from "@/features/branches/ActiveBranchContext";
 import type { OrderStatus, InspectionMedia } from "./types";
 import type { Concern } from "./concerns";
 import type { IntakePayload, LinePayload } from "./schema";
 
 export function useOrders(status?: OrderStatus) {
-  return useQuery({ queryKey: ["orders", status ?? "all"], queryFn: () => api.listOrders(status) });
+  const { branchId } = useActiveBranch();
+  return useQuery({
+    queryKey: ["orders", branchId, status ?? "all"],
+    queryFn: () => api.listOrders(status, branchId),
+  });
 }
 export function useOrder(id: string | undefined) {
   return useQuery({ queryKey: ["order", id], queryFn: () => api.getOrder(id!), enabled: !!id });
@@ -27,8 +32,9 @@ export function useOrdersByVehicle(vehicleId: string | undefined) {
 }
 export function useCreateOrder() {
   const qc = useQueryClient();
+  const { branchId } = useActiveBranch();
   return useMutation({
-    mutationFn: (payload: IntakePayload) => api.createOrder(payload),
+    mutationFn: (payload: IntakePayload) => api.createOrder(payload, branchId!),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   });
 }

@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button, buttonClasses } from "@/components/ui/Button";
+import { useActiveBranch } from "@/features/branches/ActiveBranchContext";
+import { BranchManager } from "@/features/branches/BranchManager";
 import { VW_EV_MODELS, DEFAULT_MODEL_KEY } from "@/features/vehicles/models";
 import {
   useModelImages,
@@ -10,6 +12,7 @@ import {
 
 export function SettingsPage() {
   const { t } = useTranslation();
+  const { isSuper } = useActiveBranch();
   const { data: images } = useModelImages();
   const upload = useUploadModelImage();
   const remove = useDeleteModelImage();
@@ -23,6 +26,8 @@ export function SettingsPage() {
   return (
     <div className="space-y-8">
       <PageHeader title={t("nav.settings")} eyebrow={t("nav.settings")} />
+
+      {isSuper && <BranchManager />}
 
       <section className="space-y-4">
         <div className="space-y-1">

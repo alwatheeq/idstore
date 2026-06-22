@@ -21,7 +21,7 @@ export function VehicleDetailPage() {
   const { data: vehicle, isLoading } = useVehicle(id);
   const { data: orders } = useOrdersByVehicle(id);
   const { data: updates } = useVehicleUpdates(id);
-  const create = useCreateSoftwareUpdate(id);
+  const create = useCreateSoftwareUpdate(id, vehicle?.branch_id ?? "");
   const remove = useDeleteSoftwareUpdate(id);
   const [logging, setLogging] = useState(false);
 

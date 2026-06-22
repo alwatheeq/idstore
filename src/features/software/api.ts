@@ -1,5 +1,4 @@
 import { supabase } from "@/lib/supabase";
-import { getDefaultBranchId } from "@/lib/branch";
 import { filterDueVehicles } from "./due";
 import type { SoftwareUpdate, DueVehicle } from "./types";
 import type { SoftwareUpdatePayload } from "./schema";
@@ -19,11 +18,11 @@ export async function createSoftwareUpdate(
   vehicleId: string,
   payload: SoftwareUpdatePayload,
   setCurrent: boolean,
+  branchId: string,
 ): Promise<SoftwareUpdate> {
-  const branch_id = await getDefaultBranchId();
   const { data, error } = await supabase
     .from("vehicle_software_updates")
-    .insert({ ...payload, vehicle_id: vehicleId, branch_id })
+    .insert({ ...payload, vehicle_id: vehicleId, branch_id: branchId })
     .select()
     .single();
   if (error) throw error;
@@ -44,11 +43,10 @@ export async function deleteSoftwareUpdate(id: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function listDueVehicles(): Promise<DueVehicle[]> {
-  const { data, error } = await supabase
-    .from("vehicles")
-    .select("*, customers(name)")
-    .order("created_at", { ascending: false });
+export async function listDueVehicles(branchId?: string | null): Promise<DueVehicle[]> {
+  let q = supabase.from("vehicles").select("*, customers(name)").order("created_at", { ascending: false });
+  if (branchId) q = q.eq("branch_id", branchId);
+  const { data, error } = await q;
   if (error) throw error;
   return filterDueVehicles((data ?? []) as unknown as DueVehicle[]);
 }

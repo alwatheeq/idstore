@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { LanguageToggle } from "./LanguageToggle";
+import { BranchSwitcher } from "@/features/branches/BranchSwitcher";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/auth/useAuth";
 
@@ -12,6 +13,7 @@ export function AppLayout() {
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex items-center justify-end gap-3 border-b border-line bg-paper/80 px-6 py-3 backdrop-blur-md">
+          <BranchSwitcher />
           <LanguageToggle />
           <button
             type="button"

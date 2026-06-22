@@ -1,9 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "./api";
+import { useActiveBranch } from "@/features/branches/ActiveBranchContext";
 import type { CustomerPayload, VehiclePayload } from "./schema";
 
 export function useCustomers(search = "") {
-  return useQuery({ queryKey: ["customers", search], queryFn: () => api.listCustomers(search) });
+  const { branchId } = useActiveBranch();
+  return useQuery({
+    queryKey: ["customers", branchId, search],
+    queryFn: () => api.listCustomers(search, branchId),
+  });
 }
 
 export function useCustomer(id: string | undefined) {
@@ -12,8 +17,9 @@ export function useCustomer(id: string | undefined) {
 
 export function useCreateCustomer() {
   const qc = useQueryClient();
+  const { branchId } = useActiveBranch();
   return useMutation({
-    mutationFn: (payload: CustomerPayload) => api.createCustomer(payload),
+    mutationFn: (payload: CustomerPayload) => api.createCustomer(payload, branchId!),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["customers"] }),
   });
 }
@@ -52,10 +58,10 @@ export function useVehicle(id: string | undefined) {
   return useQuery({ queryKey: ["vehicle", id], queryFn: () => api.getVehicle(id!), enabled: !!id });
 }
 
-export function useCreateVehicle(customerId: string) {
+export function useCreateVehicle(customerId: string, branchId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: VehiclePayload) => api.createVehicle(customerId, payload),
+    mutationFn: (payload: VehiclePayload) => api.createVehicle(customerId, payload, branchId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["vehicles", customerId] }),
   });
 }
