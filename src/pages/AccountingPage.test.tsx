@@ -33,7 +33,7 @@ const summary = (over: Partial<AccountingSummary> = {}): AccountingSummary => ({
       { id: "i1", invoice_number: 7, total: 100, paid: 40, balance: 60, issued_at: "2026-06-01T00:00:00.000Z", customer_name: "Ahmad" },
     ],
   },
-  methods: [{ method: "cash", count: 2, total: 1234.5 }],
+  methods: [{ method: "cash", count: 2, total: 900 }],
   purchases: {
     total: 25,
     orders: [{ id: "p1", po_number: 3, supplier_name: "ACME", received_at: "2026-06-05T00:00:00.000Z", value: 25 }],
@@ -52,7 +52,7 @@ describe("AccountingPage", () => {
     wrap(<AccountingPage />);
     expect(screen.getByText("Revenue (cash in)")).toBeInTheDocument();
     expect(screen.getByText("1234.500 JOD")).toBeInTheDocument();
-    expect(screen.getByText("Outstanding receivables")).toBeInTheDocument();
+    expect(screen.getAllByText("Outstanding receivables").length).toBeGreaterThan(0); // appears as card label + section heading
     expect(screen.getByText("Payments by method")).toBeInTheDocument();
     expect(screen.getByText("Purchases (cash out)")).toBeInTheDocument();
   });

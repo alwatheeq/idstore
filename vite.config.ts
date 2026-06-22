@@ -12,7 +12,7 @@ export default defineConfig({
     env: {
       VITE_SUPABASE_URL: "http://localhost:54321",
       VITE_SUPABASE_PUBLISHABLE_KEY: "test-publishable-key",
-      TZ: "UTC",
+      TZ: "UTC", // keeps date-boundary tests deterministic: toISOString() always produces UTC months
     },
   },
 });
