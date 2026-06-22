@@ -5,7 +5,7 @@ import type { ServiceOrderLine } from "@/features/orders/types";
 const row = (over: Partial<ServiceOrderLine>): ServiceOrderLine => ({
   id: "l", service_order_id: "o", line_type: "service", description: "x",
   quantity: 1, unit_price: 0, discount_type: "none", discount_value: 0, line_total: 0,
-  created_at: "", ...over,
+  inventory_item_id: null, issued_qty: 0, created_at: "", ...over,
 });
 
 describe("lineMath", () => {

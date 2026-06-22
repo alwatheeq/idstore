@@ -49,24 +49,24 @@ describe("LineItemsEditor", () => {
   });
 
   it("renders both line descriptions", () => {
-    wrap(<LineItemsEditor orderId="o" />);
+    wrap(<LineItemsEditor orderId="o" branchId="b1" />);
     expect(screen.getByText(/Brake change/)).toBeInTheDocument();
     expect(screen.getByText(/Pads/)).toBeInTheDocument();
   });
 
   it("renders the grand total as 180.000 JOD", () => {
-    wrap(<LineItemsEditor orderId="o" />);
+    wrap(<LineItemsEditor orderId="o" branchId="b1" />);
     expect(screen.getByText(/180\.000 JOD/)).toBeInTheDocument();
   });
 
   it("renders the subtotal as 200.000", () => {
-    wrap(<LineItemsEditor orderId="o" />);
+    wrap(<LineItemsEditor orderId="o" branchId="b1" />);
     // subtotal dd is 200.000
     expect(screen.getByText("200.000")).toBeInTheDocument();
   });
 
   it("renders the discount total as 20.000", () => {
-    wrap(<LineItemsEditor orderId="o" />);
+    wrap(<LineItemsEditor orderId="o" branchId="b1" />);
     // discountTotal dd is 20.000
     expect(screen.getByText("20.000")).toBeInTheDocument();
   });

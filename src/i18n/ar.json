@@ -177,6 +177,8 @@
     "reportedConcerns": "الأعطال المُبلّغ عنها",
     "otherConcerns": "أعطال أخرى / تفاصيل",
     "concernsChecked": "تم فحص {{done}} من {{total}}",
+    "fromStock": "من المخزون (قطعة)",
+    "noStockItem": "— ليس من المخزون —",
     "intakeNotes": "ملاحظات الفحص",
     "advance": "تقديم الحالة",
     "approve": "اعتماد",

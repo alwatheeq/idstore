@@ -11,6 +11,7 @@ import { TextField } from "@/components/ui/TextField";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
+import { useItems } from "@/features/inventory/hooks";
 
 type FormProps = {
   defaultValues?: ServiceOrderLine;
@@ -21,9 +22,12 @@ type FormProps = {
 
 function LineForm({ defaultValues, submitting, onSubmit, onCancel }: FormProps) {
   const { t } = useTranslation();
+  const { data: items } = useItems();
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<LineFormValues, unknown, LinePayload>({
     resolver: zodResolver(lineSchema),
@@ -34,6 +38,7 @@ function LineForm({ defaultValues, submitting, onSubmit, onCancel }: FormProps) 
       unit_price: defaultValues?.unit_price ?? 0,
       discount_type: defaultValues?.discount_type ?? "none",
       discount_value: defaultValues?.discount_value ?? 0,
+      inventory_item_id: defaultValues?.inventory_item_id ?? "",
     },
     values: defaultValues
       ? {
@@ -43,9 +48,25 @@ function LineForm({ defaultValues, submitting, onSubmit, onCancel }: FormProps) 
           unit_price: defaultValues.unit_price,
           discount_type: defaultValues.discount_type,
           discount_value: defaultValues.discount_value,
+          inventory_item_id: defaultValues.inventory_item_id ?? "",
         }
       : undefined,
   });
+
+  const linkedItem = (watch("inventory_item_id") as string) ?? "";
+  const itemOptions = [
+    { value: "", label: t("orders.noStockItem") },
+    ...(items ?? []).map((i) => ({ value: i.id, label: i.sku ? `${i.name} · ${i.sku}` : i.name })),
+  ];
+  function pickItem(id: string) {
+    setValue("inventory_item_id", id);
+    const it = items?.find((i) => i.id === id);
+    if (it) {
+      setValue("description", it.name);
+      setValue("unit_price", it.sale_price);
+      setValue("line_type", "part");
+    }
+  }
 
   const typeOpts = (["service", "part", "fee"] as const).map((v) => ({
     value: v,
@@ -61,6 +82,14 @@ function LineForm({ defaultValues, submitting, onSubmit, onCancel }: FormProps) 
       onSubmit={handleSubmit(onSubmit)}
       className="space-y-3 rounded-xl border border-line bg-paper-2 p-4"
     >
+      {itemOptions.length > 1 && (
+        <Select
+          label={t("orders.fromStock")}
+          options={itemOptions}
+          value={linkedItem}
+          onChange={(e) => pickItem(e.target.value)}
+        />
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         <Select
           label={t("orders.lineType")}
@@ -108,13 +137,13 @@ function LineForm({ defaultValues, submitting, onSubmit, onCancel }: FormProps) 
   );
 }
 
-export function LineItemsEditor({ orderId }: { orderId: string }) {
+export function LineItemsEditor({ orderId, branchId }: { orderId: string; branchId: string }) {
   const { t } = useTranslation();
   const toast = useToast();
   const { data: lines } = useLines(orderId);
-  const create = useCreateLine(orderId);
-  const update = useUpdateLine(orderId);
-  const del = useDeleteLine(orderId);
+  const create = useCreateLine(orderId, branchId);
+  const update = useUpdateLine(orderId, branchId);
+  const del = useDeleteLine(orderId, branchId);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 

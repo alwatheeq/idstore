@@ -46,6 +46,7 @@ export const lineSchema = z.object({
   unit_price: reqNonNeg,
   discount_type: z.enum(["none", "amount", "percent"]).default("none"),
   discount_value: reqNonNeg.default(0),
+  inventory_item_id: optText,
 });
 
 export type IntakeFormValues = z.input<typeof intakeSchema>;

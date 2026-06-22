@@ -72,25 +72,33 @@ export function useApproveOrder(id: string) {
 export function useLines(orderId: string | undefined) {
   return useQuery({ queryKey: ["lines", orderId], queryFn: () => api.listLines(orderId!), enabled: !!orderId });
 }
-export function useCreateLine(orderId: string) {
+function useInvalidateLines(orderId: string) {
   const qc = useQueryClient();
+  return () => {
+    qc.invalidateQueries({ queryKey: ["lines", orderId] });
+    qc.invalidateQueries({ queryKey: ["inventory-items"] });
+  };
+}
+export function useCreateLine(orderId: string, branchId: string) {
+  const invalidate = useInvalidateLines(orderId);
   return useMutation({
-    mutationFn: (payload: LinePayload) => api.createLine(orderId, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["lines", orderId] }),
+    mutationFn: (payload: LinePayload) => api.createLine(orderId, payload, branchId),
+    onSuccess: invalidate,
   });
 }
-export function useUpdateLine(orderId: string) {
-  const qc = useQueryClient();
+export function useUpdateLine(orderId: string, branchId: string) {
+  const invalidate = useInvalidateLines(orderId);
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: LinePayload }) => api.updateLine(id, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["lines", orderId] }),
+    mutationFn: ({ id, payload }: { id: string; payload: LinePayload }) =>
+      api.updateLine(id, payload, branchId),
+    onSuccess: invalidate,
   });
 }
-export function useDeleteLine(orderId: string) {
-  const qc = useQueryClient();
+export function useDeleteLine(orderId: string, branchId: string) {
+  const invalidate = useInvalidateLines(orderId);
   return useMutation({
-    mutationFn: (id: string) => api.deleteLine(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["lines", orderId] }),
+    mutationFn: (id: string) => api.deleteLine(id, branchId),
+    onSuccess: invalidate,
   });
 }
 export function useMedia(orderId: string | undefined) {

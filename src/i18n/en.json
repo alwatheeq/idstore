@@ -177,6 +177,8 @@
     "reportedConcerns": "Reported concerns",
     "otherConcerns": "Other concerns / details",
     "concernsChecked": "{{done}} of {{total}} checked",
+    "fromStock": "From inventory (part)",
+    "noStockItem": "— not from stock —",
     "intakeNotes": "Inspection notes",
     "advance": "Advance status",
     "approve": "Mark approved",

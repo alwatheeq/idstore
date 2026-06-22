@@ -19,7 +19,7 @@ export interface ServiceOrder {
 export interface ServiceOrderLine {
   id: string; service_order_id: string; line_type: LineType; description: string;
   quantity: number; unit_price: number; discount_type: DiscountType; discount_value: number;
-  line_total: number; created_at: string;
+  line_total: number; inventory_item_id: string | null; issued_qty: number; created_at: string;
 }
 export type OrderListRow = ServiceOrder & {
   customers: { name: string } | null;

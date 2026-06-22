@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { lineTotalForPayload } from "./lineMath";
+import { createMovement } from "@/features/inventory/api";
 import type { ServiceOrder, ServiceOrderLine, InspectionMedia, OrderStatus, OrderListRow, OrderDetailRow } from "./types";
 import type { Concern } from "./concerns";
 import type { IntakePayload, LinePayload } from "./schema";
@@ -77,21 +78,87 @@ export async function listLines(orderId: string): Promise<ServiceOrderLine[]> {
   if (error) throw error;
   return data as ServiceOrderLine[];
 }
-export async function createLine(orderId: string, payload: LinePayload): Promise<ServiceOrderLine> {
+type ExistingLine = { inventory_item_id: string | null; issued_qty: number; service_order_id: string };
+
+async function loadLine(id: string): Promise<ExistingLine> {
+  const { data, error } = await supabase
+    .from("service_order_lines")
+    .select("inventory_item_id, issued_qty, service_order_id")
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  const d = data as { inventory_item_id: string | null; issued_qty: number; service_order_id: string };
+  return { ...d, issued_qty: Number(d.issued_qty) || 0 };
+}
+
+export async function createLine(
+  orderId: string,
+  payload: LinePayload,
+  branchId: string,
+): Promise<ServiceOrderLine> {
+  const line_total = lineTotalForPayload(payload);
+  const issued_qty = payload.inventory_item_id ? payload.quantity : 0;
+  const { data, error } = await supabase.from("service_order_lines")
+    .insert({ ...payload, service_order_id: orderId, line_total, issued_qty }).select().single();
+  if (error) throw error;
+  if (payload.inventory_item_id) {
+    await createMovement({
+      itemId: payload.inventory_item_id, branchId, type: "issue",
+      quantityDelta: -payload.quantity, reference: "Service order", serviceOrderId: orderId,
+    });
+  }
+  return data as ServiceOrderLine;
+}
+
+export async function updateLine(
+  id: string,
+  payload: LinePayload,
+  branchId: string,
+): Promise<ServiceOrderLine> {
+  const prev = await loadLine(id);
+  const oldItem = prev.inventory_item_id;
+  const oldIssued = prev.issued_qty;
+  const newItem = payload.inventory_item_id;
+  const newIssued = newItem ? payload.quantity : 0;
+
+  if (oldItem && newItem && oldItem === newItem) {
+    const delta = newIssued - oldIssued; // >0: issue more; <0: return
+    if (delta !== 0) {
+      await createMovement({
+        itemId: newItem, branchId, type: delta > 0 ? "issue" : "adjust",
+        quantityDelta: -delta, reference: "Service order", serviceOrderId: prev.service_order_id,
+      });
+    }
+  } else {
+    if (oldItem && oldIssued > 0) {
+      await createMovement({
+        itemId: oldItem, branchId, type: "adjust",
+        quantityDelta: oldIssued, reference: "Service order return", serviceOrderId: prev.service_order_id,
+      });
+    }
+    if (newItem) {
+      await createMovement({
+        itemId: newItem, branchId, type: "issue",
+        quantityDelta: -payload.quantity, reference: "Service order", serviceOrderId: prev.service_order_id,
+      });
+    }
+  }
+
   const line_total = lineTotalForPayload(payload);
   const { data, error } = await supabase.from("service_order_lines")
-    .insert({ ...payload, service_order_id: orderId, line_total }).select().single();
+    .update({ ...payload, line_total, issued_qty: newIssued }).eq("id", id).select().single();
   if (error) throw error;
   return data as ServiceOrderLine;
 }
-export async function updateLine(id: string, payload: LinePayload): Promise<ServiceOrderLine> {
-  const line_total = lineTotalForPayload(payload);
-  const { data, error } = await supabase.from("service_order_lines")
-    .update({ ...payload, line_total }).eq("id", id).select().single();
-  if (error) throw error;
-  return data as ServiceOrderLine;
-}
-export async function deleteLine(id: string): Promise<void> {
+
+export async function deleteLine(id: string, branchId: string): Promise<void> {
+  const prev = await loadLine(id);
+  if (prev.inventory_item_id && prev.issued_qty > 0) {
+    await createMovement({
+      itemId: prev.inventory_item_id, branchId, type: "adjust",
+      quantityDelta: prev.issued_qty, reference: "Service order return", serviceOrderId: prev.service_order_id,
+    });
+  }
   const { error } = await supabase.from("service_order_lines").delete().eq("id", id);
   if (error) throw error;
 }

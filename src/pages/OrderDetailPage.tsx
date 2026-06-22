@@ -109,7 +109,7 @@ export function OrderDetailPage() {
       </section>
 
       <OrderConcerns orderId={id} concerns={order.concerns} />
-      <LineItemsEditor orderId={id} />
+      <LineItemsEditor orderId={id} branchId={order.branch_id} />
       <InspectionMedia orderId={id} />
     </div>
   );
