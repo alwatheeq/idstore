@@ -3,7 +3,7 @@
 Guidance for AI agents working in this repo. Keep it accurate and concise — it loads into every session.
 
 ## What this is
-**Watheeq EV / "idstore"** — a management app for a Volkswagen **electric-vehicle** service center. Bilingual **English-first (LTR) + Arabic (RTL) toggle**. Admin app + a read-only **customer portal**. See `README.md` for setup and `docs/superpowers/` for the per-module specs & plans.
+**ID Store ("idstore")** — a management app for a Volkswagen **electric-vehicle** service center. Bilingual **English-first (LTR) + Arabic (RTL) toggle**. Admin app + a read-only **customer portal**. UI is the "Volt Instrument" design system (tokens in `src/index.css` + `tailwind.config.js`; logo `src/components/BrandLogo.tsx`; mono numerals via the `.num` class for money/IDs/plates). See `README.md` for setup and `docs/superpowers/` for the per-module specs & plans.
 
 ## Commands
 - `npm run dev` — dev server (Vite). Don't run it in automation; it's long-running.
@@ -15,7 +15,7 @@ Guidance for AI agents working in this repo. Keep it accurate and concise — it
 Vite + React 19 + TypeScript (strict, `verbatimModuleSyntax`) · Supabase (Postgres/Auth/Storage) · Tailwind v3 · Radix `DirectionProvider` · react-i18next · TanStack Query v5 · react-router-dom v7 · react-hook-form + **zod v4** · Vitest + Testing Library.
 
 ## Architecture / where things live
-- `src/features/<feature>/` — feature-scoped `types.ts`, `schema.ts` (zod), `api.ts` (Supabase calls), `hooks.ts` (TanStack Query), components. Features: `customers`, `orders`, `invoices`, `dashboard`, `portal`.
+- `src/features/<feature>/` — feature-scoped `types.ts`, `schema.ts` (zod), `api.ts` (Supabase calls), `hooks.ts` (TanStack Query), components. Features: `customers`, `orders`, `invoices`, `dashboard`, `portal`, `software`, `vehicles` (model images + `<VehicleImage>`), `branches` (multi-branch + active-branch context), `inventory`, `purchasing` (purchase orders).
 - `src/pages/` — route page components (admin); `src/pages/portal/` — customer portal pages.
 - `src/auth/` — `AuthProvider`, `useAuth`, `useRole` (admin vs customer), `RequireRole` guard, admin `LoginPage`.
 - `src/lib/` — `supabase.ts` (client), `money.ts` (currency math), `branch.ts`, `phone.ts`.
@@ -26,7 +26,9 @@ Vite + React 19 + TypeScript (strict, `verbatimModuleSyntax`) · Supabase (Postg
 - **Money:** Jordanian Dinar (JOD), **3 decimals** everywhere (`toFixed(3)`). All money math goes through `src/lib/money.ts` (`computeLineTotal`, `computeInvoiceTotals`, `derivePaymentStatus`) — never re-implement it.
 - **Zod schema = the persistence source of truth.** A column missing from a feature's `schema.ts` input silently won't save. Add new columns to the schema.
 - **i18n parity is enforced** by a test — every key must exist in BOTH `src/i18n/en.json` and `ar.json`. Arabic must be natural (not machine-literal). All user-facing text via `t()`.
-- **RTL-safe styling only** — use logical Tailwind classes (`ms-`/`me-`/`ps-`/`pe-`/`border-e`); never hardcoded `left`/`right`/`ml`/`mr`. (Known debt: literal `←` back-arrows don't mirror.)
+- **RTL-safe styling only** — use logical Tailwind classes (`ms-`/`me-`/`ps-`/`pe-`/`border-e`); never hardcoded `left`/`right`/`ml`/`mr`. Directional glyphs (back arrows, chevrons) use `BackLink` / the `.rtl-flip` utility so they mirror in Arabic.
+- **Branch scoping:** list hooks read `useActiveBranch().branchId` and filter by it; inserts use the active branch (top-level entities) or the parent's branch (vehicle←customer, invoice←order, order-line/software←parent). RLS enforces it via `can_access_branch()`. Create actions are disabled under the "All branches" view.
+- **Inventory stock is ledger-derived** — never write `inventory_stock` directly; insert an `inventory_movements` row and a DB trigger updates stock (transfers = two rows; PO receipts and order parts both post movements).
 - **Data hooks** wrap api with TanStack Query; mutations `invalidateQueries` the relevant keys and surface errors via `useToast`. Forms use `useForm<FormValues, unknown, Payload>` + `zodResolver` so `onSubmit` gets the transformed payload; async-loaded edit forms need the `values` prop (not just `defaultValues`).
 - **Generous spacing** in UI (the owner's preference): `space-y-*`, block labels, padded inputs — don't cram.
 - **TDD for logic** (money, schemas, helpers); components tested with mocked hooks/data.
@@ -44,6 +46,8 @@ Vite + React 19 + TypeScript (strict, `verbatimModuleSyntax`) · Supabase (Postg
 ## Working style
 - Branch per module/sub-project; merge to `main` and push to GitHub (`alwatheeq/idstore`) when done. Don't commit/push unless asked.
 - **After any subagent/file-gen work, run `git status`** — a cut-off generator has twice left source files untracked that still built locally (only caught at push). Tracked ≠ on-disk.
+- **Gotcha — dev server caches `tailwind.config.js`:** after changing it, restart the preview server or new tokens error as "class does not exist". `npm run build` (fresh process) is unaffected — trust it over a long-running dev server.
+- **Gotcha — adding a required field to a core type** (Vehicle/ServiceOrder/ServiceOrderLine/OrderListRow) breaks test fixtures; update the `make*`/`row()` factories (e.g. `stats.test`, `DashboardPage.test`, `lineMath.test`, portal/order-detail tests) and the `tsc -b` build will point you at them.
 - Each module = its own spec → plan → reviewed build (see `docs/superpowers/{specs,plans}/`).
 
 ## Phase status
