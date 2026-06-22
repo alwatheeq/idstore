@@ -77,6 +77,32 @@
       "count": "Count"
     }
   },
+  "po": {
+    "title": "Purchase orders",
+    "po": "PO",
+    "newPO": "New PO",
+    "create": "Create PO",
+    "empty": "No purchase orders yet",
+    "notFound": "Purchase order not found",
+    "supplier": "Supplier",
+    "reference": "Reference",
+    "notes": "Notes",
+    "item": "Item",
+    "pickItem": "Select an item",
+    "addLine": "Add line",
+    "lines": "Lines",
+    "noLines": "No lines yet",
+    "total": "Total",
+    "markOrdered": "Mark ordered",
+    "receiveAll": "Receive all",
+    "received": "received",
+    "status": {
+      "draft": "Draft",
+      "ordered": "Ordered",
+      "received": "Received",
+      "cancelled": "Cancelled"
+    }
+  },
   "branch": {
     "all": "All branches",
     "switch": "Switch branch",

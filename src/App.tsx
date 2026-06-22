@@ -14,6 +14,8 @@ import { SoftwarePage } from "@/pages/SoftwarePage";
 import { InventoryPage } from "@/pages/InventoryPage";
 import { ItemDetailPage } from "@/pages/ItemDetailPage";
 import { SuppliersPage } from "@/pages/SuppliersPage";
+import { PurchaseOrdersPage } from "@/pages/PurchaseOrdersPage";
+import { PurchaseOrderDetailPage } from "@/pages/PurchaseOrderDetailPage";
 import { InvoicesPage } from "@/pages/InvoicesPage";
 import { InvoiceDetailPage } from "@/pages/InvoiceDetailPage";
 import { SettingsPage } from "@/pages/SettingsPage";
@@ -48,6 +50,8 @@ export default function App() {
           <Route path="/inventory" element={<InventoryPage />} />
           <Route path="/inventory/:id" element={<ItemDetailPage />} />
           <Route path="/suppliers" element={<SuppliersPage />} />
+          <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
+          <Route path="/purchase-orders/:id" element={<PurchaseOrderDetailPage />} />
           <Route path="/invoices" element={<InvoicesPage />} />
           <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />

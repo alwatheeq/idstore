@@ -25,6 +25,9 @@ export function InventoryPage() {
         eyebrow={t("nav.inventory")}
         actions={
           <div className="flex items-center gap-2">
+            <Link to="/purchase-orders" className={buttonClasses("ghost")}>
+              {t("po.title")}
+            </Link>
             <Link to="/suppliers" className={buttonClasses("ghost")}>
               {t("inventory.suppliers")}
             </Link>
