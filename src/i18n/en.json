@@ -291,6 +291,7 @@
     "noReceivables": "Nothing outstanding — all invoices are settled",
     "noPurchases": "No purchases received in this period",
     "loadError": "Could not load accounting data. Please try again.",
+    "countTimes": "×{{count}}",
     "method": { "cash": "Cash", "card": "Card", "transfer": "Transfer" }
   },
   "portal": {

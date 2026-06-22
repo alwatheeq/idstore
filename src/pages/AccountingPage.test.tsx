@@ -72,10 +72,13 @@ describe("AccountingPage", () => {
   it("refetches when the period preset changes", () => {
     wrap(<AccountingPage />);
     fireEvent.click(screen.getByRole("button", { name: "This year" }));
-    // Latest call's range should be the full-year span (Jan→Jan), not a single month.
     const lastRange = mockSummary.mock.calls.at(-1)![0];
-    expect(lastRange.from.slice(5, 7)).toBe("01");
-    expect(lastRange.to.slice(5, 7)).toBe("01");
+    const fromD = new Date(lastRange.from);
+    const toD = new Date(lastRange.to);
+    // "This year" spans a full calendar year: `to` is exactly one year after `from`.
+    expect(toD.getFullYear()).toBe(fromD.getFullYear() + 1);
+    expect(toD.getMonth()).toBe(fromD.getMonth());
+    expect(toD.getDate()).toBe(fromD.getDate());
   });
 
   it("shows the error state when the query fails", () => {

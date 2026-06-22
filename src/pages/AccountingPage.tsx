@@ -141,7 +141,7 @@ export function AccountingPage() {
                     <div key={m.method} className="flex items-center justify-between text-sm">
                       <span className="font-medium text-ink">{t(`accounting.method.${m.method}`)}</span>
                       <span className="flex items-center gap-3">
-                        <span className="num text-muted">×{m.count}</span>
+                        <span className="num text-muted">{t("accounting.countTimes", { count: m.count })}</span>
                         <span className="num font-semibold text-ink">{money(m.total)}</span>
                       </span>
                     </div>
