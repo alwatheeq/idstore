@@ -8,7 +8,7 @@ const order = (over: Partial<OrderListRow>): OrderListRow => ({
   odometer_at_intake: null, charge_percent: null, hv_battery_state: null, reported_concerns: null,
   intake_notes: null, approved_at: null, approved_by: null, closed_at: null,
   next_service_due_date: null, next_service_due_odometer: null, created_at: "", updated_at: "",
-  customers: null, vehicles: null, ...over,
+  concerns: [], customers: null, vehicles: null, ...over,
 });
 const invoice = (over: Partial<InvoiceListRow>): InvoiceListRow => ({
   id: "i", service_order_id: "o", invoice_number: 1, currency: "JOD",

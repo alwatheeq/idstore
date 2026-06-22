@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "./api";
 import { nextStatus } from "./status";
 import type { OrderStatus, InspectionMedia } from "./types";
+import type { Concern } from "./concerns";
 import type { IntakePayload, LinePayload } from "./schema";
 
 export function useOrders(status?: OrderStatus) {
@@ -36,6 +37,13 @@ export function useAdvanceStatus(id: string) {
       qc.invalidateQueries({ queryKey: ["orders"] });
       qc.invalidateQueries({ queryKey: ["order", id] });
     },
+  });
+}
+export function useUpdateConcerns(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (concerns: Concern[]) => api.updateOrderConcerns(id, concerns),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["order", id] }),
   });
 }
 export function useApproveOrder(id: string) {

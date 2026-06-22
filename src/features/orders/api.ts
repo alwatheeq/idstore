@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { getDefaultBranchId } from "@/lib/branch";
 import { lineTotalForPayload } from "./lineMath";
 import type { ServiceOrder, ServiceOrderLine, InspectionMedia, OrderStatus, OrderListRow, OrderDetailRow } from "./types";
+import type { Concern } from "./concerns";
 import type { IntakePayload, LinePayload } from "./schema";
 
 const BUCKET = "inspection-media";
@@ -40,6 +41,12 @@ export async function updateOrderStatus(id: string, status: OrderStatus): Promis
   const patch: Record<string, unknown> = { status };
   if (status === "closed") patch.closed_at = new Date().toISOString();
   const { data, error } = await supabase.from("service_orders").update(patch).eq("id", id).select().single();
+  if (error) throw error;
+  return data as ServiceOrder;
+}
+export async function updateOrderConcerns(id: string, concerns: Concern[]): Promise<ServiceOrder> {
+  const { data, error } = await supabase.from("service_orders")
+    .update({ concerns }).eq("id", id).select().single();
   if (error) throw error;
   return data as ServiceOrder;
 }

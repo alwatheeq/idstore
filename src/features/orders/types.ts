@@ -1,3 +1,5 @@
+import type { Concern } from "./concerns";
+
 export type OrderStatus =
   | "appointment" | "intake" | "diagnosis" | "estimate" | "awaiting_approval"
   | "in_progress" | "qc" | "ready" | "closed" | "cancelled";
@@ -9,6 +11,7 @@ export interface ServiceOrder {
   order_number: number; status: OrderStatus;
   odometer_at_intake: number | null; charge_percent: number | null;
   hv_battery_state: string | null; reported_concerns: string | null; intake_notes: string | null;
+  concerns: Concern[];
   approved_at: string | null; approved_by: string | null; closed_at: string | null;
   next_service_due_date: string | null; next_service_due_odometer: number | null;
   created_at: string; updated_at: string;

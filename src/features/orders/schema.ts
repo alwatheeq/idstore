@@ -34,6 +34,9 @@ export const intakeSchema = z.object({
   hv_battery_state: optText,
   reported_concerns: optText,
   intake_notes: optText,
+  concerns: z
+    .array(z.object({ key: z.string(), checked: z.boolean() }))
+    .default([]),
 });
 
 export const lineSchema = z.object({

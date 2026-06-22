@@ -6,6 +6,7 @@ import { intakeSchema, type IntakeFormValues, type IntakePayload } from "./schem
 import { TextField } from "@/components/ui/TextField";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { ConcernsField } from "./ConcernsField";
 import { useCustomers, useVehicles } from "@/features/customers/hooks";
 
 type Props = { submitting?: boolean; onSubmit: (p: IntakePayload) => void; onCancel: () => void };
@@ -28,8 +29,11 @@ export function IntakeForm({ submitting, onSubmit, onCancel }: Props) {
       hv_battery_state: "",
       reported_concerns: "",
       intake_notes: "",
+      concerns: [],
     },
   });
+
+  const concernKeys = (watch("concerns") ?? []).map((c) => c.key);
 
   const customerId = watch("customer_id");
   const { data: customers } = useCustomers();
@@ -87,8 +91,22 @@ export function IntakeForm({ submitting, onSubmit, onCancel }: Props) {
         {...register("hv_battery_state")}
         error={errors.hv_battery_state?.message}
       />
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-ink-2">
+          {t("orders.reportedConcerns")}
+        </label>
+        <ConcernsField
+          value={concernKeys}
+          onChange={(keys) =>
+            setValue(
+              "concerns",
+              keys.map((k) => ({ key: k, checked: false })),
+            )
+          }
+        />
+      </div>
       <TextField
-        label={t("orders.concerns")}
+        label={t("orders.otherConcerns")}
         {...register("reported_concerns")}
         error={errors.reported_concerns?.message}
       />

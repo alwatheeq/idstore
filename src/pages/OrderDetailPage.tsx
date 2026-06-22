@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/auth/useAuth";
 import { LineItemsEditor } from "@/features/orders/LineItemsEditor";
 import { InspectionMedia } from "@/features/orders/InspectionMedia";
+import { OrderConcerns } from "@/features/orders/OrderConcerns";
 import { useInvoiceByOrder, useGenerateInvoice } from "@/features/invoices/hooks";
 
 function Field({ label, value }: { label: string; value: string | number | null }) {
@@ -95,7 +96,7 @@ export function OrderDetailPage() {
           <Field label={t("orders.odometer")} value={order.odometer_at_intake} />
           <Field label={t("orders.charge")} value={order.charge_percent} />
           <Field label={t("orders.battery")} value={order.hv_battery_state} />
-          <Field label={t("orders.concerns")} value={order.reported_concerns} />
+          <Field label={t("orders.otherConcerns")} value={order.reported_concerns} />
         </dl>
         {order.intake_notes && (
           <p className="pt-1 text-sm text-ink-2">{order.intake_notes}</p>
@@ -107,6 +108,7 @@ export function OrderDetailPage() {
         )}
       </section>
 
+      <OrderConcerns orderId={id} concerns={order.concerns} />
       <LineItemsEditor orderId={id} />
       <InspectionMedia orderId={id} />
     </div>

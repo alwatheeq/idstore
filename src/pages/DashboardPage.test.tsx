@@ -41,6 +41,7 @@ const makeOrder = (over: Partial<OrderListRow>): OrderListRow => ({
   next_service_due_odometer: null,
   created_at: "",
   updated_at: "",
+  concerns: [],
   customers: null,
   vehicles: null,
   ...over,

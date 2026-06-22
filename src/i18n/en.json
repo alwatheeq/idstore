@@ -74,6 +74,9 @@
     "charge": "Charge %",
     "battery": "HV battery state",
     "concerns": "Reported concerns",
+    "reportedConcerns": "Reported concerns",
+    "otherConcerns": "Other concerns / details",
+    "concernsChecked": "{{done}} of {{total}} checked",
     "intakeNotes": "Inspection notes",
     "advance": "Advance status",
     "approve": "Mark approved",
@@ -97,6 +100,20 @@
     "discountType": "Discount type",
     "discountValue": "Discount value",
     "noLines": "No line items yet"
+  },
+  "concerns": {
+    "wont_charge": "Won't charge",
+    "slow_charging": "Slow charging",
+    "reduced_range": "Reduced range",
+    "warning_light": "Warning light on",
+    "no_power": "No power / won't start",
+    "software": "Software / infotainment",
+    "braking": "Braking issue",
+    "noise": "Unusual noise",
+    "ac_heating": "A/C or heating",
+    "suspension": "Suspension / steering",
+    "tires": "Tires / wheels",
+    "body": "Body / exterior"
   },
   "status": {
     "appointment": "Appointment",

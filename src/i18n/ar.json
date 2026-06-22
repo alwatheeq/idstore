@@ -74,6 +74,9 @@
     "charge": "نسبة الشحن %",
     "battery": "حالة بطارية الجهد العالي",
     "concerns": "الأعطال المُبلّغ عنها",
+    "reportedConcerns": "الأعطال المُبلّغ عنها",
+    "otherConcerns": "أعطال أخرى / تفاصيل",
+    "concernsChecked": "تم فحص {{done}} من {{total}}",
     "intakeNotes": "ملاحظات الفحص",
     "advance": "تقديم الحالة",
     "approve": "اعتماد",
@@ -97,6 +100,20 @@
     "discountType": "نوع الخصم",
     "discountValue": "قيمة الخصم",
     "noLines": "لا توجد بنود بعد"
+  },
+  "concerns": {
+    "wont_charge": "لا يشحن",
+    "slow_charging": "شحن بطيء",
+    "reduced_range": "انخفاض مدى القيادة",
+    "warning_light": "ضوء تحذير مضاء",
+    "no_power": "لا تعمل / لا تبدأ التشغيل",
+    "software": "مشكلة برمجيات / نظام المعلومات",
+    "braking": "مشكلة في الفرامل",
+    "noise": "صوت غير معتاد",
+    "ac_heating": "التكييف أو التدفئة",
+    "suspension": "التعليق / التوجيه",
+    "tires": "الإطارات / الجنوط",
+    "body": "الهيكل / الخارجية"
   },
   "status": {
     "appointment": "موعد",
