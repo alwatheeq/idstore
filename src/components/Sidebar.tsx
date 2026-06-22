@@ -78,7 +78,7 @@ export function Sidebar() {
       className="sticky top-0 flex h-screen w-60 shrink-0 flex-col gap-1 border-e bg-surface p-4"
     >
       <div className="mb-4 px-2 py-3">
-        <BrandLogo className="w-40 text-ink" />
+        <BrandLogo />
       </div>
 
       {items.map((it) => (

@@ -11,7 +11,7 @@ export function PortalLayout() {
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-line bg-paper/80 px-6 py-3 backdrop-blur-md">
         <Link to="/portal" className="flex items-center">
-          <BrandLogo className="w-28 text-ink" />
+          <BrandLogo />
         </Link>
         <div className="flex items-center gap-3">
           <LanguageToggle />

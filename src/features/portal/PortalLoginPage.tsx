@@ -51,7 +51,7 @@ export function PortalLoginPage() {
         className="card relative z-10 w-full max-w-sm animate-fade-up space-y-7 p-8"
       >
         <div className="space-y-2 text-center">
-          <BrandLogo className="mx-auto w-56 text-ink" />
+          <BrandLogo className="mx-auto" />
           <p className="micro">{t("portal.title")}</p>
         </div>
 
