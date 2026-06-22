@@ -53,6 +53,13 @@ const icons = {
       <path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2" />
     </>
   ),
+  inventory: icon(
+    <>
+      <path d="M3 8l9-4 9 4-9 4-9-4z" />
+      <path d="M3 8v8l9 4 9-4V8" />
+      <path d="M12 12v8" />
+    </>
+  ),
   settings: icon(
     <>
       <circle cx="12" cy="12" r="3" />
@@ -67,6 +74,7 @@ const items = [
   { to: "/customers", key: "customers", end: false },
   { to: "/invoices", key: "invoices", end: false },
   { to: "/software", key: "software", end: false },
+  { to: "/inventory", key: "inventory", end: false },
   { to: "/settings", key: "settings", end: false },
 ] as const;
 

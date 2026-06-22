@@ -11,6 +11,9 @@ import { CustomerDetailPage } from "@/pages/CustomerDetailPage";
 import { CustomerFormPage } from "@/pages/CustomerFormPage";
 import { VehicleDetailPage } from "@/pages/VehicleDetailPage";
 import { SoftwarePage } from "@/pages/SoftwarePage";
+import { InventoryPage } from "@/pages/InventoryPage";
+import { ItemDetailPage } from "@/pages/ItemDetailPage";
+import { SuppliersPage } from "@/pages/SuppliersPage";
 import { InvoicesPage } from "@/pages/InvoicesPage";
 import { InvoiceDetailPage } from "@/pages/InvoiceDetailPage";
 import { SettingsPage } from "@/pages/SettingsPage";
@@ -42,6 +45,9 @@ export default function App() {
           <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
           <Route path="/vehicles/:id" element={<VehicleDetailPage />} />
           <Route path="/software" element={<SoftwarePage />} />
+          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/inventory/:id" element={<ItemDetailPage />} />
+          <Route path="/suppliers" element={<SuppliersPage />} />
           <Route path="/invoices" element={<InvoicesPage />} />
           <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
