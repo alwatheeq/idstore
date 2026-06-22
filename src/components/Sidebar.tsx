@@ -46,6 +46,11 @@ const icons = {
       <path d="M8.5 9h7M8.5 12.5h7" />
     </>
   ),
+  accounting: icon(
+    <>
+      <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+    </>
+  ),
   software: icon(
     <>
       <rect x="4" y="4" width="16" height="16" rx="2" />
@@ -73,6 +78,7 @@ const items = [
   { to: "/orders", key: "orders", end: false },
   { to: "/customers", key: "customers", end: false },
   { to: "/invoices", key: "invoices", end: false },
+  { to: "/accounting", key: "accounting", end: false },
   { to: "/software", key: "software", end: false },
   { to: "/inventory", key: "inventory", end: false },
   { to: "/settings", key: "settings", end: false },
