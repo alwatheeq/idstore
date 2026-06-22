@@ -11,6 +11,13 @@ export function useOrders(status?: OrderStatus) {
 export function useOrder(id: string | undefined) {
   return useQuery({ queryKey: ["order", id], queryFn: () => api.getOrder(id!), enabled: !!id });
 }
+export function useLastOdometer(vehicleId: string | undefined) {
+  return useQuery({
+    queryKey: ["lastOdometer", vehicleId],
+    queryFn: () => api.getLastOdometer(vehicleId!),
+    enabled: !!vehicleId,
+  });
+}
 export function useOrdersByVehicle(vehicleId: string | undefined) {
   return useQuery({
     queryKey: ["orders-by-vehicle", vehicleId],

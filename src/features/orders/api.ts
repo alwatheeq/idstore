@@ -30,6 +30,18 @@ export async function listOrdersByVehicle(vehicleId: string): Promise<{ id: stri
   if (error) throw error;
   return data as { id: string; order_number: number }[];
 }
+/** Most recent recorded odometer for a vehicle (from past service orders), or null. */
+export async function getLastOdometer(vehicleId: string): Promise<number | null> {
+  const { data, error } = await supabase.from("service_orders")
+    .select("odometer_at_intake")
+    .eq("vehicle_id", vehicleId)
+    .not("odometer_at_intake", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return (data?.odometer_at_intake as number | null) ?? null;
+}
 export async function createOrder(payload: IntakePayload): Promise<ServiceOrder> {
   const branch_id = await getDefaultBranchId();
   const { data, error } = await supabase.from("service_orders")

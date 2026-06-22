@@ -72,6 +72,7 @@
     "intake": "Intake & inspection",
     "odometer": "Odometer (km)",
     "charge": "Charge %",
+    "previousOdometer": "Previous: {{km}} km",
     "battery": "HV battery state",
     "concerns": "Reported concerns",
     "reportedConcerns": "Reported concerns",

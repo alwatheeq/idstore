@@ -16,6 +16,10 @@ vi.mock("@/features/customers/hooks", () => ({
   useVehicles: vi.fn(() => ({ data: [] })),
 }));
 
+vi.mock("@/features/orders/hooks", () => ({
+  useLastOdometer: vi.fn(() => ({ data: null })),
+}));
+
 const wrap = (ui: React.ReactNode) =>
   render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
 

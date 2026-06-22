@@ -7,6 +7,7 @@ import { TextField } from "@/components/ui/TextField";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { ConcernsField } from "./ConcernsField";
+import { useLastOdometer } from "./hooks";
 import { useCustomers, useVehicles } from "@/features/customers/hooks";
 
 type Props = { submitting?: boolean; onSubmit: (p: IntakePayload) => void; onCancel: () => void };
@@ -36,8 +37,15 @@ export function IntakeForm({ submitting, onSubmit, onCancel }: Props) {
   const concernKeys = (watch("concerns") ?? []).map((c) => c.key);
 
   const customerId = watch("customer_id");
+  const vehicleId = watch("vehicle_id");
   const { data: customers } = useCustomers();
   const { data: vehicles } = useVehicles(customerId || undefined);
+  const { data: lastOdometer } = useLastOdometer(vehicleId || undefined);
+  // Previous reading = latest from this vehicle's service history, else the
+  // vehicle's stored odometer. Shown above the field so the new reading can be
+  // sanity-checked (and tapped to prefill).
+  const prevOdometer =
+    lastOdometer ?? (vehicles ?? []).find((v) => v.id === vehicleId)?.current_odometer ?? null;
 
   // Reset vehicle selection whenever the customer changes so a stale vehicle_id
   // from the previous customer cannot be submitted with the new customer.
@@ -73,12 +81,23 @@ export function IntakeForm({ submitting, onSubmit, onCancel }: Props) {
         error={errors.vehicle_id?.message}
       />
       <div className="grid sm:grid-cols-2 gap-4">
-        <TextField
-          label={t("orders.odometer")}
-          inputMode="numeric"
-          {...register("odometer_at_intake")}
-          error={errors.odometer_at_intake?.message}
-        />
+        <div className="space-y-1.5">
+          {prevOdometer != null && (
+            <button
+              type="button"
+              onClick={() => setValue("odometer_at_intake", String(prevOdometer))}
+              className="num text-xs font-medium text-volt-deep transition-colors hover:underline"
+            >
+              {t("orders.previousOdometer", { km: prevOdometer.toLocaleString() })}
+            </button>
+          )}
+          <TextField
+            label={t("orders.odometer")}
+            inputMode="numeric"
+            {...register("odometer_at_intake")}
+            error={errors.odometer_at_intake?.message}
+          />
+        </div>
         <TextField
           label={t("orders.charge")}
           inputMode="numeric"
