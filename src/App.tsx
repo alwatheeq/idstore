@@ -18,6 +18,7 @@ import { PurchaseOrdersPage } from "@/pages/PurchaseOrdersPage";
 import { PurchaseOrderDetailPage } from "@/pages/PurchaseOrderDetailPage";
 import { InvoicesPage } from "@/pages/InvoicesPage";
 import { InvoiceDetailPage } from "@/pages/InvoiceDetailPage";
+import { AccountingPage } from "@/pages/AccountingPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { PortalLoginPage } from "@/features/portal/PortalLoginPage";
 import { PortalLayout } from "@/features/portal/PortalLayout";
@@ -54,6 +55,7 @@ export default function App() {
           <Route path="/purchase-orders/:id" element={<PurchaseOrderDetailPage />} />
           <Route path="/invoices" element={<InvoicesPage />} />
           <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+          <Route path="/accounting" element={<AccountingPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>

@@ -8,6 +8,7 @@
     "invoices": "الفواتير",
     "software": "البرمجيات",
     "inventory": "المخزون",
+    "accounting": "المحاسبة",
     "settings": "الإعدادات"
   },
   "settings": {
@@ -264,6 +265,34 @@
     "noHistory": "لا توجد تحديثات برمجية مسجّلة بعد",
     "allUpToDate": "جميع المركبات محدّثة",
     "vehicleNotFound": "المركبة غير موجودة"
+  },
+  "accounting": {
+    "title": "المحاسبة",
+    "eyebrow": "المالية",
+    "period": {
+      "thisMonth": "هذا الشهر",
+      "lastMonth": "الشهر الماضي",
+      "thisYear": "هذه السنة",
+      "custom": "مخصّص",
+      "from": "من",
+      "to": "إلى"
+    },
+    "consolidated": "موحّد — كل الفروع",
+    "revenue": "الإيرادات (نقدًا)",
+    "receivables": "الذمم المستحقة",
+    "byMethod": "المدفوعات حسب الطريقة",
+    "purchases": "المشتريات (نقدًا)",
+    "count": "العدد",
+    "balanceDue": "الرصيد المستحق",
+    "invoiceNo": "فاتورة",
+    "poNo": "أمر شراء",
+    "receivedOn": "تاريخ الاستلام",
+    "noPayments": "لا توجد مدفوعات في هذه الفترة",
+    "noReceivables": "لا توجد ذمم مستحقة — جميع الفواتير مسدّدة",
+    "noPurchases": "لا توجد مشتريات مستلمة في هذه الفترة",
+    "loadError": "تعذّر تحميل بيانات المحاسبة. حاول مرة أخرى.",
+    "countTimes": "×{{count}}",
+    "method": { "cash": "نقدًا", "card": "بطاقة", "transfer": "تحويل" }
   },
   "portal": {
     "title": "بوابتي", "login": "تسجيل الدخول", "phone": "رقم الهاتف", "pin": "الرمز السري",
