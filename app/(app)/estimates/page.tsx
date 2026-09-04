@@ -1,0 +1,87 @@
+import Link from "next/link";
+import { BadgeCheck, Calculator, Clock3, FileCheck2, FileText, Plus } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
+import { MetricStrip } from "@/components/metric-strip";
+import { PageHeader } from "@/components/page-header";
+import { RecordFeedback } from "@/components/record-feedback";
+import { StatusPill } from "@/components/status-pill";
+import { getCurrentStaff } from "@/lib/auth/session";
+import type { Json } from "@/lib/database.types";
+import { createClient } from "@/lib/supabase/server";
+import { addEstimateLine, createEstimate, recordEstimateDecision, removeEstimateLine, sendEstimate } from "./actions";
+
+type PageQuery = { new?: string; order?: string; estimate?: string; created?: string; error?: string };
+type PillTone = "blue" | "green" | "amber" | "red" | "gray";
+const money = new Intl.NumberFormat("en-JO", { style: "currency", currency: "JOD" });
+const dateTime = new Intl.DateTimeFormat("en-JO", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Amman" });
+function tone(status: string): PillTone { if (status === "approved") return "green"; if (["sent", "partially_approved", "draft"].includes(status)) return "amber"; if (status === "declined") return "red"; if (["expired", "superseded"].includes(status)) return "gray"; return "blue"; }
+function findingCheck(value: Json) { return value && typeof value === "object" && !Array.isArray(value) && typeof value.check === "string" ? value.check : "Inspection finding"; }
+
+export default async function EstimatesPage({ searchParams }: { searchParams: Promise<PageQuery> }) {
+  const query = await searchParams;
+  const staff = await getCurrentStaff();
+  const supabase = await createClient();
+  const [{ data: orders }, { data: estimates, error }, { data: findings }] = await Promise.all([
+    supabase.from("repair_orders").select("id, ro_number, status, branch:branches(code, city), customer:customers(display_name), vehicle:vehicles(vin, registration_no, model:vehicle_models(name))").eq("organization_id", staff.organizationId).not("status", "in", '("delivered","closed","cancelled")').order("opened_at", { ascending: false }),
+    supabase.from("estimate_versions").select("id, repair_order_id, version_no, status, currency, subtotal, discount_total, tax_total, grand_total, document_hash, expires_at, sent_at, created_at, repair_order:repair_orders(ro_number, status, branch:branches(code, city), customer:customers(display_name), vehicle:vehicles(vin, registration_no, model:vehicle_models(name))), estimate_lines(id, line_no, line_type, source_id, description_snapshot, quantity, unit_price, discount_amount, tax_rate, tax_amount, line_total, approval_group), estimate_approvals(id, decision, actor_name, channel, evidence_json, decided_at)").eq("organization_id", staff.organizationId).order("created_at", { ascending: false }),
+    supabase.from("findings").select("id, severity, status, inspection_item:inspection_items(finding_text, customer_text, measurement_json, inspection:inspections(repair_order_id))").eq("organization_id", staff.organizationId).in("status", ["open", "estimated"]).order("created_at"),
+  ]);
+  const activeOrderIds = new Set((estimates ?? []).filter((estimate) => ["draft", "sent", "partially_approved"].includes(estimate.status)).map((estimate) => estimate.repair_order_id));
+  const eligibleOrders = (orders ?? []).filter((order) => ["diagnosis", "approved", "on_hold"].includes(order.status) && !activeOrderIds.has(order.id));
+  const requestedOrderEstimate = estimates?.find((estimate) => estimate.repair_order_id === query.order && ["draft", "sent", "partially_approved"].includes(estimate.status));
+  const selected = estimates?.find((estimate) => estimate.id === query.estimate) ?? requestedOrderEstimate;
+  const selectedOrder = orders?.find((order) => order.id === query.order);
+  const showNewForm = (query.new === "1" || Boolean(query.order && !requestedOrderEstimate)) && eligibleOrders.length > 0;
+  const selectedFindings = selected ? (findings ?? []).filter((finding) => finding.inspection_item?.inspection?.repair_order_id === selected.repair_order_id) : [];
+  const drafts = (estimates ?? []).filter((estimate) => estimate.status === "draft");
+  const awaiting = (estimates ?? []).filter((estimate) => ["sent", "partially_approved"].includes(estimate.status));
+  const approved = (estimates ?? []).filter((estimate) => estimate.status === "approved");
+  const approvedValue = approved.reduce((total, estimate) => total + Number(estimate.grand_total), 0);
+
+  return <>
+    <PageHeader eyebrow="Customer authorization" title="Estimates & approvals" description="Price findings, lock the customer offer and preserve the decision evidence before repair begins.">
+      {eligibleOrders.length ? <Link className="button primary" href="/estimates?new=1#new-estimate"><Plus /> New estimate</Link> : null}
+    </PageHeader>
+    <RecordFeedback created={query.created} error={query.error ?? (error ? "Estimate records could not be loaded." : undefined)} />
+
+    {showNewForm ? <section className="panel operation-form" id="new-estimate"><div className="panel-header"><div><div className="panel-title">Create draft estimate</div><div className="panel-subtitle">Creates the next version for a repair order with no active offer.</div></div><Link className="panel-link" href="/estimates">Cancel</Link></div><form action={createEstimate} className="form-grid panel-body"><div className="form-field form-span-2"><label htmlFor="estimate-order">Repair order</label><select id="estimate-order" name="repairOrderId" defaultValue={selectedOrder?.id ?? ""} required><option value="">Select repair order</option>{eligibleOrders.map((order) => <option key={order.id} value={order.id}>{order.ro_number} · {order.vehicle?.model?.name ?? "Volkswagen ID"} {order.vehicle?.registration_no ?? ""} · {order.customer?.display_name} · {order.branch?.city}</option>)}</select></div><div className="form-actions form-span-2"><Link className="button" href="/estimates">Cancel</Link><button className="button primary" type="submit">Create draft</button></div></form></section> : null}
+
+    <MetricStrip metrics={[
+      { label: "Draft estimates", value: String(drafts.length), note: "Still editable", icon: FileText },
+      { label: "Awaiting decision", value: String(awaiting.length), note: "Sent and locked", noteTone: awaiting.length ? "warn" : "good", icon: Clock3 },
+      { label: "Approved value", value: money.format(approvedValue), note: `${approved.length} approved offer${approved.length === 1 ? "" : "s"}`, noteTone: approved.length ? "good" : undefined, icon: BadgeCheck },
+      { label: "Declined", value: String((estimates ?? []).filter((estimate) => estimate.status === "declined").length), note: "Revision may be required", icon: FileCheck2 },
+    ]} />
+
+    {selected ? <section className="estimate-workspace" id="estimate-workspace">
+      <div className="estimate-context"><div><span>{selected.repair_order?.branch?.city} · {selected.repair_order?.ro_number} · Version {selected.version_no}</span><h2>{selected.repair_order?.customer?.display_name}</h2><p>{selected.repair_order?.vehicle?.model?.name ?? "Volkswagen ID"} · {selected.repair_order?.vehicle?.registration_no ?? selected.repair_order?.vehicle?.vin}</p></div><StatusPill label={selected.status} tone={tone(selected.status)} /></div>
+      <div className="estimate-columns">
+        <div className="stack">
+          {selected.status === "draft" ? <section className="panel operation-form"><div className="panel-header"><div><div className="panel-title">Add priced work</div><div className="panel-subtitle">Link inspection findings when the line resolves a recorded condition.</div></div></div><form action={addEstimateLine} className="form-grid panel-body"><input type="hidden" name="estimateId" value={selected.id} />
+            <div className="form-field"><label htmlFor="estimate-line-type">Line type</label><select id="estimate-line-type" name="lineType" defaultValue="labor"><option value="labor">Labor</option><option value="part">Part</option><option value="fee">Fee</option><option value="warranty">Warranty</option><option value="goodwill">Goodwill</option><option value="text">Text</option></select></div>
+            <div className="form-field"><label htmlFor="estimate-group">Approval group</label><input id="estimate-group" name="approvalGroup" defaultValue="General" /></div>
+            <div className="form-field form-span-2"><label htmlFor="estimate-description">Description</label><input id="estimate-description" name="description" required /></div>
+            <div className="form-field form-span-2"><label htmlFor="estimate-finding">Inspection finding</label><select id="estimate-finding" name="findingId" defaultValue=""><option value="">Not linked to a finding</option>{selectedFindings.map((finding) => <option key={finding.id} value={finding.id}>{finding.severity} · {findingCheck(finding.inspection_item?.measurement_json ?? null)} · {finding.inspection_item?.customer_text ?? finding.inspection_item?.finding_text}</option>)}</select></div>
+            <div className="form-field"><label htmlFor="estimate-quantity">Quantity</label><input id="estimate-quantity" name="quantity" type="number" min="0.001" step="0.001" defaultValue="1" required /></div>
+            <div className="form-field"><label htmlFor="estimate-price">Unit price (JOD)</label><input id="estimate-price" name="unitPrice" type="number" min="0" step="0.001" required /></div>
+            <div className="form-field"><label htmlFor="estimate-discount">Discount (JOD)</label><input id="estimate-discount" name="discountAmount" type="number" min="0" step="0.001" defaultValue="0" required /></div>
+            <div className="form-field"><label htmlFor="estimate-tax">Tax rate (%)</label><input id="estimate-tax" name="taxRate" type="number" min="0" max="100" step="0.0001" defaultValue="16" required /></div>
+            <div className="form-actions form-span-2"><button className="button primary" type="submit">Add priced line</button></div>
+          </form></section> : null}
+
+          <section className="panel estimate-sheet"><div className="panel-header"><div><div className="panel-title">Estimate worksheet</div><div className="panel-subtitle">Tax calculated after discount to three decimal places</div></div></div><div className="data-scroll"><table className="data-table estimate-line-table"><thead><tr><th>Line</th><th>Description</th><th>Group</th><th>Qty</th><th className="align-right">Unit</th><th className="align-right">Tax</th><th className="align-right">Total</th><th></th></tr></thead><tbody>{selected.estimate_lines.sort((a, b) => a.line_no - b.line_no).map((line) => <tr key={line.id}><td><div className="cell-main">{line.line_type}</div><div className="cell-sub mono">#{line.line_no}</div></td><td><div className="cell-main">{line.description_snapshot}</div>{line.source_id ? <div className="cell-sub">Linked finding</div> : null}</td><td>{line.approval_group ?? "General"}</td><td className="mono">{Number(line.quantity).toLocaleString()}</td><td className="align-right mono">{money.format(Number(line.unit_price))}</td><td className="align-right"><div className="mono">{money.format(Number(line.tax_amount))}</div><div className="cell-sub">{Number(line.tax_rate)}%</div></td><td className="align-right cell-main mono">{money.format(Number(line.line_total))}</td><td>{selected.status === "draft" ? <form action={removeEstimateLine}><input type="hidden" name="estimateId" value={selected.id} /><input type="hidden" name="lineId" value={line.id} /><button className="button compact" type="submit">Remove</button></form> : null}</td></tr>)}{!selected.estimate_lines.length ? <tr><td colSpan={8}><div className="table-empty">No priced work yet.</div></td></tr> : null}</tbody></table></div></section>
+        </div>
+
+        <aside className="stack">
+          <section className="panel estimate-total"><div className="estimate-total-head"><Calculator /><span>Customer offer</span></div><dl><div><dt>Subtotal</dt><dd>{money.format(Number(selected.subtotal))}</dd></div><div><dt>Discount</dt><dd>− {money.format(Number(selected.discount_total))}</dd></div><div><dt>Tax</dt><dd>{money.format(Number(selected.tax_total))}</dd></div><div className="grand-total"><dt>Total</dt><dd>{money.format(Number(selected.grand_total))}</dd></div></dl>{selected.status === "draft" ? <form action={sendEstimate} className="send-estimate-form"><input type="hidden" name="estimateId" value={selected.id} /><label htmlFor="valid-days">Valid for</label><select id="valid-days" name="validDays" defaultValue="7"><option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select><button className="button dark" type="submit" disabled={!selected.estimate_lines.length}>Send and lock estimate</button></form> : <div className="estimate-lock-note"><FileCheck2 /><span>{selected.sent_at ? `Sent ${dateTime.format(new Date(selected.sent_at))}` : "Estimate locked"}{selected.expires_at ? ` · expires ${dateTime.format(new Date(selected.expires_at))}` : ""}</span></div>}</section>
+
+          {selected.status === "sent" ? <section className="panel decision-card"><div className="panel-header"><div><div className="panel-title">Record customer decision</div><div className="panel-subtitle">Preserve who decided and through which channel.</div></div></div><form action={recordEstimateDecision} className="panel-body"><input type="hidden" name="estimateId" value={selected.id} /><div className="form-field"><label htmlFor="decision-actor">Customer or authorized contact</label><input id="decision-actor" name="actorName" required /></div><div className="form-field"><label htmlFor="decision-channel">Evidence channel</label><select id="decision-channel" name="channel" defaultValue="phone"><option value="phone">Phone</option><option value="whatsapp">WhatsApp</option><option value="email">Email</option><option value="in_person">In person</option><option value="portal">Customer portal</option></select></div><div className="form-field"><label htmlFor="decision-note">Evidence note</label><textarea id="decision-note" name="evidenceNote" rows={3} placeholder="Reference, time or confirmation details" /></div><div className="decision-actions"><button className="button" name="decision" value="declined" type="submit">Record decline</button><button className="button primary" name="decision" value="approved" type="submit">Record approval</button></div></form></section> : null}
+
+          {selected.estimate_approvals.length ? <section className="panel"><div className="panel-header"><div><div className="panel-title">Decision evidence</div><div className="panel-subtitle">Immutable customer authorization record</div></div></div><div className="approval-ledger">{selected.estimate_approvals.map((approval) => <article key={approval.id}><StatusPill label={approval.decision} tone={tone(approval.decision)} /><strong>{approval.actor_name}</strong><span>{approval.channel.replaceAll("_", " ")} · {dateTime.format(new Date(approval.decided_at))}</span></article>)}</div></section> : null}
+        </aside>
+      </div>
+    </section> : null}
+
+    {!estimates?.length ? <EmptyState icon={FileText} title="No estimates yet" description={orders?.length ? "Create a draft from an active repair order, price the approved work and send it for a recorded customer decision." : "Open a repair order before preparing an estimate."} action={eligibleOrders.length ? <Link className="button primary" href="/estimates?new=1#new-estimate">Create first estimate</Link> : <Link className="button" href="/work-orders?new=1#new-work-order">Open work order</Link>} /> : <section className="panel"><div className="panel-header"><div><div className="panel-title">Estimate ledger</div><div className="panel-subtitle">Versioned customer offers across accessible branches</div></div></div><div className="data-scroll"><table className="data-table estimate-ledger-table"><thead><tr><th>Work order / version</th><th>Customer & vehicle</th><th>Branch</th><th>Status</th><th>Lines</th><th className="align-right">Total</th><th></th></tr></thead><tbody>{estimates.map((estimate) => <tr key={estimate.id}><td><div className="cell-main mono">{estimate.repair_order?.ro_number}</div><div className="cell-sub">Version {estimate.version_no} · {dateTime.format(new Date(estimate.created_at))}</div></td><td><div className="cell-main">{estimate.repair_order?.customer?.display_name}</div><div className="cell-sub">{estimate.repair_order?.vehicle?.model?.name ?? "Volkswagen ID"} · {estimate.repair_order?.vehicle?.registration_no ?? estimate.repair_order?.vehicle?.vin}</div></td><td>{estimate.repair_order?.branch?.city}</td><td><StatusPill label={estimate.status} tone={tone(estimate.status)} /></td><td className="mono">{estimate.estimate_lines.length}</td><td className="align-right cell-main mono">{money.format(Number(estimate.grand_total))}</td><td><Link className="button compact" href={`/estimates?estimate=${estimate.id}#estimate-workspace`}>Open</Link></td></tr>)}</tbody></table></div></section>}
+  </>;
+}

@@ -87,9 +87,13 @@ Required manual checks:
 12. Invoice line tax is calculated after discount and all document amounts reconcile to three decimals.
 13. Posted invoice identity and commercial fields are immutable, and posting emits one outbox event.
 14. Payments cannot exceed the outstanding balance, and an idempotent retry does not create another allocation.
-15. Dashboard totals reconcile to the operational ledgers for the selected branch scope.
-16. Staff dashboard scope lists only assigned branches and never exposes unassigned-branch signals.
-17. Objects outside the caller's organization path cannot be read or uploaded.
+15. A repair order cannot have two active inspections, and a completed inspection cannot be edited.
+16. A `safety_stop` inspection finding moves the repair order into quarantine.
+17. Estimate totals calculate tax after discount to three decimals, and sent estimates reject line changes.
+18. Recording a customer estimate decision preserves actor/channel evidence and advances the repair order consistently.
+19. Dashboard totals reconcile to the operational ledgers for the selected branch scope.
+20. Staff dashboard scope lists only assigned branches and never exposes unassigned-branch signals.
+21. Objects outside the caller's organization path cannot be read or uploaded.
 
 ## 7. Secrets
 

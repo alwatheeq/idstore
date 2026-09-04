@@ -4609,6 +4609,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_estimate_line: {
+        Args: {
+          p_approval_group: string
+          p_description: string
+          p_discount_amount: number
+          p_estimate_id: string
+          p_finding_id: string | null
+          p_line_type: string
+          p_quantity: number
+          p_tax_rate: number
+          p_unit_price: number
+        }
+        Returns: Database["public"]["Tables"]["estimate_lines"]["Row"]
+        SetofOptions: { from: "*"; to: "estimate_lines"; isOneToOne: true; isSetofReturn: false }
+      }
       add_invoice_line: {
         Args: {
           p_description: string
@@ -4644,6 +4659,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      add_inspection_item: {
+        Args: {
+          p_check_label: string
+          p_customer_text: string
+          p_finding_text: string
+          p_inspection_id: string
+          p_measurement: string
+          p_result: string
+          p_severity: string
+        }
+        Returns: Database["public"]["Tables"]["inspection_items"]["Row"]
+        SetofOptions: { from: "*"; to: "inspection_items"; isOneToOne: true; isSetofReturn: false }
       }
       add_purchase_order_line: {
         Args: {
@@ -4696,6 +4724,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      complete_inspection: {
+        Args: { p_inspection_id: string }
+        Returns: Database["public"]["Tables"]["inspections"]["Row"]
+        SetofOptions: { from: "*"; to: "inspections"; isOneToOne: true; isSetofReturn: false }
+      }
       create_appointment: {
         Args: {
           p_branch_id: string
@@ -4708,6 +4741,16 @@ export type Database = {
           p_vehicle_id: string
         }
         Returns: string
+      }
+      create_estimate_from_repair_order: {
+        Args: { p_repair_order_id: string }
+        Returns: Database["public"]["Tables"]["estimate_versions"]["Row"]
+        SetofOptions: { from: "*"; to: "estimate_versions"; isOneToOne: true; isSetofReturn: false }
+      }
+      create_inspection: {
+        Args: { p_repair_order_id: string }
+        Returns: Database["public"]["Tables"]["inspections"]["Row"]
+        SetofOptions: { from: "*"; to: "inspections"; isOneToOne: true; isSetofReturn: false }
       }
       create_branch: {
         Args: {
@@ -5169,6 +5212,27 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      record_estimate_decision: {
+        Args: {
+          p_actor_name: string
+          p_channel: string
+          p_decision: string
+          p_estimate_id: string
+          p_evidence_note: string
+        }
+        Returns: Database["public"]["Tables"]["estimate_versions"]["Row"]
+        SetofOptions: { from: "*"; to: "estimate_versions"; isOneToOne: true; isSetofReturn: false }
+      }
+      remove_estimate_line: {
+        Args: { p_estimate_line_id: string }
+        Returns: Database["public"]["Tables"]["estimate_versions"]["Row"]
+        SetofOptions: { from: "*"; to: "estimate_versions"; isOneToOne: true; isSetofReturn: false }
+      }
+      remove_inspection_item: {
+        Args: { p_inspection_item_id: string }
+        Returns: Database["public"]["Tables"]["inspections"]["Row"]
+        SetofOptions: { from: "*"; to: "inspections"; isOneToOne: true; isSetofReturn: false }
+      }
       remove_invoice_line: {
         Args: { p_expected_version: number; p_invoice_line_id: string }
         Returns: {
@@ -5231,6 +5295,11 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      send_estimate: {
+        Args: { p_estimate_id: string; p_valid_days: number }
+        Returns: Database["public"]["Tables"]["estimate_versions"]["Row"]
+        SetofOptions: { from: "*"; to: "estimate_versions"; isOneToOne: true; isSetofReturn: false }
       }
       start_job: {
         Args: { p_expected_version: number; p_job_id: string }

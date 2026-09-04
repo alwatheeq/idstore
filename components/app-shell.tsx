@@ -5,13 +5,15 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Bell, Boxes, Building2, CalendarDays, CarFront, CircleDollarSign,
-  ClipboardList, Gauge, Menu, ShieldCheck, ShoppingCart, Users, UserRoundCog, X,
+  ClipboardCheck, ClipboardList, FileText, Gauge, Menu, ShieldCheck, ShoppingCart, Users, UserRoundCog, X,
 } from "lucide-react";
 import type { CurrentStaff } from "@/lib/auth/session";
 
 const navigation = [
   { href: "/dashboard", label: "Control room", icon: Gauge },
   { href: "/work-orders", label: "Work orders", icon: ClipboardList },
+  { href: "/inspections", label: "Inspections", icon: ClipboardCheck },
+  { href: "/estimates", label: "Estimates", icon: FileText },
   { href: "/appointments", label: "Appointments", icon: CalendarDays },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/vehicles", label: "Vehicles", icon: CarFront },

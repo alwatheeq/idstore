@@ -104,7 +104,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const exceptions = [
     riskOrders.length ? { icon: AlertTriangle, title: `${riskOrders.length} safety-restricted work order${riskOrders.length === 1 ? "" : "s"}`, copy: "Quarantine or restricted handling requires workshop attention.", href: "/work-orders", tone: "red" } : null,
     overdueOrders.length ? { icon: Clock3, title: `${overdueOrders.length} promised handover${overdueOrders.length === 1 ? " is" : "s are"} overdue`, copy: "Review the workshop sequence and update the customer.", href: "/work-orders", tone: "amber" } : null,
-    awaitingApproval.length ? { icon: ClipboardCheck, title: `${awaitingApproval.length} order${awaitingApproval.length === 1 ? "" : "s"} awaiting approval`, copy: "Customer approval is holding the repair path.", href: "/work-orders", tone: "amber" } : null,
+    awaitingApproval.length ? { icon: ClipboardCheck, title: `${awaitingApproval.length} order${awaitingApproval.length === 1 ? "" : "s"} awaiting approval`, copy: "Customer approval is holding the repair path.", href: "/estimates", tone: "amber" } : null,
     blockedJobs.length || unassignedJobs.length ? { icon: Wrench, title: `${blockedJobs.length} blocked · ${unassignedJobs.length} unassigned`, copy: "Workshop jobs need recovery or dispatch.", href: "/work-orders", tone: "amber" } : null,
     unavailableParts.length ? { icon: Boxes, title: `${unavailableParts.length} catalog part${unavailableParts.length === 1 ? "" : "s"} unavailable`, copy: "No free stock exists in the selected scope.", href: "/inventory", tone: "amber" } : null,
   ].filter((exception): exception is NonNullable<typeof exception> => Boolean(exception));
