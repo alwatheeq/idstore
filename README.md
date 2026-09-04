@@ -28,7 +28,7 @@ npm install
 npm run dev
 ```
 
-Without Supabase environment variables, the interface runs as a local operational prototype. Once a project is connected, set the two public values documented in `.env.example`; the request proxy then enforces authenticated sessions.
+Set the two public Supabase values documented in `.env.example`; the request proxy then enforces authenticated sessions. The interface shell can still be viewed without a connected project, but live operations require Supabase.
 
 For a local database, install Docker Desktop and use the Supabase CLI:
 
@@ -60,4 +60,6 @@ The local `.env.local` contains only the public project URL and publishable key 
 
 ## Current status
 
-The web application and versioned database migrations are implemented. The development Supabase project is live, migrations have been applied and transaction-tested, and database types have been generated. GitHub synchronization still requires valid GitHub CLI authentication.
+The development Supabase project is live and all five versioned migrations have been applied. Mobile-number/6-digit-PIN authentication, the multi-branch shell, branch setup, customer creation, vehicle registration and work-order intake now read and write live Supabase data through typed, permission-checked commands. The full create flow has been transaction-tested against the connected project.
+
+Appointments, staff administration, workshop execution details, inventory, purchasing, billing and dashboard analytics still use prototype presentation data and are the next implementation phases. The live database schema already covers those domains. GitHub synchronization still requires valid GitHub CLI authentication and a configured repository remote.

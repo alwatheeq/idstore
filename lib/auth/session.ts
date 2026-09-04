@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 export type CurrentStaff = {
   displayName: string;
   role: "admin" | "staff";
+  organizationId: string;
 };
 
 export const getCurrentStaff = cache(async (): Promise<CurrentStaff> => {
@@ -24,7 +25,7 @@ export const getCurrentStaff = cache(async (): Promise<CurrentStaff> => {
       .maybeSingle(),
     supabase
       .from("memberships")
-      .select("role")
+      .select("role, organization_id")
       .eq("user_id", user.id)
       .eq("status", "active")
       .limit(1)
@@ -36,5 +37,6 @@ export const getCurrentStaff = cache(async (): Promise<CurrentStaff> => {
   return {
     displayName: profile.display_name,
     role: membership.role,
+    organizationId: membership.organization_id,
   };
 });

@@ -1,10 +1,67 @@
-import { Plus } from "lucide-react";
+import Link from "next/link";
+import { Building2, Plus } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { RecordFeedback } from "@/components/record-feedback";
 import { StatusPill } from "@/components/status-pill";
-import { branches } from "@/lib/demo-data";
+import { getCurrentStaff } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/server";
+import { createBranch } from "./actions";
 
-export default function BranchesPage() {
-  return <><PageHeader eyebrow="Network administration" title="Branches" description="Configure cities, warehouses, service capabilities, invoice sequences, hours and branch access."><button className="button primary"><Plus /> Add branch</button></PageHeader>
-    <div className="cards-grid">{branches.map((branch, index) => <article className={`branch-card ${index === 0 ? "selected" : ""}`} key={branch.id}><div className="branch-card-head"><div><div className="branch-code">{branch.code}</div><h3>{branch.displayName}</h3><p>{branch.city}, Jordan</p></div><StatusPill label={branch.hvCapable ? "HV capable" : "General service"} tone={branch.hvCapable ? "green" : "gray"} /></div><div className="branch-stats"><div><span>Active jobs</span><strong className="mono">{branch.activeJobs}</strong></div><div><span>Bay utilization</span><strong className="mono">{branch.utilization}%</strong></div></div></article>)}</div>
-    <section className="panel" style={{ marginTop: 20 }}><div className="panel-header"><div><div className="panel-title">Network configuration</div><div className="panel-subtitle">Shared policies with branch-specific operational controls</div></div></div><div className="data-scroll"><table className="data-table"><thead><tr><th>Branch</th><th>Warehouse</th><th>Invoice prefix</th><th>HV service</th><th>Battery quarantine</th><th>Status</th></tr></thead><tbody>{branches.map((branch) => <tr key={branch.id}><td><div className="cell-main">{branch.displayName}</div><div className="cell-sub">{branch.code}</div></td><td>{branch.city} Main</td><td className="mono">{branch.code.split("-")[0]}-INV</td><td><StatusPill label={branch.hvCapable ? "enabled" : "disabled"} tone={branch.hvCapable ? "green" : "gray"} /></td><td>{branch.hvCapable ? "Dedicated zone" : "Transfer to Amman"}</td><td><StatusPill label="active" tone="green" /></td></tr>)}</tbody></table></div></section></>;
+type PageQuery = { new?: string; created?: string; error?: string };
+
+export default async function BranchesPage({ searchParams }: { searchParams: Promise<PageQuery> }) {
+  const query = await searchParams;
+  const staff = await getCurrentStaff();
+  const supabase = await createClient();
+  const [{ data: branches, error: branchError }, { data: activeOrders }] = await Promise.all([
+    supabase
+      .from("branches")
+      .select("id, code, legal_name, display_name, city, phone, email, status, branch_capabilities(capability_code, status), warehouses(name)")
+      .eq("organization_id", staff.organizationId)
+      .order("city"),
+    supabase
+      .from("repair_orders")
+      .select("branch_id")
+      .eq("organization_id", staff.organizationId)
+      .not("status", "in", '("delivered","closed","cancelled")'),
+  ]);
+
+  const orderCounts = new Map<string, number>();
+  for (const order of activeOrders ?? []) orderCounts.set(order.branch_id, (orderCounts.get(order.branch_id) ?? 0) + 1);
+  const showForm = staff.role === "admin" && (query.new === "1" || Boolean(query.error));
+
+  return <>
+    <PageHeader eyebrow="Network administration" title="Branches" description="Configure cities, warehouses, service capabilities, invoice sequences, hours and branch access.">
+      {staff.role === "admin" ? <Link className="button primary" href="/branches?new=1#new-branch"><Plus /> Add branch</Link> : null}
+    </PageHeader>
+    <RecordFeedback created={query.created} error={query.error ?? (branchError ? "Branch records could not be loaded." : undefined)} />
+
+    {showForm ? <section className="panel operation-form" id="new-branch">
+      <div className="panel-header"><div><div className="panel-title">Open a service branch</div><div className="panel-subtitle">Creates the branch and its main warehouse in one transaction.</div></div><Link className="panel-link" href="/branches">Cancel</Link></div>
+      <form action={createBranch} className="form-grid panel-body">
+        <div className="form-field"><label htmlFor="branch-code">Branch code</label><input id="branch-code" name="code" placeholder="AMM-01" pattern="[A-Za-z0-9][A-Za-z0-9-]{1,15}" required /></div>
+        <div className="form-field"><label htmlFor="branch-city">City</label><input id="branch-city" name="city" placeholder="Amman" required /></div>
+        <div className="form-field"><label htmlFor="branch-display-name">Display name</label><input id="branch-display-name" name="displayName" placeholder="Amman Service Hub" required /></div>
+        <div className="form-field"><label htmlFor="branch-legal-name">Legal name</label><input id="branch-legal-name" name="legalName" placeholder="IDstore Amman Service Center" required /></div>
+        <div className="form-field form-span-2"><label htmlFor="branch-address">Street address</label><input id="branch-address" name="addressLine1" autoComplete="street-address" /></div>
+        <div className="form-field"><label htmlFor="branch-phone">Branch phone</label><input id="branch-phone" name="phone" type="tel" autoComplete="tel" /></div>
+        <div className="form-field"><label htmlFor="branch-email">Branch email</label><input id="branch-email" name="email" type="email" autoComplete="email" /></div>
+        <div className="form-field"><label htmlFor="branch-tax">Tax registration</label><input id="branch-tax" name="taxRegistration" /></div>
+        <label className="check-field"><input name="hvCapable" type="checkbox" /> <span><strong>High-voltage service</strong><small>Create the branch with an active HV service capability.</small></span></label>
+        <div className="form-actions form-span-2"><Link className="button" href="/branches">Cancel</Link><button className="button primary" type="submit">Create branch</button></div>
+      </form>
+    </section> : null}
+
+    {!branches?.length ? <EmptyState icon={Building2} title="No branches yet" description="Create the first service center before adding customers, vehicles or work orders." action={staff.role === "admin" ? <Link className="button primary" href="/branches?new=1#new-branch">Create first branch</Link> : undefined} /> : <>
+      <div className="cards-grid">{branches.map((branch, index) => {
+        const hvCapable = branch.branch_capabilities.some((capability) => capability.capability_code === "HV_SERVICE" && capability.status === "active");
+        return <article className={`branch-card ${index === 0 ? "selected" : ""}`} key={branch.id}><div className="branch-card-head"><div><div className="branch-code">{branch.code}</div><h3>{branch.display_name}</h3><p>{branch.city}, Jordan</p></div><StatusPill label={hvCapable ? "HV capable" : "General service"} tone={hvCapable ? "green" : "gray"} /></div><div className="branch-stats"><div><span>Active jobs</span><strong className="mono">{orderCounts.get(branch.id) ?? 0}</strong></div><div><span>Status</span><strong style={{ fontSize: 14 }}>{branch.status}</strong></div></div></article>;
+      })}</div>
+      <section className="panel" style={{ marginTop: 20 }}><div className="panel-header"><div><div className="panel-title">Network configuration</div><div className="panel-subtitle">Live branch records and warehouse readiness</div></div></div><div className="data-scroll"><table className="data-table"><thead><tr><th>Branch</th><th>Warehouse</th><th>Phone</th><th>HV service</th><th>Status</th></tr></thead><tbody>{branches.map((branch) => {
+        const hvCapable = branch.branch_capabilities.some((capability) => capability.capability_code === "HV_SERVICE" && capability.status === "active");
+        return <tr key={branch.id}><td><div className="cell-main">{branch.display_name}</div><div className="cell-sub">{branch.code} · {branch.legal_name}</div></td><td>{branch.warehouses[0]?.name ?? "Not configured"}</td><td className="mono">{branch.phone ?? "—"}</td><td><StatusPill label={hvCapable ? "enabled" : "disabled"} tone={hvCapable ? "green" : "gray"} /></td><td><StatusPill label={branch.status} tone={branch.status === "active" ? "green" : "gray"} /></td></tr>;
+      })}</tbody></table></div></section>
+    </>}
+  </>;
 }

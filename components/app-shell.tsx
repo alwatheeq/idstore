@@ -8,7 +8,6 @@ import {
   ClipboardList, Gauge, Menu, ShieldCheck, Users, UserRoundCog, X,
 } from "lucide-react";
 import type { CurrentStaff } from "@/lib/auth/session";
-import { branches } from "@/lib/demo-data";
 
 const navigation = [
   { href: "/dashboard", label: "Control room", icon: Gauge },
@@ -29,7 +28,9 @@ function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 }
 
-export function AppShell({ children, staff }: { children: React.ReactNode; staff: CurrentStaff }) {
+type ShellBranch = { id: string; code: string; city: string; displayName: string };
+
+export function AppShell({ children, staff, branches }: { children: React.ReactNode; staff: CurrentStaff; branches: ShellBranch[] }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isArabic, setIsArabic] = useState(false);
@@ -60,7 +61,7 @@ export function AppShell({ children, staff }: { children: React.ReactNode; staff
       <main className="app-main">
         <header className="topbar">
           <button className="icon-button mobile-menu" aria-label="Toggle menu" onClick={() => setMenuOpen((value) => !value)}>{menuOpen ? <X size={17} /> : <Menu size={17} />}</button>
-          <div className="branch-select"><label htmlFor="branch">Operating branch</label><select id="branch" defaultValue="all"><option value="all">All branches</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.city} · {branch.code}</option>)}</select></div>
+          <div className="branch-select"><label htmlFor="branch">Operating branch</label><select id="branch" defaultValue="all"><option value="all">{branches.length ? "All branches" : "No branches configured"}</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.city} · {branch.code}</option>)}</select></div>
           <div className="topbar-spacer" />
           <button className="icon-button locale-button" onClick={() => setIsArabic((value) => !value)}>{isArabic ? "EN" : "العربية"}</button>
           <button className="icon-button notification" aria-label="Notifications"><Bell size={16} /></button>

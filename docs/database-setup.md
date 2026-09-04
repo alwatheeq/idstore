@@ -20,7 +20,9 @@ The repository migration is also applied through the authenticated Supabase conn
 
 ## 3. Create the first Auth user
 
-Create the initial user through Supabase Auth with a verified email and MFA enrollment. Obtain the user's UUID from Auth administration. Do not put the UUID in a migration or commit it to Git.
+Internal users sign in with an E.164 mobile number and a six-digit PIN. Until a dedicated phone-auth provider is introduced, the server maps the normalized number to an internal Auth email alias in the form `<digits>@mobile.idstore.invalid` and uses the PIN as the Auth password. Create that alias in Supabase Auth, mark it verified, set the six-digit PIN, and obtain the user's UUID from Auth administration. Never put a mobile number, PIN or Auth UUID in a migration or commit it to Git.
+
+Six-digit PINs are low entropy. Before production rollout, add rate limiting and a stronger second factor or replace this bridge with verified phone OTP authentication.
 
 ## 4. Bootstrap the organization and first Admin
 
@@ -64,7 +66,7 @@ Integration payloads are server-only. Do not grant browser access to that bucket
 
 ## 6. Verification
 
-Execute `supabase/tests/schema_verification.sql` against the linked project. Then run both Supabase advisors and resolve every security finding before application rollout.
+Execute `supabase/tests/schema_verification.sql` against the linked project. Then run both Supabase advisors and review every finding before application rollout. The authenticated `SECURITY DEFINER` command functions are intentional API boundaries: each must retain explicit in-function authorization checks, a fixed `search_path`, and revoked access for `PUBLIC` and `anon`.
 
 Required manual checks:
 

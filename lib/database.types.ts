@@ -4609,6 +4609,81 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_branch: {
+        Args: {
+          p_address_line1?: string
+          p_city: string
+          p_code: string
+          p_display_name: string
+          p_email?: string
+          p_hv_capable?: boolean
+          p_legal_name: string
+          p_organization_id: string
+          p_phone?: string
+          p_tax_registration?: string
+        }
+        Returns: {
+          address_json: Json
+          admin_area: string | null
+          city: string
+          code: string
+          country_code: string
+          created_at: string
+          currency: string
+          display_name: string
+          email: string | null
+          id: string
+          latitude: number | null
+          legal_name: string
+          longitude: number | null
+          organization_id: string
+          phone: string | null
+          status: string
+          tax_registration: string | null
+          timezone: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "branches"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_customer: {
+        Args: {
+          p_address_line1?: string
+          p_city?: string
+          p_customer_type: string
+          p_display_name: string
+          p_email?: string
+          p_mobile?: string
+          p_notes?: string
+          p_organization_id: string
+          p_preferred_branch_id: string
+          p_tax_number?: string
+        }
+        Returns: {
+          created_at: string
+          customer_type: string
+          display_name: string
+          id: string
+          legal_name: string | null
+          notes: string | null
+          organization_id: string
+          preferred_branch_id: string | null
+          preferred_locale: string
+          status: string
+          tax_number: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "customers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_repair_order: {
         Args: {
           p_appointment_id?: string
@@ -4645,6 +4720,42 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "repair_orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_vehicle: {
+        Args: {
+          p_battery_kwh?: number
+          p_branch_id: string
+          p_customer_id: string
+          p_model_id: string
+          p_model_year?: number
+          p_odometer_km?: number
+          p_organization_id: string
+          p_registration_no: string
+          p_trim?: string
+          p_vin: string
+        }
+        Returns: {
+          battery_code: string | null
+          battery_kwh: number | null
+          created_at: string
+          id: string
+          model_id: string | null
+          model_year: number | null
+          organization_id: string
+          registration_country: string | null
+          registration_no: string | null
+          software_version: string | null
+          status: string
+          trim: string | null
+          updated_at: string
+          vin: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "vehicles"
           isOneToOne: true
           isSetofReturn: false
         }
