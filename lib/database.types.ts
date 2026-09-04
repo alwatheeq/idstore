@@ -4609,6 +4609,33 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_purchase_order_line: {
+        Args: {
+          p_part_id: string
+          p_purchase_order_id: string
+          p_quantity: number
+          p_tax_rate: number
+          p_unit_cost: number
+        }
+        Returns: {
+          branch_id: string
+          id: string
+          line_no: number
+          ordered_quantity: number
+          organization_id: string
+          part_id: string
+          purchase_order_id: string
+          received_quantity: number
+          tax_rate: number
+          unit_cost: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "purchase_order_lines"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       assign_job: {
         Args: {
           p_assignment_kind: string
@@ -4783,6 +4810,65 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "parts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_purchase_order: {
+        Args: {
+          p_branch_id: string
+          p_organization_id: string
+          p_part_id: string
+          p_quantity: number
+          p_supplier_id: string
+          p_tax_rate: number
+          p_unit_cost: number
+        }
+        Returns: {
+          branch_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          grand_total: number
+          id: string
+          ordered_at: string | null
+          organization_id: string
+          po_number: string
+          status: string
+          subtotal: number
+          supplier_id: string
+          tax_total: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "purchase_orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_supplier: {
+        Args: {
+          p_email: string
+          p_name: string
+          p_organization_id: string
+          p_phone: string
+          p_tax_number: string
+        }
+        Returns: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          organization_id: string
+          phone: string | null
+          status: string
+          tax_number: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "suppliers"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -4984,6 +5070,36 @@ export type Database = {
         }
         Returns: string
       }
+      receive_purchase_order_line: {
+        Args: {
+          p_destination_bin_id: string
+          p_expiry_date: string | null
+          p_idempotency_key: string
+          p_purchase_order_line_id: string
+          p_quantity: number
+          p_serial_no: string
+          p_supplier_document_no: string
+          p_supplier_lot: string
+        }
+        Returns: {
+          branch_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          purchase_order_id: string
+          receipt_number: string
+          received_at: string
+          received_by: string | null
+          status: string
+          supplier_document_no: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "goods_receipts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       receive_invoice_payment: {
         Args: {
           p_amount: number
@@ -5067,6 +5183,31 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "appointments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      transition_purchase_order: {
+        Args: { p_purchase_order_id: string; p_to_status: string }
+        Returns: {
+          branch_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          grand_total: number
+          id: string
+          ordered_at: string | null
+          organization_id: string
+          po_number: string
+          status: string
+          subtotal: number
+          supplier_id: string
+          tax_total: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "purchase_orders"
           isOneToOne: true
           isSetofReturn: false
         }

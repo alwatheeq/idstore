@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Bell, Boxes, Building2, CalendarDays, CarFront, CircleDollarSign,
-  ClipboardList, Gauge, Menu, ShieldCheck, Users, UserRoundCog, X,
+  ClipboardList, Gauge, Menu, ShieldCheck, ShoppingCart, Users, UserRoundCog, X,
 } from "lucide-react";
 import type { CurrentStaff } from "@/lib/auth/session";
 
@@ -16,6 +16,7 @@ const navigation = [
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/vehicles", label: "Vehicles", icon: CarFront },
   { href: "/inventory", label: "Parts & stock", icon: Boxes },
+  { href: "/purchasing", label: "Purchasing", icon: ShoppingCart },
   { href: "/invoices", label: "Billing", icon: CircleDollarSign },
 ];
 

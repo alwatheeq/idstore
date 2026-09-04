@@ -126,6 +126,16 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
 .appointment-ledger { min-width: 980px; }
 .work-order-ledger { min-width: 1080px; }
 .workshop-job-ledger { min-width: 1180px; }
+.purchase-order-ledger { min-width: 1080px; }
+.receiving-ledger { min-width: 980px; }
+.po-state { display: grid; gap: 8px; min-width: 150px; }
+.po-rail { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; width: 150px; }
+.po-rail span { height: 4px; border-radius: 3px; background: var(--surface-3); }
+.po-rail span.complete { background: var(--blue); }
+.quantity-copy { width: 190px; display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 10px; }
+.quantity-copy strong { color: var(--ink); }
+.receiving-track { width: 190px; height: 7px; margin: 6px 0 4px; overflow: hidden; border-radius: 5px; background: var(--surface-3); }
+.receiving-fill { height: 100%; border-radius: inherit; background: var(--teal); }
 .assign-control { display: flex; align-items: center; gap: 6px; min-width: 240px; }
 .assign-control select { height: 32px; min-width: 150px; border: 1px solid var(--line-strong); border-radius: 8px; padding: 0 28px 0 8px; background: #fff; color: var(--ink); font-size: 10px; }
 .table-empty { padding: 24px 8px; color: var(--muted); text-align: center; font-size: 12px; }

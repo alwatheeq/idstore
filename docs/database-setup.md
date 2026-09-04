@@ -81,7 +81,10 @@ Required manual checks:
 6. Stock movements cannot withdraw more than the available balance.
 7. Only the assigned technician can run a job timer, and job completion closes the timer after its start time.
 8. High-voltage job completion is blocked until its permit is closed or revoked.
-9. Objects outside the caller's organization path cannot be read or uploaded.
+9. Only confirmed purchase orders can be received, and receipts cannot exceed the outstanding quantity.
+10. Serialized receipts require one serial number and quantity one; lot-tracked receipts require a supplier lot.
+11. Retrying a posted goods receipt with the same idempotency key does not duplicate stock.
+12. Objects outside the caller's organization path cannot be read or uploaded.
 
 ## 7. Secrets
 

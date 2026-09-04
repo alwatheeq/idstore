@@ -47,6 +47,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
         <div className="form-field"><label htmlFor="part-number">Part number</label><input className="mono" id="part-number" name="partNumber" required /></div>
         <div className="form-field form-span-2"><label htmlFor="part-description">English description</label><input id="part-description" name="description" required /></div>
         <div className="form-field"><label htmlFor="part-unit">Stock unit</label><select id="part-unit" name="unit" defaultValue="ea"><option value="ea">Each</option><option value="l">Litre</option><option value="kg">Kilogram</option><option value="set">Set</option></select></div>
+        <div className="form-field"><label htmlFor="part-tracking">Traceability</label><select id="part-tracking" name="tracking" defaultValue="none"><option value="none">Standard stock</option><option value="lot">Supplier lot</option><option value="serial">Individual serial</option></select></div>
         <div className="form-field"><label htmlFor="part-price">Sale price (JOD)</label><input id="part-price" name="salePrice" type="number" min="0" step="0.001" required /></div>
         <div className="form-actions form-span-2"><Link className="button" href="/inventory">Cancel</Link><button className="button primary" type="submit">Create part</button></div>
       </form>

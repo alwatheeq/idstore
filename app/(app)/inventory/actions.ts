@@ -13,9 +13,11 @@ export async function createPart(formData: FormData) {
   const partNumber = formText(formData, "partNumber").toUpperCase();
   const description = formText(formData, "description");
   const unit = formText(formData, "unit").toLowerCase();
+  const tracking = formText(formData, "tracking");
   const salePrice = optionalNumber(formData, "salePrice");
-  if (!branchId || !partNumber || !description || !unit || salePrice === undefined || Number.isNaN(salePrice) || salePrice < 0) {
-    redirect(routeMessage("/inventory", "error", "Branch, part number, description, unit and non-negative sale price are required."));
+  if (!branchId || !partNumber || !description || !unit || !["none", "lot", "serial"].includes(tracking)
+      || salePrice === undefined || Number.isNaN(salePrice) || salePrice < 0) {
+    redirect(routeMessage("/inventory", "error", "Branch, part number, description, tracking and non-negative sale price are required."));
   }
 
   try {
@@ -26,7 +28,7 @@ export async function createPart(formData: FormData) {
       p_part_number: partNumber,
       p_description_en: description,
       p_unit: unit,
-      p_tracking: "none",
+      p_tracking: tracking,
       p_sale_price: salePrice,
     });
     if (error) throw error;
