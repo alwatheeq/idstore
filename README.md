@@ -49,6 +49,15 @@ npx supabase migration list
 
 Run Supabase security and performance advisors after every database change. Never commit `.env` files, database passwords, access tokens or secret keys.
 
+### Connected development project
+
+- Project: `IDstore`
+- Project reference: `irmtvbeholrcrwgjajjf`
+- Region: `eu-central-1`
+- API URL: `https://irmtvbeholrcrwgjajjf.supabase.co`
+
+The local `.env.local` contains only the public project URL and publishable key and remains excluded from Git. Database types are generated into `lib/database.types.ts`.
+
 ## Current status
 
-The web application and versioned database migrations are implemented and pass production build, type and lint checks. Live Supabase project creation, migration application, generated database types and GitHub synchronization require the selected Supabase organization/cost confirmation and valid GitHub authentication.
+The web application and versioned database migrations are implemented. The development Supabase project is live, migrations have been applied and transaction-tested, and database types have been generated. GitHub synchronization still requires valid GitHub CLI authentication.

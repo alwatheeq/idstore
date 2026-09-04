@@ -475,11 +475,11 @@ begin
     if new.paid_total < old.paid_total or new.paid_total > old.grand_total then
       raise exception 'Invalid paid total' using errcode = '23514';
     end if;
-    if new.status <> case
+    if new.status <> (case
       when new.paid_total = new.grand_total then 'paid'
       when new.paid_total > 0 then 'partially_paid'
       else 'posted'
-    end then
+    end) then
       raise exception 'Invoice payment state does not match paid total' using errcode = '23514';
     end if;
   end if;

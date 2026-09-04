@@ -1,4 +1,4 @@
--- IDstore initial database schema
+-- IDstore initial database schema.
 -- Multi-branch Volkswagen ID EV service-center platform.
 
 create extension if not exists pgcrypto with schema extensions;
