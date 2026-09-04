@@ -56,6 +56,11 @@ where routine_schema = 'public'
   and routine_name in (
     'create_repair_order',
     'transition_repair_order',
+    'create_qualification_type',
+    'grant_technician_qualification',
+    'create_hv_work_permit',
+    'record_hv_permit_check',
+    'transition_hv_work_permit',
     'post_stock_movement',
     'post_invoice',
     'receive_invoice_payment'

@@ -80,20 +80,24 @@ Required manual checks:
 5. Posted stock movements cannot be updated or deleted.
 6. Stock movements cannot withdraw more than the available balance.
 7. Only the assigned technician can run a job timer, and job completion closes the timer after its start time.
-8. High-voltage job completion is blocked until its permit is closed or revoked.
-9. Only confirmed purchase orders can be received, and receipts cannot exceed the outstanding quantity.
-10. Serialized receipts require one serial number and quantity one; lot-tracked receipts require a supplier lot.
-11. Retrying a posted goods receipt with the same idempotency key does not duplicate stock.
-12. Invoice line tax is calculated after discount and all document amounts reconcile to three decimals.
-13. Posted invoice identity and commercial fields are immutable, and posting emits one outbox event.
-14. Payments cannot exceed the outstanding balance, and an idempotent retry does not create another allocation.
-15. A repair order cannot have two active inspections, and a completed inspection cannot be edited.
-16. A `safety_stop` inspection finding moves the repair order into quarantine.
-17. Estimate totals calculate tax after discount to three decimals, and sent estimates reject line changes.
-18. Recording a customer estimate decision preserves actor/channel evidence and advances the repair order consistently.
-19. Dashboard totals reconcile to the operational ledgers for the selected branch scope.
-20. Staff dashboard scope lists only assigned branches and never exposes unassigned-branch signals.
-21. Objects outside the caller's organization path cannot be read or uploaded.
+8. High-voltage jobs require an active branch capability, a configured qualification code and an assigned technician with a current verified credential.
+9. A high-voltage timer cannot start until the permit has passed risk review, authorization and isolation and is explicitly `work_active` inside its validity window.
+10. HV authorization, isolation, re-energization and closure reject missing mandatory checks; voltage proof and re-energization tests require an independent witness and tool reference.
+11. A failed advanced-stage HV check revokes the permit, quarantines the repair order, closes an active timer and blocks the job.
+12. High-voltage job QC or completion is blocked until its permit is closed; a revoked permit is not accepted as safe closure.
+13. Only confirmed purchase orders can be received, and receipts cannot exceed the outstanding quantity.
+14. Serialized receipts require one serial number and quantity one; lot-tracked receipts require a supplier lot.
+15. Retrying a posted goods receipt with the same idempotency key does not duplicate stock.
+16. Invoice line tax is calculated after discount and all document amounts reconcile to three decimals.
+17. Posted invoice identity and commercial fields are immutable, and posting emits one outbox event.
+18. Payments cannot exceed the outstanding balance, and an idempotent retry does not create another allocation.
+19. A repair order cannot have two active inspections, and a completed inspection cannot be edited.
+20. A `safety_stop` inspection finding moves the repair order into quarantine.
+21. Estimate totals calculate tax after discount to three decimals, and sent estimates reject line changes.
+22. Recording a customer estimate decision preserves actor/channel evidence and advances the repair order consistently.
+23. Dashboard totals reconcile to the operational ledgers for the selected branch scope.
+24. Staff dashboard scope lists only assigned branches and never exposes unassigned-branch signals.
+25. Objects outside the caller's organization path cannot be read or uploaded.
 
 ## 7. Secrets
 

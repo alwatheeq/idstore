@@ -14,6 +14,7 @@ const navigation = [
   { href: "/work-orders", label: "Work orders", icon: ClipboardList },
   { href: "/inspections", label: "Inspections", icon: ClipboardCheck },
   { href: "/estimates", label: "Estimates", icon: FileText },
+  { href: "/hv-safety", label: "HV safety", icon: ShieldCheck },
   { href: "/appointments", label: "Appointments", icon: CalendarDays },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/vehicles", label: "Vehicles", icon: CarFront },

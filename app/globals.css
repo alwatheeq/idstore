@@ -83,6 +83,7 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
 .button:focus-visible, .panel-link:focus-visible, .nav-item:focus-visible, .finance-link:focus-visible { outline: 3px solid color-mix(in srgb, var(--blue) 35%, transparent); outline-offset: 2px; }
 .button.primary { color: #fff; background: var(--blue); border-color: var(--blue); }
 .button.dark { color: #fff; background: var(--navy); border-color: var(--navy); }
+.button.danger { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, var(--line)); background: var(--red-soft); }
 .button.compact { min-height: 30px; padding: 0 9px; font-size: 10px; }
 .button svg { width: 15px; height: 15px; }
 
@@ -339,6 +340,51 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
 .approval-ledger span { grid-column: 2; color: var(--muted); font-size: 10px; text-transform: capitalize; }
 .estimate-ledger-table { min-width: 940px; }
 
+.hv-setup-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; scroll-margin-top: 88px; }
+.hv-permit-form { border-top: 3px solid var(--amber); }
+.hv-workspace { margin-bottom: 22px; scroll-margin-top: 88px; }
+.hv-lockout-header { min-height: 122px; padding: 22px 24px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px; color: #fff; background: linear-gradient(115deg, var(--navy), #102f50); border-radius: var(--radius) var(--radius) 0 0; border-bottom: 4px solid var(--amber); }
+.hv-bolt-mark { width: 48px; height: 48px; display: grid; place-items: center; color: var(--navy); background: var(--amber); border-radius: 50% 50% 50% 8px; box-shadow: 0 0 0 6px rgba(229,160,0,.13); }
+.hv-bolt-mark svg { width: 23px; }
+.hv-lockout-header span { color: #f3c85f; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.hv-lockout-header h2 { margin: 4px 0 3px; font-size: 24px; letter-spacing: -.025em; }
+.hv-lockout-header p { margin: 0; color: #a9bbce; font-size: 11px; }
+.hv-lockout-rail { min-height: 66px; margin-bottom: 18px; display: grid; grid-template-columns: repeat(7, minmax(105px, 1fr)); overflow-x: auto; background: #fff; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 var(--radius) var(--radius); }
+.hv-lockout-rail span { min-width: 105px; padding: 12px 8px; display: grid; place-items: center; align-content: center; gap: 5px; position: relative; color: var(--muted); font-size: 9px; font-weight: 700; text-align: center; text-transform: uppercase; }
+.hv-lockout-rail span + span { border-left: 1px solid var(--line); }
+.hv-lockout-rail i { width: 11px; height: 11px; display: block; background: var(--line-strong); border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px var(--line-strong); }
+.hv-lockout-rail span.complete i { background: var(--teal); box-shadow: 0 0 0 1px var(--teal); }
+.hv-lockout-rail span.current { color: #8b5d00; background: var(--amber-soft); }
+.hv-lockout-rail span.current i { background: var(--amber); box-shadow: 0 0 0 4px rgba(229,160,0,.16); }
+.hv-columns { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, .7fr); gap: 20px; align-items: start; }
+.hv-evidence { border-top: 3px solid var(--amber); }
+.hv-check-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; border-bottom: 1px solid var(--line); }
+.hv-check-ledger { display: grid; }
+.hv-check-ledger article { min-height: 67px; padding: 12px 18px; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 11px; border-bottom: 1px solid var(--line); }
+.hv-check-ledger strong, .hv-check-ledger span { display: block; }
+.hv-check-ledger strong { font-size: 12px; text-transform: capitalize; }
+.hv-check-ledger span { margin-top: 2px; color: var(--muted); font-size: 10px; }
+.hv-release-note { min-height: 92px; padding: 18px; display: flex; align-items: center; gap: 13px; color: #006f65; background: var(--green-soft); border-bottom: 1px solid var(--line); }
+.hv-release-note svg { width: 24px; flex: 0 0 auto; }
+.hv-release-note strong, .hv-release-note span { display: block; }
+.hv-release-note span { margin-top: 3px; color: var(--muted); font-size: 10px; }
+.hv-gate-action { min-height: 82px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 18px; background: var(--surface-2); }
+.hv-gate-action strong, .hv-gate-action span { display: block; }
+.hv-gate-action strong { font-size: 11px; }
+.hv-gate-action span { margin-top: 2px; color: var(--muted); font-size: 10px; }
+.hv-permit-facts dl { margin: 0; padding: 7px 18px 14px; }
+.hv-permit-facts dl div { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.hv-permit-facts dl div:last-child { border-bottom: 0; }
+.hv-permit-facts dt { color: var(--muted); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.hv-permit-facts dd { margin: 3px 0 0; font-size: 11px; overflow-wrap: anywhere; }
+.qualification-roster { display: grid; }
+.qualification-roster article { min-height: 64px; padding: 11px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
+.qualification-roster article:last-child { border-bottom: 0; }
+.qualification-roster strong, .qualification-roster span { display: block; }
+.qualification-roster strong { font-size: 11px; }
+.qualification-roster span { color: var(--muted); font-size: 9px; }
+.hv-permit-table { min-width: 1030px; }
+
 .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .branch-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
 .branch-card.selected { border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue-soft); }
@@ -399,6 +445,8 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
   .dashboard-grid > .stack { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .estimate-columns { grid-template-columns: 1fr; }
   .estimate-columns > .stack:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hv-columns { grid-template-columns: 1fr; }
+  .hv-columns > .stack:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 780px) {
@@ -449,4 +497,9 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
   .condition-status { grid-column: 2; grid-row: 2; display: flex; }
   .condition-row > form { grid-column: 3; grid-row: 1 / span 2; }
   .estimate-columns > .stack:last-child { grid-template-columns: 1fr; }
+  .hv-setup-grid, .hv-columns > .stack:last-child { grid-template-columns: 1fr; }
+  .hv-lockout-header { grid-template-columns: auto minmax(0, 1fr); }
+  .hv-lockout-header .inspection-context-state { grid-column: 2; justify-content: flex-start; }
+  .hv-check-form { grid-template-columns: 1fr; }
+  .hv-gate-action { align-items: stretch; flex-direction: column; }
 }

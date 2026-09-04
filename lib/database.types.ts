@@ -4752,6 +4752,17 @@ export type Database = {
         Returns: Database["public"]["Tables"]["inspections"]["Row"]
         SetofOptions: { from: "*"; to: "inspections"; isOneToOne: true; isSetofReturn: false }
       }
+      create_hv_work_permit: {
+        Args: {
+          p_job_id: string
+          p_procedure_ref: string
+          p_risk_json: Json
+          p_valid_from: string
+          p_valid_to: string
+        }
+        Returns: Database["public"]["Tables"]["hv_work_permits"]["Row"]
+        SetofOptions: { from: "*"; to: "hv_work_permits"; isOneToOne: true; isSetofReturn: false }
+      }
       create_branch: {
         Args: {
           p_address_line1?: string
@@ -4926,6 +4937,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_qualification_type: {
+        Args: {
+          p_code: string
+          p_name: string
+          p_organization_id: string
+          p_scope_json: Json
+        }
+        Returns: Database["public"]["Tables"]["qualification_types"]["Row"]
+        SetofOptions: { from: "*"; to: "qualification_types"; isOneToOne: true; isSetofReturn: false }
+      }
       create_purchase_order: {
         Args: {
           p_branch_id: string
@@ -5093,6 +5114,18 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      grant_technician_qualification: {
+        Args: {
+          p_certificate_reference: string
+          p_issuer: string
+          p_qualification_type_id: string
+          p_technician_id: string
+          p_valid_from: string
+          p_valid_to: string | null
+        }
+        Returns: Database["public"]["Tables"]["technician_qualifications"]["Row"]
+        SetofOptions: { from: "*"; to: "technician_qualifications"; isOneToOne: true; isSetofReturn: false }
+      }
       post_invoice: {
         Args: { p_expected_version: number; p_invoice_id: string }
         Returns: {
@@ -5222,6 +5255,17 @@ export type Database = {
         }
         Returns: Database["public"]["Tables"]["estimate_versions"]["Row"]
         SetofOptions: { from: "*"; to: "estimate_versions"; isOneToOne: true; isSetofReturn: false }
+      }
+      record_hv_permit_check: {
+        Args: {
+          p_check_code: string
+          p_permit_id: string
+          p_result: string
+          p_tool_ref: string
+          p_witness_id: string | null
+        }
+        Returns: Database["public"]["Tables"]["hv_permit_checks"]["Row"]
+        SetofOptions: { from: "*"; to: "hv_permit_checks"; isOneToOne: true; isSetofReturn: false }
       }
       remove_estimate_line: {
         Args: { p_estimate_line_id: string }
@@ -5382,6 +5426,11 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      transition_hv_work_permit: {
+        Args: { p_permit_id: string; p_to_state: string }
+        Returns: Database["public"]["Tables"]["hv_work_permits"]["Row"]
+        SetofOptions: { from: "*"; to: "hv_work_permits"; isOneToOne: true; isSetofReturn: false }
       }
       transition_repair_order: {
         Args: {

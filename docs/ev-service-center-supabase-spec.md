@@ -481,8 +481,11 @@ The following are database functions, not sequences of browser-side writes:
 | `post_goods_receipt(receipt_id, idempotency_key)` | Validates PO/tolerance, posts stock and updates receipt/PO states |
 | `dispatch_stock_transfer(transfer_id, idempotency_key)` | Checks source-branch permission/availability and posts transfer-out into in-transit stock |
 | `receive_stock_transfer(transfer_id, lines, idempotency_key)` | Checks destination permission, posts transfer-in, records discrepancy and closes/partially receives |
-| `authorize_hv_permit(permit_id, expected_version)` | Checks branch/bay capability, qualifications, required evidence and approver separation |
-| `start_job(job_id, technician_id, expected_version)` | Checks assignment, approvals, parts policy and active HV permit when required |
+| `create_qualification_type(...)` / `grant_technician_qualification(...)` | Defines organization qualification codes and records issuer, certificate, validity and verifier evidence |
+| `create_hv_work_permit(job_id, procedure_ref, risk, valid_from, valid_to)` | Checks branch capability, HV job scope and a maximum 24-hour permit window |
+| `record_hv_permit_check(permit_id, check_code, result, witness_id, tool_ref)` | Appends controlled evidence; voltage and re-energization tests require an independent witness and tool reference |
+| `transition_hv_work_permit(permit_id, target_state)` | Checks qualification, time window, state sequence and mandatory evidence; revocation stops active HV work |
+| `start_job(job_id, expected_version)` | Checks assignment, current qualification and an explicitly `work_active` HV permit when required |
 | `post_invoice(draft_id, fiscal_series, idempotency_key)` | Locks draft/series, validates completed approved quantities, computes totals, assigns number, freezes snapshots, emits outbox |
 | `record_payment_and_allocate(...)` | Creates idempotent payment, validates currency/open amounts, allocates and updates invoice state |
 | `post_credit_note(...)` | Validates uncredited source balance, assigns number, posts immutable credit and optional stock return |
