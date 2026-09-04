@@ -14,6 +14,7 @@ Preferred automated path:
 npx supabase link --project-ref <project-ref>
 npx supabase db push
 npx supabase migration list
+npx supabase functions deploy provision-staff
 ```
 
 The repository migration is also applied through the authenticated Supabase connector during provisioning. Do not apply the same migration twice under different names.
@@ -52,6 +53,8 @@ commit;
 ```
 
 Create branches after the Admin membership exists. Each active branch requires city, address, time zone, currency and tax configuration. Staff memberships use `role = 'staff'`, receive rows in `membership_branches`, and receive only the required `membership_permissions`.
+
+After the first Admin exists, additional Admin and Staff accounts are provisioned from **Staff and access**. The authenticated `provision-staff` Edge Function creates the Auth identity, then calls the transactional database command for the profile, membership, branch assignments and capability grants. JWT verification must remain enabled; the service-role key is used only inside the hosted function and must never be added to the Next.js environment.
 
 ## 5. Storage
 

@@ -10,6 +10,7 @@ IDstore is a bilingual, multi-branch Volkswagen ID electric-vehicle service-cent
 - `lib/supabase/` — SSR clients, session refresh and typed command adapters
 - `supabase/config.toml` — local Supabase configuration
 - `supabase/migrations/` — versioned database migrations
+- `supabase/functions/` — authenticated server-side account provisioning
 - `supabase/seed.sql` — local-only seed entry point
 - `supabase/tests/schema_verification.sql` — post-migration verification queries
 
@@ -45,6 +46,7 @@ Local Studio is available at the URL printed by `supabase start`. See `docs/data
 npx supabase link --project-ref <project-ref>
 npx supabase db push
 npx supabase migration list
+npx supabase functions deploy provision-staff
 ```
 
 Run Supabase security and performance advisors after every database change. Never commit `.env` files, database passwords, access tokens or secret keys.
@@ -60,6 +62,6 @@ The local `.env.local` contains only the public project URL and publishable key 
 
 ## Current status
 
-The development Supabase project is live and all five versioned migrations have been applied. Mobile-number/6-digit-PIN authentication, the multi-branch shell, branch setup, customer creation, vehicle registration and work-order intake now read and write live Supabase data through typed, permission-checked commands. The full create flow has been transaction-tested against the connected project.
+The development Supabase project is live and all six versioned migrations have been applied. Mobile-number/6-digit-PIN authentication, the multi-branch shell, branch setup, customer creation, vehicle registration, appointment scheduling and status management, staff provisioning, branch/capability assignment, and work-order intake now read and write live Supabase data through typed, permission-checked commands. The staff Auth function is deployed with JWT verification, and the operational flows have been transaction-tested against the connected project.
 
-Appointments, staff administration, workshop execution details, inventory, purchasing, billing and dashboard analytics still use prototype presentation data and are the next implementation phases. The live database schema already covers those domains. GitHub synchronization still requires valid GitHub CLI authentication and a configured repository remote.
+Workshop execution details, inventory, purchasing, billing and dashboard analytics still use prototype presentation data and are the next implementation phases. The live database schema already covers those domains. GitHub synchronization still requires valid GitHub CLI authentication and a configured repository remote.

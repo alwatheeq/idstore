@@ -4609,6 +4609,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_appointment: {
+        Args: {
+          p_branch_id: string
+          p_customer_id: string
+          p_end_at: string
+          p_notes: string | null
+          p_organization_id: string
+          p_promised_at: string | null
+          p_start_at: string
+          p_vehicle_id: string
+        }
+        Returns: string
+      }
       create_branch: {
         Args: {
           p_address_line1?: string
@@ -4834,6 +4847,21 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      provision_staff_access: {
+        Args: {
+          p_branch_ids: string[]
+          p_display_name: string
+          p_employee_no: string | null
+          p_is_technician: boolean
+          p_labor_grade: string | null
+          p_mobile: string
+          p_organization_id: string
+          p_permission_codes: string[]
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: string
+      }
       receive_invoice_payment: {
         Args: {
           p_amount: number
@@ -4860,6 +4888,36 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      transition_appointment: {
+        Args: {
+          p_appointment_id: string
+          p_expected_version: number
+          p_to_status: string
+        }
+        Returns: {
+          branch_id: string
+          channel: string
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          end_at: string
+          id: string
+          notes: string | null
+          organization_id: string
+          promised_at: string | null
+          start_at: string
+          status: string
+          updated_at: string
+          vehicle_id: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "appointments"
           isOneToOne: true
           isSetofReturn: false
         }

@@ -53,7 +53,7 @@ export function AppShell({ children, staff, branches }: { children: React.ReactN
         <div className="nav-label">Workshop</div>
         <nav className="nav-list">{navGroup(navigation)}</nav>
         <div className="nav-label">Administration</div>
-        <nav className="nav-list">{navGroup(administration)}</nav>
+        <nav className="nav-list">{navGroup(staff.role === "admin" ? administration : administration.filter((item) => item.href !== "/staff"))}</nav>
         <div className="sidebar-footer">
           <div className="safety-note"><strong><ShieldCheck size={14} /> HV safety enabled</strong>Quarantine, permit and qualification controls are active.</div>
         </div>

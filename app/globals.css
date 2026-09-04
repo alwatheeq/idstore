@@ -82,6 +82,7 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
 .button:hover { border-color: var(--blue); }
 .button.primary { color: #fff; background: var(--blue); border-color: var(--blue); }
 .button.dark { color: #fff; background: var(--navy); border-color: var(--navy); }
+.button.compact { min-height: 30px; padding: 0 9px; font-size: 10px; }
 .button svg { width: 15px; height: 15px; }
 
 .metric-strip { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 22px; }
@@ -114,6 +115,15 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
 .check-field strong, .check-field small { display: block; }
 .check-field strong { font-size: 12px; }
 .check-field small { color: var(--muted); font-size: 10px; margin-top: 2px; }
+.access-fieldset { min-width: 0; margin: 0 0 18px; padding: 15px; border: 1px solid var(--line); border-radius: 10px; }
+.access-fieldset legend { padding: 0 6px; font-size: 12px; font-weight: 700; }
+.access-fieldset > p { margin: -2px 0 13px; color: var(--muted); font-size: 11px; }
+.access-grid, .permission-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.access-grid .check-field, .permission-grid .check-field { margin: 0; }
+.permission-grid .check-field { min-height: 72px; }
+.inline-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.inline-actions form { display: contents; }
+.appointment-ledger { min-width: 980px; }
 .record-feedback { min-height: 44px; display: flex; align-items: center; gap: 9px; margin: -8px 0 20px; padding: 10px 13px; border: 1px solid; border-radius: 10px; font-size: 12px; font-weight: 600; }
 .record-feedback svg { width: 17px; height: 17px; flex: 0 0 auto; }
 .record-feedback.success { color: #087268; background: var(--green-soft); border-color: #b8ded7; }
@@ -231,6 +241,7 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
   .metric:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
   .grid-main { grid-template-columns: 1fr; }
   .cards-grid { grid-template-columns: repeat(2, 1fr); }
+  .permission-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 780px) {
@@ -261,4 +272,5 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
   .form-grid { grid-template-columns: 1fr; }
   .form-span-2 { grid-column: auto; }
   .form-actions { grid-column: auto; }
+  .access-grid, .permission-grid { grid-template-columns: 1fr; }
 }
