@@ -87,7 +87,9 @@ Required manual checks:
 12. Invoice line tax is calculated after discount and all document amounts reconcile to three decimals.
 13. Posted invoice identity and commercial fields are immutable, and posting emits one outbox event.
 14. Payments cannot exceed the outstanding balance, and an idempotent retry does not create another allocation.
-15. Objects outside the caller's organization path cannot be read or uploaded.
+15. Dashboard totals reconcile to the operational ledgers for the selected branch scope.
+16. Staff dashboard scope lists only assigned branches and never exposes unassigned-branch signals.
+17. Objects outside the caller's organization path cannot be read or uploaded.
 
 ## 7. Secrets
 
