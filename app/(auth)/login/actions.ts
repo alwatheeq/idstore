@@ -1,22 +1,45 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { mobileAuthEmail, normalizeMobile } from "@/lib/auth/mobile";
 import { createClient } from "@/lib/supabase/server";
 
-export async function signIn(formData: FormData) {
-  const email = String(formData.get("email") ?? "");
-  const password = String(formData.get("password") ?? "");
+export type LoginState = { error: string | null };
 
-  let failure: string | null = null;
+export async function signIn(_previousState: LoginState, formData: FormData): Promise<LoginState> {
+  const dialCode = String(formData.get("dialCode") ?? "");
+  const mobile = String(formData.get("mobile") ?? "");
+  const pin = String(formData.get("pin") ?? "");
+
+  if (!/^\d{6}$/.test(pin)) return { error: "Enter your six-digit PIN." };
+
+  let email: string;
   try {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    failure = error?.message ?? null;
+    email = mobileAuthEmail(normalizeMobile(dialCode, mobile));
   } catch (error) {
-    failure = error instanceof Error ? error.message : "Unable to sign in";
+    return { error: error instanceof Error ? error.message : "Enter a valid mobile number." };
   }
 
-  if (failure) redirect(`/login?error=${encodeURIComponent(failure)}`);
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pin });
+    if (error || !data.user) return { error: "Mobile number or PIN is incorrect." };
+
+    const { data: membership, error: membershipError } = await supabase
+      .from("memberships")
+      .select("id")
+      .eq("user_id", data.user.id)
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle();
+
+    if (membershipError || !membership) {
+      await supabase.auth.signOut();
+      return { error: "This account is not active. Contact an administrator." };
+    }
+  } catch {
+    return { error: "Sign-in is temporarily unavailable. Please try again." };
+  }
 
   redirect("/dashboard");
 }

@@ -1,7 +1,29 @@
-import Link from "next/link";
-import { signIn } from "./actions";
+import { LoginForm } from "./login-form";
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const { error } = await searchParams;
-  return <main className="login-screen"><section className="login-story"><div className="brand"><div className="brand-mark">ID</div><div><div className="brand-name">IDstore</div><div className="brand-sub">Service operations</div></div></div><div><h1>Every vehicle.<br /><span>Every branch.</span><br />One clear view.</h1><p>Purpose-built operating software for VW ID electric vehicle service centers—from arrival and HV safety to parts, invoicing and handover.</p></div><div className="brand-sub">Secure · Branch-aware · Audit-ready</div></section><section className="login-panel"><h2>Welcome back</h2><p>Sign in with your Admin or Staff account.</p>{error ? <div className="demo-hint" style={{ color: "var(--red)", background: "var(--red-soft)", marginBottom: 18 }}>{error}</div> : null}<form action={signIn}><div className="form-field"><label htmlFor="email">Work email</label><input id="email" name="email" type="email" autoComplete="email" placeholder="name@idstore.jo" required /></div><div className="form-field"><label htmlFor="password">Password</label><input id="password" name="password" type="password" autoComplete="current-password" required /></div><button className="button primary" type="submit">Sign in</button></form><div className="demo-hint">Database credentials are intentionally not bundled. Until the live Supabase project is approved, explore the operational prototype from the <Link className="panel-link" href="/dashboard">demo dashboard →</Link></div></section></main>;
+export default function LoginPage() {
+  return (
+    <main className="login-screen">
+      <section className="login-story">
+        <div className="brand">
+          <div className="brand-mark">ID</div>
+          <div>
+            <div className="brand-name">IDstore</div>
+            <div className="brand-sub">Service operations</div>
+          </div>
+        </div>
+        <div>
+          <h1>Every vehicle.<br /><span>Every branch.</span><br />One clear view.</h1>
+          <p>Purpose-built operating software for VW ID electric vehicle service centers—from arrival and HV safety to parts, invoicing and handover.</p>
+        </div>
+        <div className="brand-sub">Secure · Branch-aware · Audit-ready</div>
+      </section>
+      <section className="login-panel">
+        <div className="login-eyebrow">Authorized access</div>
+        <h2>Welcome back</h2>
+        <p>Sign in with the mobile number and PIN assigned to your Admin or Staff account.</p>
+        <LoginForm />
+        <div className="login-security-note">Your mobile number is normalized securely and your PIN is never stored in this browser.</div>
+      </section>
+    </main>
+  );
 }

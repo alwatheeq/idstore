@@ -7,6 +7,7 @@ import {
   Bell, Boxes, Building2, CalendarDays, CarFront, CircleDollarSign,
   ClipboardList, Gauge, Menu, ShieldCheck, Users, UserRoundCog, X,
 } from "lucide-react";
+import type { CurrentStaff } from "@/lib/auth/session";
 import { branches } from "@/lib/demo-data";
 
 const navigation = [
@@ -24,7 +25,11 @@ const administration = [
   { href: "/staff", label: "Staff & access", icon: UserRoundCog },
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+}
+
+export function AppShell({ children, staff }: { children: React.ReactNode; staff: CurrentStaff }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isArabic, setIsArabic] = useState(false);
@@ -59,7 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="topbar-spacer" />
           <button className="icon-button locale-button" onClick={() => setIsArabic((value) => !value)}>{isArabic ? "EN" : "العربية"}</button>
           <button className="icon-button notification" aria-label="Notifications"><Bell size={16} /></button>
-          <div className="user-chip"><div className="avatar">MA</div><div className="user-copy"><strong>Moatasem A.</strong><span>Administrator</span></div></div>
+          <div className="user-chip"><div className="avatar">{initials(staff.displayName)}</div><div className="user-copy"><strong>{staff.displayName}</strong><span>{staff.role === "admin" ? "Administrator" : "Staff"}</span></div></div>
         </header>
         <div className="page-content">{children}</div>
       </main>

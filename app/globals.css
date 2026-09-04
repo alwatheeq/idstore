@@ -182,13 +182,21 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
 .login-story h1 span { color: #6db1ff; }
 .login-story p { max-width: 520px; color: #b7c9dc; position: relative; z-index: 1; }
 .login-panel { padding: 48px clamp(30px, 8vw, 120px); display: grid; align-content: center; }
+.login-eyebrow { color: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 10px; }
 .login-panel h2 { font-size: 28px; margin: 0 0 8px; }
 .login-panel > p { color: var(--muted); margin: 0 0 30px; }
 .form-field { display: grid; gap: 7px; margin-bottom: 16px; }
 .form-field label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
-.form-field input { height: 45px; border: 1px solid var(--line-strong); border-radius: 9px; padding: 0 12px; outline: none; }
-.form-field input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
+.form-field input, .form-field select { height: 45px; border: 1px solid var(--line-strong); border-radius: 9px; padding: 0 12px; outline: none; background: #fff; color: var(--ink); font: inherit; }
+.form-field input:focus, .form-field select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
+.phone-control { display: grid; grid-template-columns: 118px 1fr; gap: 8px; }
+.phone-control select { min-width: 0; font-size: 12px; font-weight: 650; }
+.pin-input { letter-spacing: .32em; font-size: 17px !important; font-variant-numeric: tabular-nums; }
+.field-help { color: var(--muted); font-size: 10px; }
+.login-error { color: var(--red); background: var(--red-soft); border: 1px solid color-mix(in srgb, var(--red) 18%, transparent); border-radius: 9px; padding: 12px 13px; margin-bottom: 18px; font-size: 12px; }
+.login-security-note { margin-top: 22px; padding: 13px; border-radius: 9px; background: var(--surface-2); color: var(--muted); font-size: 11px; }
 .login-panel .button { width: 100%; min-height: 45px; margin-top: 7px; }
+.login-panel .button:disabled { cursor: wait; opacity: .72; }
 .demo-hint { margin-top: 22px; padding: 13px; border-radius: 9px; background: var(--surface-2); color: var(--muted); font-size: 11px; }
 
 [dir="rtl"] body { font-family: "IBM Plex Sans Arabic", "IBM Plex Sans", system-ui, sans-serif; }
@@ -229,4 +237,5 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
   .login-story { min-height: 38vh; padding: 30px; }
   .login-story h1 { font-size: 42px; margin-top: 50px; }
   .login-panel { padding: 42px 28px; }
+  .phone-control { grid-template-columns: 108px 1fr; }
 }
