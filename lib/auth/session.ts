@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export type CurrentStaff = {
+  userId: string;
   displayName: string;
   role: "admin" | "staff";
   organizationId: string;
@@ -35,6 +36,7 @@ export const getCurrentStaff = cache(async (): Promise<CurrentStaff> => {
   if (!profile || !membership) redirect("/login");
 
   return {
+    userId: user.id,
     displayName: profile.display_name,
     role: membership.role,
     organizationId: membership.organization_id,

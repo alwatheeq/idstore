@@ -124,6 +124,11 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
 .inline-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .inline-actions form { display: contents; }
 .appointment-ledger { min-width: 980px; }
+.work-order-ledger { min-width: 1080px; }
+.workshop-job-ledger { min-width: 1180px; }
+.assign-control { display: flex; align-items: center; gap: 6px; min-width: 240px; }
+.assign-control select { height: 32px; min-width: 150px; border: 1px solid var(--line-strong); border-radius: 8px; padding: 0 28px 0 8px; background: #fff; color: var(--ink); font-size: 10px; }
+.table-empty { padding: 24px 8px; color: var(--muted); text-align: center; font-size: 12px; }
 .record-feedback { min-height: 44px; display: flex; align-items: center; gap: 9px; margin: -8px 0 20px; padding: 10px 13px; border: 1px solid; border-radius: 10px; font-size: 12px; font-weight: 600; }
 .record-feedback svg { width: 17px; height: 17px; flex: 0 0 auto; }
 .record-feedback.success { color: #087268; background: var(--green-soft); border-color: #b8ded7; }

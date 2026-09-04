@@ -2,28 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { formText, operationError, optionalText, routeMessage } from "@/lib/actions/form";
+import { formText, operationError, optionalText, routeMessage, zonedLocalToIso } from "@/lib/actions/form";
 import { getCurrentStaff } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
-
-function zonedLocalToIso(value: string, timeZone: string) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
-  if (!match) throw new Error("Choose a valid appointment date and time.");
-  const [, year, month, day, hour, minute] = match.map(Number);
-  const utcGuess = Date.UTC(year, month - 1, day, hour, minute);
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(new Date(utcGuess));
-  const part = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((item) => item.type === type)?.value);
-  const representedAsUtc = Date.UTC(part("year"), part("month") - 1, part("day"), part("hour"), part("minute"));
-  return new Date(utcGuess - (representedAsUtc - utcGuess)).toISOString();
-}
 
 export async function createAppointment(formData: FormData) {
   const staff = await getCurrentStaff();

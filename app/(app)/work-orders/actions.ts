@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { formText, operationError, optionalNumber, optionalText, routeMessage } from "@/lib/actions/form";
+import { formText, operationError, optionalNumber, optionalText, routeMessage, zonedLocalToIso } from "@/lib/actions/form";
 import { getCurrentStaff } from "@/lib/auth/session";
 import { createRepairOrder } from "@/lib/supabase/commands";
 import { createClient } from "@/lib/supabase/server";
@@ -25,6 +25,17 @@ export async function createWorkOrder(formData: FormData) {
 
   try {
     const supabase = await createClient();
+    let promisedAt: string | undefined;
+    if (promisedLocal) {
+      const { data: branch, error: branchError } = await supabase
+        .from("branches")
+        .select("timezone")
+        .eq("id", branchId)
+        .eq("organization_id", staff.organizationId)
+        .single();
+      if (branchError || !branch) throw branchError ?? new Error("Branch not found.");
+      promisedAt = zonedLocalToIso(promisedLocal, branch.timezone);
+    }
     await createRepairOrder(supabase, {
       organizationId: staff.organizationId,
       branchId,
@@ -33,7 +44,7 @@ export async function createWorkOrder(formData: FormData) {
       odometerKm,
       stateOfCharge,
       customerConcern: optionalText(formData, "customerConcern"),
-      promisedAt: promisedLocal ? new Date(promisedLocal).toISOString() : undefined,
+      promisedAt,
     });
   } catch (error) {
     redirect(routeMessage("/work-orders", "error", operationError(error, "The work order could not be opened.")));
@@ -42,4 +53,122 @@ export async function createWorkOrder(formData: FormData) {
   revalidatePath("/work-orders");
   revalidatePath("/dashboard");
   redirect(routeMessage("/work-orders", "created", "Work order opened."));
+}
+
+export async function transitionWorkOrder(formData: FormData) {
+  await getCurrentStaff();
+  const repairOrderId = formText(formData, "repairOrderId");
+  const version = Number(formText(formData, "version"));
+  const toStatus = formText(formData, "toStatus");
+  const allowed = ["diagnosis", "awaiting_approval", "approved", "in_progress", "qc", "ready", "delivered", "closed", "on_hold", "cancelled"];
+  if (!repairOrderId || !Number.isSafeInteger(version) || !allowed.includes(toStatus)) {
+    redirect(routeMessage("/work-orders", "error", "The work-order action is invalid."));
+  }
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("transition_repair_order", {
+      p_repair_order_id: repairOrderId,
+      p_expected_version: version,
+      p_to_status: toStatus,
+      p_reason: optionalText(formData, "reason"),
+    });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/work-orders", "error", operationError(error, "The work order could not be progressed.")));
+  }
+  revalidatePath("/work-orders");
+  revalidatePath("/dashboard");
+  redirect(routeMessage("/work-orders", "created", `Work order moved to ${toStatus.replaceAll("_", " ")}.`));
+}
+
+export async function createJob(formData: FormData) {
+  await getCurrentStaff();
+  const repairOrderId = formText(formData, "repairOrderId");
+  const description = formText(formData, "description");
+  const safetyClass = formText(formData, "safetyClass");
+  const plannedMinutes = optionalNumber(formData, "plannedMinutes");
+  if (!repairOrderId || !description || !["normal", "ev_aware", "hv_isolated", "hv_battery_open"].includes(safetyClass)
+      || plannedMinutes === undefined || Number.isNaN(plannedMinutes) || plannedMinutes < 0) {
+    redirect(routeMessage("/work-orders", "error", "Work order, description, safety class and planned minutes are required."));
+  }
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("create_job", {
+      p_repair_order_id: repairOrderId,
+      p_description: description,
+      p_operation_code: optionalText(formData, "operationCode") ?? "",
+      p_safety_class: safetyClass,
+      p_required_qualification_code: optionalText(formData, "qualificationCode") ?? "",
+      p_planned_minutes: plannedMinutes,
+    });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/work-orders", "error", operationError(error, "The workshop job could not be created.")));
+  }
+  revalidatePath("/work-orders");
+  redirect(routeMessage("/work-orders", "created", "Workshop job created."));
+}
+
+export async function assignJob(formData: FormData) {
+  await getCurrentStaff();
+  const jobId = formText(formData, "jobId");
+  const technicianId = formText(formData, "technicianId");
+  const version = Number(formText(formData, "version"));
+  if (!jobId || !technicianId || !Number.isSafeInteger(version)) {
+    redirect(routeMessage("/work-orders", "error", "Choose a valid technician assignment."));
+  }
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("assign_job", {
+      p_job_id: jobId,
+      p_expected_version: version,
+      p_technician_id: technicianId,
+      p_assignment_kind: "primary",
+    });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/work-orders", "error", operationError(error, "The job could not be assigned.")));
+  }
+  revalidatePath("/work-orders");
+  redirect(routeMessage("/work-orders", "created", "Technician assigned."));
+}
+
+export async function startJob(formData: FormData) {
+  await getCurrentStaff();
+  const jobId = formText(formData, "jobId");
+  const version = Number(formText(formData, "version"));
+  if (!jobId || !Number.isSafeInteger(version)) redirect(routeMessage("/work-orders", "error", "The timer action is invalid."));
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("start_job", { p_job_id: jobId, p_expected_version: version });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/work-orders", "error", operationError(error, "The job timer could not be started.")));
+  }
+  revalidatePath("/work-orders");
+  redirect(routeMessage("/work-orders", "created", "Job timer started."));
+}
+
+export async function finishJob(formData: FormData) {
+  await getCurrentStaff();
+  const jobId = formText(formData, "jobId");
+  const version = Number(formText(formData, "version"));
+  const outcome = formText(formData, "outcome");
+  if (!jobId || !Number.isSafeInteger(version) || !["paused", "blocked", "qc", "completed"].includes(outcome)) {
+    redirect(routeMessage("/work-orders", "error", "The timer outcome is invalid."));
+  }
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("finish_job", {
+      p_job_id: jobId,
+      p_expected_version: version,
+      p_outcome: outcome,
+      p_note: optionalText(formData, "note") ?? "",
+    });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/work-orders", "error", operationError(error, "The job timer could not be stopped.")));
+  }
+  revalidatePath("/work-orders");
+  redirect(routeMessage("/work-orders", "created", `Job marked ${outcome}.`));
 }

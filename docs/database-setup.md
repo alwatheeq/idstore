@@ -78,7 +78,10 @@ Required manual checks:
 3. A user with no membership cannot read organization data.
 4. Customer portal users are not internal Admin/Staff members.
 5. Posted stock movements cannot be updated or deleted.
-6. Objects outside the caller's organization path cannot be read or uploaded.
+6. Stock movements cannot withdraw more than the available balance.
+7. Only the assigned technician can run a job timer, and job completion closes the timer after its start time.
+8. High-voltage job completion is blocked until its permit is closed or revoked.
+9. Objects outside the caller's organization path cannot be read or uploaded.
 
 ## 7. Secrets
 

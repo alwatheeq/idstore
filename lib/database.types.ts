@@ -4609,6 +4609,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_job: {
+        Args: {
+          p_assignment_kind: string
+          p_expected_version: number
+          p_job_id: string
+          p_technician_id: string
+        }
+        Returns: {
+          assigned_at: string
+          assignment_kind: string
+          branch_id: string
+          id: string
+          job_id: string
+          organization_id: string
+          technician_id: string
+          unassigned_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "job_assignments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_appointment: {
         Args: {
           p_branch_id: string
@@ -4697,6 +4721,72 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_job: {
+        Args: {
+          p_description: string
+          p_operation_code: string
+          p_planned_minutes: number
+          p_repair_order_id: string
+          p_required_qualification_code: string
+          p_safety_class: string
+        }
+        Returns: {
+          branch_id: string
+          completed_at: string | null
+          created_at: string
+          description_snapshot: string
+          estimate_line_id: string | null
+          id: string
+          operation_code: string | null
+          organization_id: string
+          planned_minutes: number
+          repair_order_id: string
+          required_qualification_code: string | null
+          safety_class: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_part: {
+        Args: {
+          p_branch_id: string
+          p_description_en: string
+          p_organization_id: string
+          p_part_number: string
+          p_sale_price: number
+          p_tracking: string
+          p_unit: string
+        }
+        Returns: {
+          created_at: string
+          description_ar: string | null
+          description_en: string
+          hazardous_classification: string | null
+          id: string
+          organization_id: string
+          part_number: string
+          sale_price: number
+          status: string
+          tax_code_id: string | null
+          tracking: string
+          unit: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "parts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_repair_order: {
         Args: {
           p_appointment_id?: string
@@ -4773,6 +4863,38 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      finish_job: {
+        Args: {
+          p_expected_version: number
+          p_job_id: string
+          p_note: string
+          p_outcome: string
+        }
+        Returns: {
+          branch_id: string
+          completed_at: string | null
+          created_at: string
+          description_snapshot: string
+          estimate_line_id: string | null
+          id: string
+          operation_code: string | null
+          organization_id: string
+          planned_minutes: number
+          repair_order_id: string
+          required_qualification_code: string | null
+          safety_class: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       post_invoice: {
         Args: { p_expected_version: number; p_invoice_id: string }
         Returns: {
@@ -4809,16 +4931,16 @@ export type Database = {
       post_stock_movement: {
         Args: {
           p_branch_id: string
-          p_from_bin_id: string
+          p_from_bin_id: string | null
           p_idempotency_key: string
-          p_lot_id: string
+          p_lot_id: string | null
           p_movement_type: string
           p_organization_id: string
           p_part_id: string
           p_quantity: number
           p_source_id: string
           p_source_type: string
-          p_to_bin_id: string
+          p_to_bin_id: string | null
           p_unit_cost: number
         }
         Returns: {
@@ -4888,6 +5010,33 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      start_job: {
+        Args: { p_expected_version: number; p_job_id: string }
+        Returns: {
+          branch_id: string
+          completed_at: string | null
+          created_at: string
+          description_snapshot: string
+          estimate_line_id: string | null
+          id: string
+          operation_code: string | null
+          organization_id: string
+          planned_minutes: number
+          repair_order_id: string
+          required_qualification_code: string | null
+          safety_class: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "jobs"
           isOneToOne: true
           isSetofReturn: false
         }
