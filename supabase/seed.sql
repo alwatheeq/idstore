@@ -1,0 +1,3 @@
+-- Local-development seed data intentionally contains no production identities.
+-- Create Auth users through Supabase Studio, then use the documented bootstrap SQL
+-- in docs/database-setup.md to create an organization and first Admin membership.

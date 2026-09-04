@@ -1,0 +1,10 @@
+import { Plus } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { StatusPill } from "@/components/status-pill";
+import { branches } from "@/lib/demo-data";
+
+export default function BranchesPage() {
+  return <><PageHeader eyebrow="Network administration" title="Branches" description="Configure cities, warehouses, service capabilities, invoice sequences, hours and branch access."><button className="button primary"><Plus /> Add branch</button></PageHeader>
+    <div className="cards-grid">{branches.map((branch, index) => <article className={`branch-card ${index === 0 ? "selected" : ""}`} key={branch.id}><div className="branch-card-head"><div><div className="branch-code">{branch.code}</div><h3>{branch.displayName}</h3><p>{branch.city}, Jordan</p></div><StatusPill label={branch.hvCapable ? "HV capable" : "General service"} tone={branch.hvCapable ? "green" : "gray"} /></div><div className="branch-stats"><div><span>Active jobs</span><strong className="mono">{branch.activeJobs}</strong></div><div><span>Bay utilization</span><strong className="mono">{branch.utilization}%</strong></div></div></article>)}</div>
+    <section className="panel" style={{ marginTop: 20 }}><div className="panel-header"><div><div className="panel-title">Network configuration</div><div className="panel-subtitle">Shared policies with branch-specific operational controls</div></div></div><div className="data-scroll"><table className="data-table"><thead><tr><th>Branch</th><th>Warehouse</th><th>Invoice prefix</th><th>HV service</th><th>Battery quarantine</th><th>Status</th></tr></thead><tbody>{branches.map((branch) => <tr key={branch.id}><td><div className="cell-main">{branch.displayName}</div><div className="cell-sub">{branch.code}</div></td><td>{branch.city} Main</td><td className="mono">{branch.code.split("-")[0]}-INV</td><td><StatusPill label={branch.hvCapable ? "enabled" : "disabled"} tone={branch.hvCapable ? "green" : "gray"} /></td><td>{branch.hvCapable ? "Dedicated zone" : "Transfer to Amman"}</td><td><StatusPill label="active" tone="green" /></td></tr>)}</tbody></table></div></section></>;
+}
