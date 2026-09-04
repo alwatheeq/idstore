@@ -84,7 +84,10 @@ Required manual checks:
 9. Only confirmed purchase orders can be received, and receipts cannot exceed the outstanding quantity.
 10. Serialized receipts require one serial number and quantity one; lot-tracked receipts require a supplier lot.
 11. Retrying a posted goods receipt with the same idempotency key does not duplicate stock.
-12. Objects outside the caller's organization path cannot be read or uploaded.
+12. Invoice line tax is calculated after discount and all document amounts reconcile to three decimals.
+13. Posted invoice identity and commercial fields are immutable, and posting emits one outbox event.
+14. Payments cannot exceed the outstanding balance, and an idempotent retry does not create another allocation.
+15. Objects outside the caller's organization path cannot be read or uploaded.
 
 ## 7. Secrets
 

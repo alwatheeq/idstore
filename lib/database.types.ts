@@ -4609,6 +4609,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_invoice_line: {
+        Args: {
+          p_description: string
+          p_discount_amount: number
+          p_expected_version: number
+          p_invoice_id: string
+          p_line_type: string
+          p_quantity: number
+          p_tax_rate: number
+          p_unit_price: number
+        }
+        Returns: {
+          branch_id: string
+          created_at: string
+          description_snapshot: string
+          discount_amount: number
+          id: string
+          invoice_id: string
+          line_no: number
+          line_total: number
+          line_type: string
+          organization_id: string
+          quantity: number
+          source_id: string | null
+          source_type: string | null
+          tax_amount: number
+          tax_rate: number
+          unit_price: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "invoice_lines"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       add_purchase_order_line: {
         Args: {
           p_part_id: string
@@ -4778,6 +4814,39 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_invoice_from_repair_order: {
+        Args: { p_repair_order_id: string }
+        Returns: {
+          branch_id: string
+          buyer_snapshot: Json
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_id: string
+          discount_total: number
+          document_hash: string | null
+          grand_total: number
+          id: string
+          invoice_number: string | null
+          invoice_series_id: string | null
+          organization_id: string
+          paid_total: number
+          posted_at: string | null
+          repair_order_id: string | null
+          seller_snapshot: Json
+          status: string
+          subtotal: number
+          tax_total: number
+          updated_at: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "invoices"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -5096,6 +5165,39 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "goods_receipts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      remove_invoice_line: {
+        Args: { p_expected_version: number; p_invoice_line_id: string }
+        Returns: {
+          branch_id: string
+          buyer_snapshot: Json
+          created_at: string
+          created_by: string | null
+          currency: string
+          customer_id: string
+          discount_total: number
+          document_hash: string | null
+          grand_total: number
+          id: string
+          invoice_number: string | null
+          invoice_series_id: string | null
+          organization_id: string
+          paid_total: number
+          posted_at: string | null
+          repair_order_id: string | null
+          seller_snapshot: Json
+          status: string
+          subtotal: number
+          tax_total: number
+          updated_at: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "invoices"
           isOneToOne: true
           isSetofReturn: false
         }
