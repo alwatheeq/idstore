@@ -95,9 +95,12 @@ Required manual checks:
 20. A `safety_stop` inspection finding moves the repair order into quarantine.
 21. Estimate totals calculate tax after discount to three decimals, and sent estimates reject line changes.
 22. Recording a customer estimate decision preserves actor/channel evidence and advances the repair order consistently.
-23. Dashboard totals reconcile to the operational ledgers for the selected branch scope.
-24. Staff dashboard scope lists only assigned branches and never exposes unassigned-branch signals.
-25. Objects outside the caller's organization path cannot be read or uploaded.
+23. A repair order cannot have two active diagnostic sessions; only the technician who started a session can add DTCs, record outcomes or complete it.
+24. Completed diagnostic sessions reject further DTC changes, while their before/after evidence and tool provenance remain readable.
+25. Battery-health reports derive organization, branch and vehicle from the repair order and reject invalid measurement times, ranges and non-object conditions.
+26. Dashboard totals reconcile to the operational ledgers for the selected branch scope.
+27. Staff dashboard scope lists only assigned branches and never exposes unassigned-branch signals.
+28. Objects outside the caller's organization path cannot be read or uploaded.
 
 ## 7. Secrets
 

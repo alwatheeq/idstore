@@ -16,15 +16,17 @@ export async function createInspection(formData: FormData) {
   await getCurrentStaff();
   const repairOrderId = formText(formData, "repairOrderId");
   if (!repairOrderId) redirect(inspectionRoute(undefined, "error", "Choose a repair order to inspect."));
+  let inspectionId = "";
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.rpc("create_inspection", { p_repair_order_id: repairOrderId });
     if (error || !data) throw error ?? new Error("Inspection was not created.");
-    revalidatePath("/inspections"); revalidatePath("/dashboard");
-    redirect(inspectionRoute(data.id, "created", "Inspection started."));
+    inspectionId = data.id;
   } catch (error) {
     redirect(inspectionRoute(undefined, "error", operationError(error, "The inspection could not be started.")));
   }
+  revalidatePath("/inspections"); revalidatePath("/dashboard");
+  redirect(inspectionRoute(inspectionId, "created", "Inspection started."));
 }
 
 export async function addInspectionItem(formData: FormData) {

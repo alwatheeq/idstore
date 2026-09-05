@@ -486,6 +486,11 @@ The following are database functions, not sequences of browser-side writes:
 | `record_hv_permit_check(permit_id, check_code, result, witness_id, tool_ref)` | Appends controlled evidence; voltage and re-energization tests require an independent witness and tool reference |
 | `transition_hv_work_permit(permit_id, target_state)` | Checks qualification, time window, state sequence and mandatory evidence; revocation stops active HV work |
 | `start_job(job_id, expected_version)` | Checks assignment, current qualification and an explicitly `work_active` HV permit when required |
+| `start_diagnostic_session(repair_order_id, tool, provenance, started_at)` | Requires branch job permission and an active technician; permits only one active session per repair order |
+| `record_diagnostic_trouble_code(session_id, control_unit, code, before_status)` | Lets only the owning technician append normalized DTC observations to an active session |
+| `set_diagnostic_trouble_code_outcome(trouble_code_id, after_status)` | Preserves the initial observation and records a controlled post-diagnosis outcome |
+| `complete_diagnostic_session(session_id)` | Locks the technician-owned session with a wall-clock-safe completion timestamp and audit event |
+| `record_battery_health_report(repair_order_id, measurements, method, conditions)` | Derives tenant, branch and vehicle from the repair order and validates time, ranges and method provenance |
 | `post_invoice(draft_id, fiscal_series, idempotency_key)` | Locks draft/series, validates completed approved quantities, computes totals, assigns number, freezes snapshots, emits outbox |
 | `record_payment_and_allocate(...)` | Creates idempotent payment, validates currency/open amounts, allocates and updates invoice state |
 | `post_credit_note(...)` | Validates uncredited source balance, assigns number, posts immutable credit and optional stock return |
@@ -677,6 +682,8 @@ Auth/access, CRM, vehicles, appointments, check-in, inspections, estimates/appro
 ### Phase 2 — EV/VW depth and supply chain (6–8 weeks)
 
 HV permits/qualifications/quarantine, battery-health reports, diagnostic imports, service-template versioning, full purchasing/receipts/transfers/counts, deferred work and customer portal.
+
+Implemented foundation: HV permits/qualifications/quarantine, controlled diagnostic sessions and DTC outcomes, battery-health reporting, purchasing and lot/serial receiving. Diagnostic file import, service-template versioning, transfers/counts, deferred work and the customer portal remain planned.
 
 ### Phase 3 — regulated integrations and optimization (4–8 weeks)
 

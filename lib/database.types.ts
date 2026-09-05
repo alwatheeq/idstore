@@ -5082,6 +5082,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      complete_diagnostic_session: {
+        Args: { p_session_id: string }
+        Returns: Database["public"]["Tables"]["diagnostic_sessions"]["Row"]
+        SetofOptions: { from: "*"; to: "diagnostic_sessions"; isOneToOne: true; isSetofReturn: false }
+      }
       finish_job: {
         Args: {
           p_expected_version: number
@@ -5256,6 +5261,30 @@ export type Database = {
         Returns: Database["public"]["Tables"]["estimate_versions"]["Row"]
         SetofOptions: { from: "*"; to: "estimate_versions"; isOneToOne: true; isSetofReturn: false }
       }
+      record_battery_health_report: {
+        Args: {
+          p_conditions_json: Json
+          p_measured_at: string
+          p_method: string
+          p_repair_order_id: string
+          p_soh_percent: number | null
+          p_tool: string
+          p_usable_kwh: number | null
+        }
+        Returns: Database["public"]["Tables"]["battery_health_reports"]["Row"]
+        SetofOptions: { from: "*"; to: "battery_health_reports"; isOneToOne: true; isSetofReturn: false }
+      }
+      record_diagnostic_trouble_code: {
+        Args: {
+          p_before_status: string
+          p_code: string
+          p_control_unit: string
+          p_description: string
+          p_session_id: string
+        }
+        Returns: Database["public"]["Tables"]["diagnostic_trouble_codes"]["Row"]
+        SetofOptions: { from: "*"; to: "diagnostic_trouble_codes"; isOneToOne: true; isSetofReturn: false }
+      }
       record_hv_permit_check: {
         Args: {
           p_check_code: string
@@ -5371,6 +5400,23 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      start_diagnostic_session: {
+        Args: {
+          p_external_ref: string
+          p_interface_serial: string
+          p_repair_order_id: string
+          p_started_at: string
+          p_tool: string
+          p_tool_version: string
+        }
+        Returns: Database["public"]["Tables"]["diagnostic_sessions"]["Row"]
+        SetofOptions: { from: "*"; to: "diagnostic_sessions"; isOneToOne: true; isSetofReturn: false }
+      }
+      set_diagnostic_trouble_code_outcome: {
+        Args: { p_after_status: string; p_trouble_code_id: string }
+        Returns: Database["public"]["Tables"]["diagnostic_trouble_codes"]["Row"]
+        SetofOptions: { from: "*"; to: "diagnostic_trouble_codes"; isOneToOne: true; isSetofReturn: false }
       }
       transition_appointment: {
         Args: {

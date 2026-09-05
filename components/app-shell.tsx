@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Bell, Boxes, Building2, CalendarDays, CarFront, CircleDollarSign,
-  ClipboardCheck, ClipboardList, FileText, Gauge, Menu, ShieldCheck, ShoppingCart, Users, UserRoundCog, X,
+  ClipboardCheck, ClipboardList, FileText, Gauge, Menu, ScanLine, ShieldCheck, ShoppingCart, Users, UserRoundCog, X,
 } from "lucide-react";
 import type { CurrentStaff } from "@/lib/auth/session";
 
@@ -15,6 +15,7 @@ const navigation = [
   { href: "/inspections", label: "Inspections", icon: ClipboardCheck },
   { href: "/estimates", label: "Estimates", icon: FileText },
   { href: "/hv-safety", label: "HV safety", icon: ShieldCheck },
+  { href: "/diagnostics", label: "Diagnostics", icon: ScanLine },
   { href: "/appointments", label: "Appointments", icon: CalendarDays },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/vehicles", label: "Vehicles", icon: CarFront },

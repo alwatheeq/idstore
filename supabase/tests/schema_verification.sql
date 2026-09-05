@@ -61,6 +61,11 @@ where routine_schema = 'public'
     'create_hv_work_permit',
     'record_hv_permit_check',
     'transition_hv_work_permit',
+    'start_diagnostic_session',
+    'record_diagnostic_trouble_code',
+    'set_diagnostic_trouble_code_outcome',
+    'complete_diagnostic_session',
+    'record_battery_health_report',
     'post_stock_movement',
     'post_invoice',
     'receive_invoice_payment'

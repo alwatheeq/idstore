@@ -67,6 +67,7 @@ export async function createHvPermit(formData: FormData) {
   if (!jobId || !procedureRef || !validFromLocal || !validToLocal) {
     redirect(permitRoute(undefined, "error", "Job, procedure and permit window are required."));
   }
+  let permitId = "";
   try {
     const supabase = await createClient();
     const { data: job, error: jobError } = await supabase.from("jobs").select("branch:branches(timezone)").eq("id", jobId).single();
@@ -78,11 +79,12 @@ export async function createHvPermit(formData: FormData) {
       p_valid_to: zonedLocalToIso(validToLocal, job.branch.timezone),
     });
     if (error || !data) throw error ?? new Error("HV permit was not created.");
-    revalidatePath("/hv-safety"); revalidatePath("/work-orders");
-    redirect(permitRoute(data.id, "created", "HV permit created."));
+    permitId = data.id;
   } catch (error) {
     redirect(permitRoute(undefined, "error", operationError(error, "The HV permit could not be created.")));
   }
+  revalidatePath("/hv-safety"); revalidatePath("/work-orders");
+  redirect(permitRoute(permitId, "created", "HV permit created."));
 }
 
 export async function recordHvCheck(formData: FormData) {

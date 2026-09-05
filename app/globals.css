@@ -385,6 +385,50 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
 .qualification-roster span { color: var(--muted); font-size: 9px; }
 .hv-permit-table { min-width: 1030px; }
 
+.diagnostic-form { border-top: 3px solid var(--blue); }
+.battery-form { border-top: 3px solid var(--teal); }
+.diagnostic-workspace { margin-bottom: 22px; scroll-margin-top: 88px; }
+.diagnostic-hero { min-height: 120px; padding: 22px 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; color: #fff; background: linear-gradient(115deg, var(--navy), #103858); border-radius: var(--radius) var(--radius) 0 0; }
+.diagnostic-hero > div > span { color: #7ebcff; font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.diagnostic-hero h2 { margin: 4px 0 3px; font-size: 24px; letter-spacing: -.025em; }
+.diagnostic-hero h2 small { margin-left: 8px; color: #a9bbce; font-size: 13px; font-weight: 500; }
+.diagnostic-hero p { margin: 0; color: #a9bbce; font-size: 11px; }
+.battery-cell-band { min-height: 88px; margin-bottom: 18px; padding: 15px 20px; display: grid; grid-template-columns: minmax(230px, .65fr) minmax(300px, 1.35fr); align-items: center; gap: 24px; background: #fff; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 var(--radius) var(--radius); }
+.battery-cell-label { display: flex; align-items: center; gap: 11px; }
+.battery-cell-label > svg { width: 25px; height: 25px; color: var(--teal); }
+.battery-cell-label strong, .battery-cell-label span { display: block; }
+.battery-cell-label strong { font-size: 16px; }
+.battery-cell-label span { margin-top: 2px; color: var(--muted); font-size: 10px; }
+.battery-cells { display: grid; grid-template-columns: repeat(12, minmax(10px, 1fr)); gap: 5px; }
+.battery-cells i { height: 30px; display: block; background: #edf1f4; border: 1px solid var(--line); border-radius: 4px; transform: skewX(-5deg); }
+.battery-cells i.filled { background: var(--teal); border-color: var(--teal); box-shadow: inset 0 -7px rgba(0,0,0,.08); }
+.battery-cells.low i.filled { background: var(--amber); border-color: var(--amber); }
+.diagnostic-columns { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, .7fr); gap: 20px; align-items: start; }
+.dtc-entry { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; border-bottom: 1px solid var(--line); }
+.dtc-ledger { display: grid; }
+.dtc-ledger article { min-height: 76px; padding: 12px 18px; display: grid; grid-template-columns: 76px minmax(160px, 1fr) auto auto; align-items: center; gap: 13px; border-bottom: 1px solid var(--line); }
+.dtc-ledger article:last-child { border-bottom: 0; }
+.dtc-code { color: var(--blue); font-size: 13px; font-weight: 750; }
+.dtc-ledger strong, .dtc-ledger span { display: block; }
+.dtc-ledger article > div:nth-child(2) > span { margin-top: 2px; color: var(--muted); font-size: 10px; }
+.dtc-state { display: flex; align-items: center; gap: 6px; }
+.dtc-state > span { color: var(--muted); }
+.dtc-ledger form { display: flex; align-items: center; gap: 6px; }
+.dtc-ledger select { height: 31px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--ink); padding: 0 7px; font-size: 10px; }
+.diagnostic-facts dl { margin: 0; padding: 7px 18px 14px; }
+.diagnostic-facts dl div { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.diagnostic-facts dl div:last-child { border-bottom: 0; }
+.diagnostic-facts dt { color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.diagnostic-facts dd { margin: 3px 0 0; font-size: 11px; overflow-wrap: anywhere; }
+.battery-history { display: grid; }
+.battery-history article { min-height: 61px; padding: 11px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); }
+.battery-history article:last-child { border-bottom: 0; }
+.battery-history strong, .battery-history span { display: block; }
+.battery-history strong { font-size: 12px; }
+.battery-history span { margin-top: 2px; color: var(--muted); font-size: 9px; }
+.battery-history b { color: var(--teal); font-size: 12px; white-space: nowrap; }
+.diagnostic-table { min-width: 1010px; }
+
 .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .branch-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
 .branch-card.selected { border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue-soft); }
@@ -447,6 +491,8 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
   .estimate-columns > .stack:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hv-columns { grid-template-columns: 1fr; }
   .hv-columns > .stack:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .diagnostic-columns { grid-template-columns: 1fr; }
+  .diagnostic-columns > .stack:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 780px) {
@@ -502,4 +548,12 @@ h1 { margin: 3px 0 4px; font-size: clamp(26px, 3vw, 38px); line-height: 1.1; let
   .hv-lockout-header .inspection-context-state { grid-column: 2; justify-content: flex-start; }
   .hv-check-form { grid-template-columns: 1fr; }
   .hv-gate-action { align-items: stretch; flex-direction: column; }
+  .diagnostic-hero { align-items: flex-start; flex-direction: column; }
+  .diagnostic-hero h2 small { display: block; margin: 4px 0 0; }
+  .battery-cell-band { grid-template-columns: 1fr; gap: 13px; }
+  .battery-cells i { height: 24px; }
+  .diagnostic-columns > .stack:last-child { grid-template-columns: 1fr; }
+  .dtc-entry { grid-template-columns: 1fr; }
+  .dtc-ledger article { grid-template-columns: 62px minmax(0, 1fr); }
+  .dtc-state, .dtc-ledger article > form { grid-column: 2; }
 }
