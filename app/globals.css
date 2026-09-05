@@ -48,6 +48,37 @@ button, a { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; text-decoration: none; }
 button, [role="button"], summary, select, input, textarea { touch-action: manipulation; }
 
+/* Numeric data remains LTR inside both English and Arabic layouts. */
+:where(
+  .mono,
+  .ltr-value,
+  time,
+  input[type="tel"],
+  input[type="number"],
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[inputmode="numeric"],
+  input[inputmode="decimal"],
+  .phone-control select
+) {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+
+:where(
+  input[type="tel"],
+  input[type="number"],
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[inputmode="numeric"],
+  input[inputmode="decimal"]
+) {
+  text-align: left;
+}
+
 .app-frame { min-height: 100vh; display: grid; grid-template-columns: 276px minmax(0, 1fr); }
 .sidebar { position: sticky; top: 0; height: 100vh; padding: 22px 16px 18px; background: linear-gradient(175deg, #0b2135 0%, var(--navy) 58%, #06121e 100%); color: #fff; display: flex; flex-direction: column; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.16) transparent; z-index: 40; }
 .brand { display: flex; align-items: center; gap: 12px; padding: 0 7px 13px; }
@@ -193,7 +224,7 @@ h1 { margin: 4px 0 5px; font-size: clamp(27px, 3vw, 39px); line-height: 1.08; le
 .data-table tbody tr:hover { background: #fbfcfe; }
 .cell-main { font-weight: 600; }
 .cell-sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
-.mono { font-variant-numeric: tabular-nums; font-family: "IBM Plex Sans", monospace; }
+.mono { font-family: "IBM Plex Sans", monospace; }
 .nowrap { white-space: nowrap; }
 .align-right { text-align: end !important; }
 
@@ -626,7 +657,7 @@ h1 { margin: 4px 0 5px; font-size: clamp(27px, 3vw, 39px); line-height: 1.08; le
 .form-field label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
 .form-field input, .form-field select { height: 45px; border: 1px solid var(--line-strong); border-radius: 9px; padding: 0 12px; outline: none; background: #fff; color: var(--ink); font: inherit; }
 .form-field input:focus, .form-field select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
-.phone-control { display: grid; grid-template-columns: 118px 1fr; gap: 8px; }
+.phone-control { display: grid; grid-template-columns: 118px 1fr; gap: 8px; direction: ltr; }
 .phone-control select { min-width: 0; font-size: 12px; font-weight: 650; }
 .pin-input { letter-spacing: .32em; font-size: 17px !important; font-variant-numeric: tabular-nums; }
 .field-help { color: var(--muted); font-size: 10px; }

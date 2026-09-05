@@ -20,7 +20,7 @@ export function LoginForm() {
       <div className="form-field">
         <label htmlFor="mobile">Mobile number</label>
         <div className="phone-control">
-          <select name="dialCode" defaultValue="+962" aria-label="Country and calling code">
+          <select name="dialCode" defaultValue="+962" aria-label="Country and calling code" dir="ltr">
             {callingCodes.map((country) => (
               <option key={country.iso} value={country.dialCode}>
                 {country.iso} {country.dialCode}
@@ -32,6 +32,7 @@ export function LoginForm() {
             name="mobile"
             type="tel"
             inputMode="tel"
+            dir="ltr"
             autoComplete="tel-national"
             placeholder="79 000 0000"
             aria-describedby="mobile-help"
@@ -49,6 +50,7 @@ export function LoginForm() {
           name="pin"
           type="password"
           inputMode="numeric"
+          dir="ltr"
           autoComplete="current-password"
           pattern="[0-9]{6}"
           minLength={6}

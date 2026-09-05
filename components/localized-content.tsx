@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { useUiLocale } from "@/components/ui-locale";
+import { isolateNumericText } from "@/lib/i18n/bidi";
 
 type TextRecord = { source: string; rendered: string };
 type AttributeRecord = { source: string; rendered: string };
@@ -9,16 +10,22 @@ const textRecords = new WeakMap<Text, TextRecord>();
 const attributeRecords = new WeakMap<Element, Map<string, AttributeRecord>>();
 const translatableAttributes = ["aria-label", "placeholder", "title"] as const;
 
-function preserveWhitespace(source: string, translate: (value: string) => string) {
+function preserveWhitespace(source: string, translate: (value: string) => string, isolateNumbers = false) {
   const value = source.trim();
-  if (!value || !/[A-Za-z]/.test(value)) return source;
-  if (/^[A-Z0-9 .:/+%°_-]+$/.test(value)) return source;
-  const translated = translate(value);
-  if (translated === value) return source;
-  return `${source.slice(0, source.indexOf(value))}${translated}${source.slice(source.indexOf(value) + value.length)}`;
+  if (!value) return source;
+
+  let rendered = source;
+  if (/[A-Za-z]/.test(value) && !/^[A-Z0-9 .:/+%°_-]+$/.test(value)) {
+    const translated = translate(value);
+    if (translated !== value) {
+      rendered = `${source.slice(0, source.indexOf(value))}${translated}${source.slice(source.indexOf(value) + value.length)}`;
+    }
+  }
+
+  return isolateNumbers ? isolateNumericText(rendered) : rendered;
 }
 
-function translateTree(root: HTMLElement, translate: (value: string) => string) {
+function translateTree(root: HTMLElement, translate: (value: string) => string, isolateNumbers: boolean) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node = walker.nextNode();
   while (node) {
@@ -26,7 +33,8 @@ function translateTree(root: HTMLElement, translate: (value: string) => string) 
     const current = textNode.data;
     const previous = textRecords.get(textNode);
     const source = previous && current === previous.rendered ? previous.source : current;
-    const rendered = preserveWhitespace(source, translate);
+    const contributesToControlName = Boolean(textNode.parentElement?.closest("label, option"));
+    const rendered = preserveWhitespace(source, translate, isolateNumbers && !contributesToControlName);
     textRecords.set(textNode, { source, rendered });
     if (current !== rendered) textNode.data = rendered;
     node = walker.nextNode();
@@ -48,17 +56,18 @@ function translateTree(root: HTMLElement, translate: (value: string) => string) 
 }
 
 export function LocalizedContent({ children }: { children: ReactNode }) {
-  const { pageText } = useUiLocale();
+  const { locale, pageText } = useUiLocale();
   const rootRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root) return;
-    translateTree(root, pageText);
-    const observer = new MutationObserver(() => translateTree(root, pageText));
+    const isolateNumbers = locale === "ar";
+    translateTree(root, pageText, isolateNumbers);
+    const observer = new MutationObserver(() => translateTree(root, pageText, isolateNumbers));
     observer.observe(root, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: [...translatableAttributes] });
     return () => observer.disconnect();
-  }, [pageText]);
+  }, [locale, pageText]);
 
   return <div className="localized-content" ref={rootRef}>{children}</div>;
 }

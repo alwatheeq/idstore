@@ -6,6 +6,7 @@ import { renderServiceDocument } from "../../lib/documents/service-document";
 import { updateSession } from "../../lib/supabase/proxy";
 import { visibleNavigationGroups } from "../../lib/navigation";
 import { translatePageText } from "../../lib/i18n/ui";
+import { isolateNumericText } from "../../lib/i18n/bidi";
 
 test("actions stay concise in English and Arabic", () => {
   expect(translatePageText("Record refund", "en")).toBe("Refund");
@@ -14,6 +15,11 @@ test("actions stay concise in English and Arabic", () => {
   expect(translatePageText("High-voltage service", "ar")).toBe("خدمة الجهد العالي");
   expect(translatePageText("Roles & permissions", "ar")).toBe("الأدوار والصلاحيات");
   expect(translatePageText("Customer records", "ar")).toBe("سجلات العملاء");
+});
+
+test("numbers, dates and times are isolated left-to-right inside Arabic text", () => {
+  expect(isolateNumericText("رقم +962 79 000 0000")).toBe("رقم \u2066+962 79 000 0000\u2069");
+  expect(isolateNumericText("الموعد 2026-09-05، 14:30")).toBe("الموعد \u20662026-09-05\u2069، \u206614:30\u2069");
 });
 
 test("staff navigation follows assigned functional permissions", () => {
@@ -108,6 +114,23 @@ test("unauthenticated visitors are routed to the mobile login", async ({ page })
   await expect(page.getByLabel(/Country and calling code/i)).toBeVisible();
   await expect(page.getByLabel(/Mobile number/i)).toBeVisible();
   await expect(page.getByLabel(/6-digit PIN/i)).toBeVisible();
+});
+
+test("Arabic login keeps phone and PIN controls left-to-right", async ({ page }) => {
+  await page.goto("/login");
+  if (await page.locator("html").getAttribute("dir") !== "rtl") {
+    await page.locator(".public-locale-toggle").click();
+  }
+
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await expect(page.locator("#mobile")).toHaveCSS("direction", "ltr");
+  await expect(page.locator("#pin")).toHaveCSS("direction", "ltr");
+  const phoneFieldOrder = await page.locator(".phone-control").evaluate((field) => {
+    const country = field.querySelector("select")?.getBoundingClientRect();
+    const number = field.querySelector("input")?.getBoundingClientRect();
+    return { countryLeft: country?.left ?? 0, numberLeft: number?.left ?? 0 };
+  });
+  expect(phoneFieldOrder.countryLeft).toBeLessThan(phoneFieldOrder.numberLeft);
 });
 
 test("login blocks malformed PINs before any authentication request", async ({ page }) => {
