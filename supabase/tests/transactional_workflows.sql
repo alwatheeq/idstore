@@ -386,6 +386,7 @@ begin
   select id into v_estimate from public.create_estimate_from_repair_order(v_service_order);
   perform public.add_estimate_line(v_estimate,'labor','Transactional diagnosis',1,50,0,16,'Diagnosis',null);
   perform public.send_estimate(v_estimate,7);
+  if public.service_document('estimate',v_estimate)->>'repair_order' is null then raise exception 'Staff estimate document projection failed'; end if;
   select id into v_estimate from public.record_estimate_group_decision(v_estimate,'Diagnosis','approved','Transactional Customer','portal','approved in rollback test');
   select id into v_supplement from public.create_supplementary_estimate(v_estimate,'Additional part found');
   if v_supplement is null then raise exception 'Supplementary estimate was not created'; end if;
@@ -429,6 +430,7 @@ begin
   insert into public.invoices(organization_id,branch_id,repair_order_id,customer_id,invoice_number,status,currency,subtotal,tax_total,grand_total,paid_total,seller_snapshot,buyer_snapshot,posted_at,document_hash,created_by) values(v_org,v_branch,v_service_order,v_customer,'INV-'||left(replace(v_key,'-',''),10),'posted','JOD',10,0,10,0,'{}','{}',now(),repeat('c',64),v_admin) returning id into v_customer_invoice;
   perform public.portal_request_payment_link(v_customer_invoice);
   if (public.portal_document('invoice',v_customer_invoice)->>'number') is null then raise exception 'Portal document rendering failed'; end if;
+  if public.service_document('invoice',v_customer_invoice)->>'number' is null then raise exception 'Shared service document projection failed'; end if;
 
   raise notice 'IDstore transactional workflow tests passed';
 end;

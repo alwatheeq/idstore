@@ -7640,6 +7640,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      service_document: {
+        Args: { p_document_id: string; p_document_type: string }
+        Returns: Json
+      }
       portal_request_appointment: {
         Args: {
           p_branch_id: string

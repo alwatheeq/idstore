@@ -64,6 +64,7 @@ where routine_schema = 'public'
     'record_hv_permit_evidence',
     'transition_hv_work_permit',
     'open_repair_order_from_checkin',
+    'service_document',
     'start_diagnostic_session',
     'record_diagnostic_trouble_code',
     'set_diagnostic_trouble_code_outcome',

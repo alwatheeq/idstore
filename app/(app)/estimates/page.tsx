@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgeCheck, Calculator, Clock3, FileCheck2, FileText, Plus } from "lucide-react";
+import { BadgeCheck, Calculator, Clock3, FileCheck2, FileText, Printer, Plus } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { MetricStrip } from "@/components/metric-strip";
 import { PageHeader } from "@/components/page-header";
@@ -55,7 +55,7 @@ export default async function EstimatesPage({ searchParams }: { searchParams: Pr
     ]} />
 
     {selected ? <section className="estimate-workspace" id="estimate-workspace">
-      <div className="estimate-context"><div><span>{selected.repair_order?.branch?.city} · {selected.repair_order?.ro_number} · Version {selected.version_no}</span><h2>{selected.repair_order?.customer?.display_name}</h2><p>{selected.repair_order?.vehicle?.model?.name ?? "Volkswagen ID"} · {selected.repair_order?.vehicle?.registration_no ?? selected.repair_order?.vehicle?.vin}</p></div><StatusPill label={selected.status} tone={tone(selected.status)} /></div>
+      <div className="estimate-context"><div><span>{selected.repair_order?.branch?.city} · {selected.repair_order?.ro_number} · Version {selected.version_no}</span><h2>{selected.repair_order?.customer?.display_name}</h2><p>{selected.repair_order?.vehicle?.model?.name ?? "Volkswagen ID"} · {selected.repair_order?.vehicle?.registration_no ?? selected.repair_order?.vehicle?.vin}</p></div><div className="inline-actions"><a className="button compact" href={`/api/documents/estimate/${selected.id}`} target="_blank" rel="noreferrer"><Printer /> Print</a><StatusPill label={selected.status} tone={tone(selected.status)} /></div></div>
       <div className="estimate-columns">
         <div className="stack">
           {selected.status === "draft" ? <section className="panel operation-form"><div className="panel-header"><div><div className="panel-title">Add priced work</div><div className="panel-subtitle">Link inspection findings when the line resolves a recorded condition.</div></div></div><form action={addEstimateLine} className="form-grid panel-body"><input type="hidden" name="estimateId" value={selected.id} />

@@ -683,7 +683,7 @@ Auth/access, CRM, vehicles, appointments, check-in, inspections, estimates/appro
 
 HV permits/qualifications/quarantine, battery-health reports, diagnostic imports, service-template versioning, full purchasing/receipts/transfers/counts, deferred work and customer portal.
 
-Implemented foundation: HV permits/qualifications/quarantine, controlled diagnostic sessions and DTC outcomes, battery-health reporting, checksummed private diagnostic evidence, service-template versioning, catalog-backed appointment selection with immutable service/task snapshots and automatic workshop-job instantiation, resource allocation, purchasing and lot/serial receiving, inter-branch transfers, blind counts, deferred work, quality release, verified/advisory campaigns, finance corrections and the separately scoped customer portal. Vendor-native diagnostic parsing remains behind the licensed-tool/file-format adapter boundary.
+Implemented foundation: HV permits/qualifications/quarantine, controlled diagnostic sessions and DTC outcomes, battery-health reporting, checksummed private diagnostic evidence, service-template versioning, catalog-backed appointment selection with immutable service/task snapshots and automatic workshop-job instantiation, bilingual print/PDF-ready estimate and invoice projections, resource allocation, purchasing and lot/serial receiving, inter-branch transfers, blind counts, deferred work, quality release, verified/advisory campaigns, finance corrections and the separately scoped customer portal. Vendor-native diagnostic parsing remains behind the licensed-tool/file-format adapter boundary.
 
 ### Phase 3 — regulated integrations and optimization (4–8 weeks)
 

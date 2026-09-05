@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { NextRequest } from "next/server";
 import { GET as getReadiness } from "../../app/api/readiness/route";
+import { renderServiceDocument } from "../../lib/documents/service-document";
 import { updateSession } from "../../lib/supabase/proxy";
 
 test("missing Supabase configuration fails closed", async () => {
@@ -42,6 +43,31 @@ test("deployment health endpoint is public and non-cacheable", async ({ request 
   expect(await health.json()).toMatchObject({ status: "ok", service: "idstore" });
 });
 
+test("service documents render bilingual print-safe content", () => {
+  const html = renderServiceDocument({
+    type: "invoice",
+    number: "TEST-INV-1",
+    status: "posted",
+    currency: "JOD",
+    subtotal: 10,
+    discount: 0,
+    tax: 1.6,
+    total: 11.6,
+    paid: 0,
+    issued_at: "2026-09-05T12:00:00Z",
+    repair_order: "TEST-RO-1",
+    seller: { organization_name: "IDstore", branch_name: "Amman", city: "Amman" },
+    buyer: { customer_name: "Test & <عميل>" },
+    vehicle: { vin: "WVWZZZTEST", model: "ID.4" },
+    lines: [{ line_no: 1, line_type: "labor", description: "Inspection <فحص>", quantity: 1, unit_price: 10, discount: 0, tax_rate: 16, tax: 1.6, total: 11.6 }],
+  });
+
+  expect(html).toContain("فاتورة ضريبية");
+  expect(html).toContain("Test &amp; &lt;عميل&gt;");
+  expect(html).toContain("Inspection &lt;فحص&gt;");
+  expect(html).toContain("@media print");
+});
+
 test("unauthenticated visitors are routed to the mobile login", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login(?:\?.*)?$/);
@@ -61,7 +87,7 @@ test("login blocks malformed PINs before any authentication request", async ({ p
 });
 
 test("protected staff and customer routes do not leak content", async ({ page }) => {
-  for (const route of ["/dashboard", "/records", "/finance-control", "/quality-campaigns", "/reports", "/search", "/governance", "/portal"]) {
+  for (const route of ["/dashboard", "/records", "/finance-control", "/quality-campaigns", "/reports", "/search", "/governance", "/portal", "/api/documents/invoice/00000000-0000-0000-0000-000000000000"]) {
     await page.goto(route);
     await expect(page).toHaveURL(/\/login(?:\?.*)?$/);
   }
