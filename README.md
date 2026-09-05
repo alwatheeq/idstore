@@ -6,13 +6,14 @@ IDstore is a bilingual, multi-branch Volkswagen ID electric-vehicle service-cent
 
 - `docs/ev-service-center-supabase-spec.md` — product and technical specification
 - `docs/database-setup.md` — Supabase connection, bootstrap and deployment guidance
+- `docs/deployment-runbook.md` — standalone container, verification and rollback procedure
 - `app/` and `components/` — responsive English/Arabic operations interface
 - `lib/supabase/` — SSR clients, session refresh and typed command adapters
 - `supabase/config.toml` — local Supabase configuration
 - `supabase/migrations/` — versioned database migrations
 - `supabase/functions/` — authenticated server-side account provisioning
 - `supabase/seed.sql` — local-only seed entry point
-- `supabase/tests/schema_verification.sql` — post-migration verification queries
+- `supabase/tests/` — post-migration and rollback-only transactional verification
 - `tests/e2e/` — desktop/mobile authentication, access-boundary and accessibility browser tests
 
 ## Security model
@@ -30,7 +31,7 @@ npm install
 npm run dev
 ```
 
-Set the two public Supabase values documented in `.env.example`; the request proxy then enforces authenticated sessions. The interface shell can still be viewed without a connected project, but live operations require Supabase.
+Set the two public Supabase values documented in `.env.example`; the request proxy then enforces authenticated sessions. Without them, the login and health routes remain available while every protected route fails closed.
 
 For a local database, install Docker Desktop and use the Supabase CLI:
 
@@ -52,6 +53,8 @@ npx supabase functions deploy provision-customer
 ```
 
 Run Supabase security and performance advisors after every database change. Never commit `.env` files, database passwords, access tokens or secret keys.
+
+The application can be built as a hardened standalone container with `compose.production.yml`. See `docs/deployment-runbook.md` for required build values, health checks, staged rollout and rollback.
 
 ### Connected development project
 

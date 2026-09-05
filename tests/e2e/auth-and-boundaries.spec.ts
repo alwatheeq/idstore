@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { NextRequest } from "next/server";
+import { GET as getReadiness } from "../../app/api/readiness/route";
 import { updateSession } from "../../lib/supabase/proxy";
 
 test("missing Supabase configuration fails closed", async () => {
@@ -16,6 +17,15 @@ test("missing Supabase configuration fails closed", async () => {
     const location = new URL(response.headers.get("location") ?? "http://invalid");
     expect(location.pathname).toBe("/login");
     expect(location.searchParams.get("next")).toBe("/dashboard");
+
+    const healthResponse = await updateSession(new NextRequest("http://127.0.0.1:3100/api/health"));
+    expect(healthResponse.status).toBe(200);
+    expect(healthResponse.headers.get("location")).toBeNull();
+
+    expect(getReadiness().status).toBe(503);
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.invalid";
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_test_configuration_only";
+    expect(getReadiness().status).toBe(200);
   } finally {
     if (previousUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     else process.env.NEXT_PUBLIC_SUPABASE_URL = previousUrl;
@@ -23,6 +33,13 @@ test("missing Supabase configuration fails closed", async () => {
     if (previousKey === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
     else process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = previousKey;
   }
+});
+
+test("deployment health endpoint is public and non-cacheable", async ({ request }) => {
+  const health = await request.get("/api/health");
+  expect(health.status()).toBe(200);
+  expect(health.headers()["cache-control"]).toContain("no-store");
+  expect(await health.json()).toMatchObject({ status: "ok", service: "idstore" });
 });
 
 test("unauthenticated visitors are routed to the mobile login", async ({ page }) => {
