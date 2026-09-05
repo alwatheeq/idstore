@@ -33,7 +33,10 @@ export async function signIn(_previousState: LoginState, formData: FormData): Pr
       .limit(1)
       .maybeSingle();
 
-    if (membershipError || !membership) {
+    if (membershipError) { await supabase.auth.signOut(); return { error: "This account is not active. Contact an administrator." }; }
+    if (!membership) {
+      const { data: portalIdentity } = await supabase.rpc("portal_identity");
+      if (portalIdentity?.length) redirect("/portal");
       await supabase.auth.signOut();
       return { error: "This account is not active. Contact an administrator." };
     }

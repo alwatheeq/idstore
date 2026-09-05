@@ -7,5 +7,7 @@ node_modules/
 *.tsbuildinfo
 dist/
 coverage/
+playwright-report/
+test-results/
 supabase/.branches/
 supabase/.temp/

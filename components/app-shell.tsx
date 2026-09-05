@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
-  Bell, Boxes, Building2, CalendarDays, CarFront, CircleDollarSign,
-  ClipboardCheck, ClipboardList, FileText, Gauge, Menu, ScanLine, ShieldCheck, ShoppingCart, Users, UserRoundCog, X,
+  Banknote, Bell, Boxes, Building2, CalendarDays, CarFront, CircleDollarSign,
+  ArrowLeftRight, BarChart3, BookOpenCheck, ClipboardCheck, ClipboardList, FileText, Gauge, Menu, Megaphone, Paperclip, PlugZap, ScanLine, Search, ShieldCheck, ShoppingCart, Users, UserRoundCog, X,
 } from "lucide-react";
 import type { CurrentStaff } from "@/lib/auth/session";
 
@@ -16,15 +16,22 @@ const navigation = [
   { href: "/estimates", label: "Estimates", icon: FileText },
   { href: "/hv-safety", label: "HV safety", icon: ShieldCheck },
   { href: "/diagnostics", label: "Diagnostics", icon: ScanLine },
+  { href: "/quality-campaigns", label: "Quality & campaigns", icon: Megaphone },
   { href: "/appointments", label: "Appointments", icon: CalendarDays },
   { href: "/customers", label: "Customers", icon: Users },
   { href: "/vehicles", label: "Vehicles", icon: CarFront },
   { href: "/inventory", label: "Parts & stock", icon: Boxes },
+  { href: "/stock-control", label: "Transfers & counts", icon: ArrowLeftRight },
   { href: "/purchasing", label: "Purchasing", icon: ShoppingCart },
   { href: "/invoices", label: "Billing", icon: CircleDollarSign },
+  { href: "/finance-control", label: "Finance controls", icon: Banknote },
+  { href: "/records", label: "Files & messages", icon: Paperclip },
+  { href: "/reports", label: "Reports", icon: BarChart3 },
 ];
 
 const administration = [
+  { href: "/catalog", label: "Catalog & capacity", icon: BookOpenCheck },
+  { href: "/governance", label: "Integrations & audit", icon: PlugZap },
   { href: "/branches", label: "Branches", icon: Building2 },
   { href: "/staff", label: "Staff & access", icon: UserRoundCog },
 ];
@@ -67,6 +74,7 @@ export function AppShell({ children, staff, branches }: { children: React.ReactN
         <header className="topbar">
           <button className="icon-button mobile-menu" aria-label="Toggle menu" onClick={() => setMenuOpen((value) => !value)}>{menuOpen ? <X size={17} /> : <Menu size={17} />}</button>
           <div className="branch-select"><label htmlFor="branch">Operating branch</label><select id="branch" defaultValue="all"><option value="all">{branches.length ? "All branches" : "No branches configured"}</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.city} · {branch.code}</option>)}</select></div>
+          <form className="topbar-search" action="/search"><Search size={15} /><input name="q" aria-label="Global search" placeholder="Search VIN, RO, customer…" /></form>
           <div className="topbar-spacer" />
           <button className="icon-button locale-button" onClick={() => setIsArabic((value) => !value)}>{isArabic ? "EN" : "العربية"}</button>
           <button className="icon-button notification" aria-label="Notifications"><Bell size={16} /></button>

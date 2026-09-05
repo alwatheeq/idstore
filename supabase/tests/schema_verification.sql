@@ -66,6 +66,25 @@ where routine_schema = 'public'
     'set_diagnostic_trouble_code_outcome',
     'complete_diagnostic_session',
     'record_battery_health_report',
+    'register_attachment',
+    'queue_customer_message',
+    'create_stock_transfer',
+    'receive_stock_transfer_line',
+    'create_stock_count',
+    'post_stock_count',
+    'post_credit_note',
+    'record_payment_refund',
+    'open_cash_session',
+    'close_cash_session',
+    'record_quality_check',
+    'create_service_campaign',
+    'match_vehicle_campaign',
+    'portal_dashboard',
+    'portal_record_estimate_decision',
+    'add_customer_contact',
+    'record_customer_consent',
+    'integration_overview',
+    'audit_recent',
     'post_stock_movement',
     'post_invoice',
     'receive_invoice_payment'
@@ -88,6 +107,19 @@ select 'stock_movements', m.id
 from public.stock_movements m
 join public.branches b on b.id = m.branch_id
 where b.organization_id <> m.organization_id;
+
+-- These integrity checks must also return zero rows.
+select 'refund_over_payment' as invariant, r.payment_id as id
+from (select payment_id,sum(amount) amount from public.payment_refunds where status='recorded' group by payment_id) r
+join public.payments p on p.id=r.payment_id where r.amount>p.amount
+union all
+select 'credit_over_line',cl.invoice_line_id
+from (select invoice_line_id,sum(quantity) quantity from public.credit_note_lines group by invoice_line_id) cl
+join public.invoice_lines il on il.id=cl.invoice_line_id where cl.quantity>il.quantity
+union all
+select 'confirmed_unverified_campaign',m.id
+from public.campaign_vehicle_matches m join public.service_campaigns c on c.id=m.campaign_id
+where m.status in ('confirmed','completed') and c.status='draft';
 
 -- Confirm immutable-ledger and tenant-consistency triggers exist.
 select event_object_schema, event_object_table, trigger_name

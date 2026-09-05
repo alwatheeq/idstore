@@ -15,6 +15,7 @@ npx supabase link --project-ref <project-ref>
 npx supabase db push
 npx supabase migration list
 npx supabase functions deploy provision-staff
+npx supabase functions deploy provision-customer
 ```
 
 The repository migration is also applied through the authenticated Supabase connector during provisioning. Do not apply the same migration twice under different names.
@@ -56,13 +57,16 @@ Create branches after the Admin membership exists. Each active branch requires c
 
 After the first Admin exists, additional Admin and Staff accounts are provisioned from **Staff and access**. The authenticated `provision-staff` Edge Function creates the Auth identity, then calls the transactional database command for the profile, membership, branch assignments and capability grants. JWT verification must remain enabled; the service-role key is used only inside the hosted function and must never be added to the Next.js environment.
 
+Customer portal identities are created by an Admin from **Customers**. The JWT-protected `provision-customer` function creates a separate Auth identity and links it to `customer_accounts`; it never creates an internal membership. Portal reads use curated security-definer RPCs rather than table policies, preventing customer identities from selecting internal notes or unrestricted columns.
+
 ## 5. Storage
 
 The migration creates private buckets for vehicle media, diagnostics, documents, qualification evidence and integration payloads. User-accessible object names start with the organization UUID:
 
 ```text
-vehicle-media/{organization_id}/{vehicle_id}/{repair_order_id}/{immutable-file-name}
-documents/{organization_id}/{document_type}/{document_id}/{immutable-file-name}
+vehicle-media/{organization_id}/{record_type}/{record_id}/{immutable-file-name}
+diagnostics/{organization_id}/{record_type}/{record_id}/{immutable-file-name}
+documents/{organization_id}/invoice/{invoice_id}/{immutable-file-name}
 ```
 
 Integration payloads are server-only. Do not grant browser access to that bucket.
@@ -101,6 +105,14 @@ Required manual checks:
 26. Dashboard totals reconcile to the operational ledgers for the selected branch scope.
 27. Staff dashboard scope lists only assigned branches and never exposes unassigned-branch signals.
 28. Objects outside the caller's organization path cannot be read or uploaded.
+29. Evidence registration validates its target tenant/branch, bucket, MIME, size and SHA-256; retries do not create duplicate metadata.
+30. A transfer leaves destination stock unchanged until receipt and preserves short-receipt reason evidence.
+31. Blind stock counts post only their calculated variance through the immutable stock ledger.
+32. Credit quantities never exceed uncredited invoice quantities; refunds reconcile to both a payment allocation and credit note.
+33. Cash close calculates expected cash from the owning cashier's session receipts and linked refunds; variance approval is separate.
+34. QC-to-ready is blocked until a current passing signed quality check exists.
+35. Campaign matches remain advisory until an accountable authorized-source verification.
+36. Customer portal RPCs expose only actively owned vehicles and the customer's own appointments, orders, estimates and posted invoices.
 
 ## 7. Secrets
 

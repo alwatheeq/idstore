@@ -13,6 +13,7 @@ IDstore is a bilingual, multi-branch Volkswagen ID electric-vehicle service-cent
 - `supabase/functions/` — authenticated server-side account provisioning
 - `supabase/seed.sql` — local-only seed entry point
 - `supabase/tests/schema_verification.sql` — post-migration verification queries
+- `tests/e2e/` — desktop/mobile authentication, access-boundary and accessibility browser tests
 
 ## Security model
 
@@ -47,6 +48,7 @@ npx supabase link --project-ref <project-ref>
 npx supabase db push
 npx supabase migration list
 npx supabase functions deploy provision-staff
+npx supabase functions deploy provision-customer
 ```
 
 Run Supabase security and performance advisors after every database change. Never commit `.env` files, database passwords, access tokens or secret keys.
@@ -62,6 +64,6 @@ The local `.env.local` contains only the public project URL and publishable key 
 
 ## Current status
 
-The development Supabase project is live and all seventeen versioned migrations have been applied. Mobile-number/6-digit-PIN authentication, the multi-branch shell, branch setup, customer creation, vehicle registration, appointment scheduling and status management, staff provisioning, branch/capability assignment, work-order intake, digital vehicle inspections, safety findings, customer estimates and approvals, workshop dispatch, technician timers, technician qualification verification, high-voltage permits and safety checks, diagnostic sessions, fault-code outcomes, battery-health history, parts catalog setup, supplier purchasing, lot/serial receiving, stock movements, service invoicing and payment allocation now read and write live Supabase data through typed, permission-checked commands. The dashboard also reads live RLS-scoped workshop, appointment, inventory and billing signals with an explicit all-branch or single-branch scope. The staff Auth function is deployed with JWT verification, and the operational flows have been transaction-tested against the connected project.
+The development Supabase project is live and all 26 versioned migrations are applied. The connected application now covers mobile/PIN authentication; Admin/Staff branch access; CRM contacts/consents, vehicle ownership and a separately scoped customer portal; appointments and capacity resources; service-template versioning; inspections, estimates and portal decisions; repair orders, jobs and time; HV permits and safety checks; diagnostics, DTCs and battery health; private checksummed evidence; parts, purchasing, receipts, transfers and blind counts; deferred work; invoices, payments, credits, refunds and cash reconciliation; signed quality release; advisory/verified service campaigns; customer-message outbox; organization search; permission-aware multi-branch reports; and redacted integration/audit governance.
 
-All current core application screens are connected to Supabase; production hardening and deeper EV workflows remain. Invoice posting emits a durable outbox event, but the Jordan e-invoicing adapter remains pending official sandbox credentials and accountant-approved tax examples. Global search, line-level/partial estimate authorization, diagnostic file imports, media uploads, reports and external Volkswagen/payment/messaging integrations are still future phases. GitHub synchronization still requires valid GitHub CLI authentication and a configured repository remote.
+The `provision-staff` and `provision-customer` Auth functions are deployed with JWT verification. New database workflows have been transaction-tested against the connected project, and the production build plus desktop/mobile Chromium boundary and accessibility suite pass. See `docs/release-status.md` for external certification, credential and operational gates that cannot be completed in source code alone. GitHub synchronization still requires valid GitHub CLI authentication and a configured repository remote.
