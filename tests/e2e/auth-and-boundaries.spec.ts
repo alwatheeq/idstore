@@ -4,6 +4,27 @@ import { NextRequest } from "next/server";
 import { GET as getReadiness } from "../../app/api/readiness/route";
 import { renderServiceDocument } from "../../lib/documents/service-document";
 import { updateSession } from "../../lib/supabase/proxy";
+import { visibleNavigationGroups } from "../../lib/navigation";
+
+test("staff navigation follows assigned functional permissions", () => {
+  const groups = visibleNavigationGroups("staff", ["crm.manage", "job.perform"]);
+  const routes = groups.flatMap((group) => group.items.map((item) => item.href));
+
+  expect(routes).toContain("/dashboard");
+  expect(routes).toContain("/customers");
+  expect(routes).toContain("/vehicles");
+  expect(routes).toContain("/diagnostics");
+  expect(routes).toContain("/records");
+  expect(routes).not.toContain("/staff");
+  expect(routes).not.toContain("/invoices");
+});
+
+test("admins retain the complete navigation surface", () => {
+  const routes = visibleNavigationGroups("admin", []).flatMap((group) => group.items.map((item) => item.href));
+  expect(routes).toContain("/staff");
+  expect(routes).toContain("/branches");
+  expect(routes).toContain("/finance-control");
+});
 
 test("missing Supabase configuration fails closed", async () => {
   const previousUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -102,6 +123,15 @@ test("login has no serious accessibility violations", async ({ page }) => {
 test("mobile login does not overflow horizontally", async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.includes("mobile"), "Mobile-only assertion");
   await page.goto("/login");
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  expect(overflow).toBe(false);
+});
+
+test("Arabic preference is server-rendered with RTL direction", async ({ context, page }) => {
+  await context.addCookies([{ name: "idstore_locale", value: "ar", domain: "127.0.0.1", path: "/", sameSite: "Lax" }]);
+  await page.goto("/login");
+  await expect(page.locator("html")).toHaveAttribute("lang", "ar");
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflow).toBe(false);
 });

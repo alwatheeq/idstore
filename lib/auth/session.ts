@@ -14,6 +14,7 @@ export type CurrentStaff = {
   organizationId: string;
   branchIds: string[];
   selectedBranchId: string | null;
+  permissionCodes: string[];
 };
 
 export const getCurrentStaff = cache(async (): Promise<CurrentStaff> => {
@@ -31,7 +32,7 @@ export const getCurrentStaff = cache(async (): Promise<CurrentStaff> => {
       .maybeSingle(),
     supabase
       .from("memberships")
-      .select("role, organization_id")
+      .select("id, role, organization_id")
       .eq("user_id", user.id)
       .eq("status", "active")
       .limit(1)
@@ -40,12 +41,15 @@ export const getCurrentStaff = cache(async (): Promise<CurrentStaff> => {
 
   if (!profile || !membership) redirect("/login");
 
-  const [{ data: branches }, cookieStore] = await Promise.all([
+  const [{ data: branches }, { data: permissionRows }, cookieStore] = await Promise.all([
     supabase
       .from("branches")
       .select("id")
       .eq("organization_id", membership.organization_id)
       .eq("status", "active"),
+    membership.role === "staff"
+      ? supabase.from("membership_permissions").select("permission_code, allowed").eq("membership_id", membership.id).eq("allowed", true)
+      : Promise.resolve({ data: [] as { permission_code: string; allowed: boolean }[] }),
     cookies(),
   ]);
   const branchIds = (branches ?? []).map((branch) => branch.id);
@@ -58,5 +62,6 @@ export const getCurrentStaff = cache(async (): Promise<CurrentStaff> => {
     organizationId: membership.organization_id,
     branchIds,
     selectedBranchId: requestedBranchId && branchIds.includes(requestedBranchId) ? requestedBranchId : null,
+    permissionCodes: membership.role === "admin" ? ["*"] : (permissionRows ?? []).map((permission) => permission.permission_code),
   };
 });

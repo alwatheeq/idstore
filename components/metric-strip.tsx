@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { LocalizedText } from "@/components/localized-text";
 
 export type Metric = {
   label: string;
@@ -13,9 +14,9 @@ export function MetricStrip({ metrics }: { metrics: Metric[] }) {
     <section className="metric-strip">
       {metrics.map(({ label, value, note, noteTone, icon: Icon }) => (
         <article className="metric" key={label}>
-          <div className="metric-top"><span>{label}</span><span className="metric-icon"><Icon /></span></div>
+          <div className="metric-top"><span><LocalizedText>{label}</LocalizedText></span><span className="metric-icon"><Icon /></span></div>
           <div className="metric-value mono">{value}</div>
-          <div className={`metric-note ${noteTone ?? ""}`}>{note}</div>
+          <div className={`metric-note ${noteTone ?? ""}`}><LocalizedText>{note}</LocalizedText></div>
         </article>
       ))}
     </section>
