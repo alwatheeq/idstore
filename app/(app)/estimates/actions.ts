@@ -16,15 +16,17 @@ export async function createEstimate(formData: FormData) {
   await getCurrentStaff();
   const repairOrderId = formText(formData, "repairOrderId");
   if (!repairOrderId) redirect(estimateRoute(undefined, "error", "Choose a repair order to estimate."));
+  let createdId: string;
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.rpc("create_estimate_from_repair_order", { p_repair_order_id: repairOrderId });
     if (error || !data) throw error ?? new Error("Estimate was not created.");
-    revalidatePath("/estimates");
-    redirect(estimateRoute(data.id, "created", "Draft estimate created."));
+    createdId = data.id;
   } catch (error) {
     redirect(estimateRoute(undefined, "error", operationError(error, "The estimate could not be created.")));
   }
+  revalidatePath("/estimates");
+  redirect(estimateRoute(createdId, "created", "Draft estimate created."));
 }
 
 export async function addEstimateLine(formData: FormData) {
@@ -109,4 +111,64 @@ export async function recordEstimateDecision(formData: FormData) {
   }
   revalidatePath("/estimates"); revalidatePath("/inspections"); revalidatePath("/work-orders"); revalidatePath("/dashboard");
   redirect(estimateRoute(estimateId, "created", `Estimate ${decision}.`));
+}
+
+export async function recordEstimateGroupDecision(formData: FormData) {
+  await getCurrentStaff();
+  const estimateId = formText(formData, "estimateId");
+  const approvalGroup = formText(formData, "approvalGroup");
+  const decision = formText(formData, "decision");
+  const actorName = formText(formData, "actorName");
+  const channel = formText(formData, "channel");
+  if (!estimateId || !approvalGroup || !actorName || !["approved", "declined"].includes(decision) || !["phone", "whatsapp", "email", "in_person", "portal"].includes(channel)) {
+    redirect(estimateRoute(estimateId || undefined, "error", "Approval group, customer, decision and evidence channel are required."));
+  }
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("record_estimate_group_decision", { p_estimate_id: estimateId, p_approval_group: approvalGroup, p_decision: decision, p_actor_name: actorName, p_channel: channel, p_evidence_note: optionalText(formData, "evidenceNote") ?? "" });
+    if (error) throw error;
+  } catch (error) {
+    redirect(estimateRoute(estimateId, "error", operationError(error, "The group decision could not be recorded.")));
+  }
+  revalidatePath("/estimates"); revalidatePath("/work-orders"); revalidatePath("/dashboard");
+  redirect(estimateRoute(estimateId, "created", `${approvalGroup} decision recorded.`));
+}
+
+export async function createSupplementaryEstimate(formData: FormData) {
+  await getCurrentStaff();
+  const estimateId = formText(formData, "estimateId");
+  const reason = formText(formData, "reason");
+  if (!estimateId || !reason) redirect(estimateRoute(estimateId || undefined, "error", "Source estimate and supplement reason are required."));
+  let createdId: string;
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("create_supplementary_estimate", { p_estimate_id: estimateId, p_reason: reason });
+    if (error || !data) throw error ?? new Error("Supplement was not created.");
+    createdId = data.id;
+  } catch (error) {
+    redirect(estimateRoute(estimateId, "error", operationError(error, "The supplementary estimate could not be created.")));
+  }
+  revalidatePath("/estimates");
+  redirect(estimateRoute(createdId, "created", "Supplementary estimate created."));
+}
+
+export async function approvePriceOverride(formData: FormData) {
+  const staff = await getCurrentStaff();
+  const estimateId = formText(formData, "estimateId");
+  const lineId = formText(formData, "lineId");
+  const catalogPrice = optionalNumber(formData, "catalogPrice");
+  const overridePrice = optionalNumber(formData, "overridePrice");
+  const reason = formText(formData, "reason");
+  if (staff.role !== "admin" || !estimateId || !lineId || catalogPrice === undefined || overridePrice === undefined || Number.isNaN(catalogPrice) || Number.isNaN(overridePrice) || !reason) {
+    redirect(estimateRoute(estimateId || undefined, "error", "Administrator, catalog price, override price and reason are required."));
+  }
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("approve_estimate_price_override", { p_estimate_line_id: lineId, p_catalog_unit_price: catalogPrice, p_override_unit_price: overridePrice, p_reason: reason });
+    if (error) throw error;
+  } catch (error) {
+    redirect(estimateRoute(estimateId, "error", operationError(error, "The price override could not be approved.")));
+  }
+  revalidatePath("/estimates");
+  redirect(estimateRoute(estimateId, "created", "Price override approved and audited."));
 }

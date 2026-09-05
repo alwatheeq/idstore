@@ -115,3 +115,53 @@ export async function bookAppointmentResource(formData: FormData) {
   revalidatePath(path); revalidatePath("/appointments");
   redirect(routeMessage(path, "created", "Resource assigned to appointment."));
 }
+
+export async function upsertOperatingHour(formData: FormData) {
+  await getCurrentStaff();
+  const branchId = formText(formData, "branchId");
+  const dayOfWeek = optionalNumber(formData, "dayOfWeek");
+  const closed = formData.get("isClosed") === "on";
+  if (!branchId || dayOfWeek === undefined || !Number.isSafeInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
+    redirect(routeMessage(path, "error", "Branch and weekday are required."));
+  }
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("upsert_branch_operating_hour", {
+      p_branch_id: branchId,
+      p_day_of_week: dayOfWeek,
+      p_opens_at: closed ? null : optionalText(formData, "opensAt") ?? null,
+      p_closes_at: closed ? null : optionalText(formData, "closesAt") ?? null,
+      p_is_closed: closed,
+    });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage(path, "error", operationError(error, "Operating hours could not be saved.")));
+  }
+  revalidatePath(path); revalidatePath("/appointments");
+  redirect(routeMessage(path, "created", "Branch operating hours saved."));
+}
+
+export async function upsertBranchHoliday(formData: FormData) {
+  await getCurrentStaff();
+  const branchId = formText(formData, "branchId");
+  const holidayDate = formText(formData, "holidayDate");
+  const name = formText(formData, "name");
+  const closed = formData.get("isClosed") === "on";
+  if (!branchId || !holidayDate || !name) redirect(routeMessage(path, "error", "Branch, date and holiday name are required."));
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("upsert_branch_holiday", {
+      p_branch_id: branchId,
+      p_holiday_date: holidayDate,
+      p_name: name,
+      p_is_closed: closed,
+      p_opens_at: closed ? null : optionalText(formData, "opensAt") ?? null,
+      p_closes_at: closed ? null : optionalText(formData, "closesAt") ?? null,
+    });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage(path, "error", operationError(error, "Holiday hours could not be saved.")));
+  }
+  revalidatePath(path); revalidatePath("/appointments");
+  redirect(routeMessage(path, "created", "Branch holiday saved."));
+}

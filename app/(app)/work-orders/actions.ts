@@ -172,3 +172,71 @@ export async function finishJob(formData: FormData) {
   revalidatePath("/work-orders");
   redirect(routeMessage("/work-orders", "created", `Job marked ${outcome}.`));
 }
+
+export async function recordJobNarrative(formData: FormData) {
+  await getCurrentStaff();
+  const jobId = formText(formData, "jobId");
+  const causeText = formText(formData, "causeText");
+  const correctionText = formText(formData, "correctionText");
+  if (!jobId || !causeText || !correctionText) redirect(routeMessage("/work-orders", "error", "Cause and correction are required."));
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("record_job_narrative", { p_job_id: jobId, p_cause_text: causeText, p_correction_text: correctionText });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/work-orders", "error", operationError(error, "The job narrative could not be saved.")));
+  }
+  revalidatePath("/work-orders");
+  redirect(routeMessage("/work-orders", "created", "Cause and correction recorded."));
+}
+
+export async function interruptJob(formData: FormData) {
+  await getCurrentStaff();
+  const jobId = formText(formData, "jobId");
+  const version = Number(formText(formData, "version"));
+  const interruptionType = formText(formData, "interruptionType");
+  const reason = formText(formData, "reason");
+  if (!jobId || !Number.isSafeInteger(version) || !["pause", "blocked"].includes(interruptionType) || !reason) redirect(routeMessage("/work-orders", "error", "A valid pause or block reason is required."));
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("interrupt_job", { p_job_id: jobId, p_expected_version: version, p_interruption_type: interruptionType, p_reason: reason });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/work-orders", "error", operationError(error, "The job could not be interrupted.")));
+  }
+  revalidatePath("/work-orders");
+  redirect(routeMessage("/work-orders", "created", `Job ${interruptionType === "pause" ? "paused" : "blocked"} with evidence.`));
+}
+
+export async function resumeJob(formData: FormData) {
+  await getCurrentStaff();
+  const jobId = formText(formData, "jobId");
+  const version = Number(formText(formData, "version"));
+  if (!jobId || !Number.isSafeInteger(version)) redirect(routeMessage("/work-orders", "error", "The resume action is invalid."));
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("resume_job", { p_job_id: jobId, p_expected_version: version });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/work-orders", "error", operationError(error, "The job could not be resumed.")));
+  }
+  revalidatePath("/work-orders");
+  redirect(routeMessage("/work-orders", "created", "Job returned to the ready queue."));
+}
+
+export async function createReworkJob(formData: FormData) {
+  await getCurrentStaff();
+  const originalJobId = formText(formData, "jobId");
+  const reworkKind = formText(formData, "reworkKind");
+  const reason = formText(formData, "reason");
+  if (!originalJobId || !["rework", "comeback"].includes(reworkKind) || !reason) redirect(routeMessage("/work-orders", "error", "Rework type and reason are required."));
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("create_rework_job", { p_original_job_id: originalJobId, p_rework_kind: reworkKind, p_reason: reason });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/work-orders", "error", operationError(error, "The rework job could not be created.")));
+  }
+  revalidatePath("/work-orders");
+  redirect(routeMessage("/work-orders", "created", `${reworkKind === "comeback" ? "Comeback" : "Rework"} job created.`));
+}

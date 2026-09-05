@@ -153,3 +153,33 @@ export async function receivePurchaseOrderLine(formData: FormData) {
   revalidatePath("/dashboard");
   redirect(routeMessage(purchasingPath, "created", "Goods receipt posted to stock."));
 }
+
+export async function recordSupplierInvoice(formData: FormData) {
+  await getCurrentStaff();
+  const purchaseOrderId = formText(formData, "purchaseOrderId");
+  const lineId = formText(formData, "lineId");
+  const supplierInvoiceNo = formText(formData, "supplierInvoiceNo");
+  const invoiceDate = formText(formData, "invoiceDate");
+  const quantity = optionalNumber(formData, "quantity");
+  const unitCost = optionalNumber(formData, "unitCost");
+  const landedCost = optionalNumber(formData, "landedCost") ?? 0;
+  if (!purchaseOrderId || !lineId || !supplierInvoiceNo || !invoiceDate || quantity === undefined || !Number.isFinite(quantity) || quantity <= 0 || unitCost === undefined || !Number.isFinite(unitCost) || unitCost < 0 || !Number.isFinite(landedCost) || landedCost < 0) {
+    redirect(routeMessage(purchasingPath, "error", "Supplier invoice number, date and valid invoice line are required."));
+  }
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("record_supplier_invoice", {
+      p_purchase_order_id: purchaseOrderId,
+      p_supplier_invoice_no: supplierInvoiceNo,
+      p_invoice_date: invoiceDate,
+      p_landed_cost: landedCost,
+      p_lines: [{ purchase_order_line_id: lineId, quantity, unit_cost: unitCost }],
+      p_evidence_note: optionalText(formData, "evidenceNote") ?? "",
+    });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage(purchasingPath, "error", operationError(error, "The supplier invoice could not be matched.")));
+  }
+  revalidatePath(purchasingPath);
+  redirect(routeMessage(purchasingPath, "created", "Supplier invoice recorded and three-way match evaluated."));
+}

@@ -104,3 +104,58 @@ export async function postInventoryMovement(formData: FormData) {
   revalidatePath("/dashboard");
   redirect(routeMessage("/inventory", "created", "Stock movement posted."));
 }
+
+export async function configurePartCatalog(formData: FormData) {
+  await getCurrentStaff();
+  const partId = formText(formData, "partId");
+  const relatedPartId = formText(formData, "relatedPartId") || null;
+  const relationship = formText(formData, "relationship");
+  if (!partId || (relatedPartId && !["superseded_by", "alternative"].includes(relationship))) {
+    redirect(routeMessage("/inventory", "error", "The catalog relationship is invalid."));
+  }
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("configure_part_catalog", {
+      p_part_id: partId,
+      p_hazardous_classification: formText(formData, "hazardousClassification"),
+      p_barcode: formText(formData, "barcode"),
+      p_barcode_type: formText(formData, "barcodeType") || "other",
+      p_related_part_id: relatedPartId,
+      p_relationship: relationship,
+      p_notes: formText(formData, "notes"),
+    });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/inventory", "error", operationError(error, "The catalog controls could not be saved.")));
+  }
+  revalidatePath("/inventory");
+  redirect(routeMessage("/inventory", "created", "Catalog identity and relationship saved."));
+}
+
+export async function recordInventoryDisposition(formData: FormData) {
+  await getCurrentStaff();
+  const stockBalanceId = formText(formData, "stockBalanceId");
+  const dispositionType = formText(formData, "dispositionType");
+  const quantity = optionalNumber(formData, "quantity");
+  const reason = formText(formData, "reason");
+  if (!stockBalanceId || !["supplier_return", "scrap"].includes(dispositionType) || quantity === undefined || !Number.isFinite(quantity) || quantity <= 0 || !reason) {
+    redirect(routeMessage("/inventory", "error", "Balance, disposition, positive quantity and reason are required."));
+  }
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("record_inventory_disposition", {
+      p_stock_balance_id: stockBalanceId,
+      p_quantity: quantity,
+      p_disposition_type: dispositionType,
+      p_reason: reason,
+      p_supplier_reference: formText(formData, "supplierReference"),
+      p_idempotency_key: randomUUID(),
+    });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/inventory", "error", operationError(error, "The inventory disposition could not be posted.")));
+  }
+  revalidatePath("/inventory");
+  revalidatePath("/dashboard");
+  redirect(routeMessage("/inventory", "created", "Inventory disposition posted to the immutable ledger."));
+}

@@ -24,6 +24,29 @@ declare
   v_match uuid;
   v_order uuid;
   v_order_version bigint;
+  v_service_order uuid;
+  v_appointments uuid[];
+  v_appointment uuid;
+  v_checkin uuid;
+  v_waitlist uuid;
+  v_job uuid;
+  v_job_version bigint;
+  v_rework uuid;
+  v_estimate uuid;
+  v_supplement uuid;
+  v_part uuid;
+  v_related_part uuid;
+  v_bin uuid;
+  v_balance uuid;
+  v_supplier uuid;
+  v_po uuid;
+  v_po_line uuid;
+  v_receipt uuid;
+  v_receipt_line uuid;
+  v_supplier_invoice uuid;
+  v_customer_invoice uuid;
+  v_warehouse uuid;
+  v_future timestamptz := date_trunc('day', now()) + interval '2 days 12 hours';
   v_status text;
   v_key text := 'test-' || gen_random_uuid()::text;
 begin
@@ -273,6 +296,69 @@ begin
   if v_status <> 'ready' then
     raise exception 'Passing QC did not release the repair order';
   end if;
+
+  -- Advanced scheduling, waitlist and guided check-in.
+  perform public.upsert_branch_operating_hour(v_branch, extract(dow from (v_future at time zone 'Asia/Amman'))::integer, '00:00', '23:59', false);
+  delete from public.branch_holidays where branch_id=v_branch and holiday_date=(v_future at time zone 'Asia/Amman')::date;
+  select public.create_advanced_appointments(v_org,v_branch,v_customer,v_vehicle,v_future,v_future+interval '1 hour',null,'transactional appointment','workshop','customer_dropoff',null,null,'["diagnosis"]'::jsonb,2) into v_appointments;
+  v_appointment:=v_appointments[1];
+  if array_length(v_appointments,1)<>2 then raise exception 'Recurring appointment series was not created'; end if;
+  select id into v_waitlist from public.create_waitlist_entry(v_branch,v_customer,v_vehicle,v_future+interval '20 days',v_future+interval '21 days',60,'workshop','customer_dropoff',3,'transactional waitlist');
+  if v_waitlist is null then raise exception 'Waitlist entry was not created'; end if;
+  select version into v_order_version from public.appointments where id=v_appointment;
+  perform public.transition_appointment(v_appointment,v_order_version,'confirmed');
+  select version into v_order_version from public.appointments where id=v_appointment;
+  select id into v_checkin from public.complete_vehicle_checkin(v_appointment,v_order_version,1100,80,2,'["charging cable"]'::jsonb,'[]'::jsonb,true,true,true,'Transactional Customer','[{"zone":"front","condition":"clear"}]'::jsonb,'');
+  if v_checkin is null or not exists(select 1 from public.appointments where id=v_appointment and status='checked_in') then raise exception 'Guided check-in did not complete'; end if;
+
+  -- Grouped estimate approvals, supplements, workshop narrative and rework.
+  insert into public.repair_orders(organization_id,branch_id,ro_number,customer_id,vehicle_id,status,created_by) values(v_org,v_branch,'SVC-'||left(replace(v_key,'-',''),12),v_customer,v_vehicle,'diagnosis',v_admin) returning id into v_service_order;
+  select id into v_estimate from public.create_estimate_from_repair_order(v_service_order);
+  perform public.add_estimate_line(v_estimate,'labor','Transactional diagnosis',1,50,0,16,'Diagnosis',null);
+  perform public.send_estimate(v_estimate,7);
+  select id into v_estimate from public.record_estimate_group_decision(v_estimate,'Diagnosis','approved','Transactional Customer','portal','approved in rollback test');
+  select id into v_supplement from public.create_supplementary_estimate(v_estimate,'Additional part found');
+  if v_supplement is null then raise exception 'Supplementary estimate was not created'; end if;
+  insert into public.jobs(organization_id,branch_id,repair_order_id,description_snapshot,status,safety_class,planned_minutes) values(v_org,v_branch,v_service_order,'Transactional workshop job','in_progress','ev_aware',60) returning id,version into v_job,v_job_version;
+  insert into public.labor_entries(organization_id,branch_id,job_id,technician_id,started_at) select v_org,v_branch,v_job,tp.id,now()-interval '5 minutes' from public.technician_profiles tp where tp.organization_id=v_org limit 1;
+  perform public.record_job_narrative(v_job,'Connector contamination','Cleaned and verified connector');
+  select version into v_job_version from public.jobs where id=v_job;
+  perform public.interrupt_job(v_job,v_job_version,'pause','Awaiting verification');
+  select version into v_job_version from public.jobs where id=v_job;
+  perform public.resume_job(v_job,v_job_version);
+  update public.jobs set status='completed' where id=v_job;
+  select id into v_rework from public.create_rework_job(v_job,'rework','Verification repeat');
+  if v_rework is null then raise exception 'Rework job was not created'; end if;
+
+  -- Catalog governance, immutable disposition and supplier three-way matching.
+  select id into v_warehouse from public.warehouses where branch_id=v_branch and status='active' limit 1;
+  if v_warehouse is null then
+    insert into public.warehouses(organization_id,branch_id,code,name) values(v_org,v_branch,'TEST-WH','Transactional warehouse') returning id into v_warehouse;
+    insert into public.bins(organization_id,branch_id,warehouse_id,code,bin_type) values(v_org,v_branch,v_warehouse,'STORAGE','storage');
+  end if;
+  select id into v_part from public.create_part(v_org,v_branch,'TEST-'||left(replace(v_key,'-',''),8),'Transactional part','ea','none',12);
+  select id into v_related_part from public.create_part(v_org,v_branch,'ALT-'||left(replace(v_key,'-',''),8),'Transactional alternative','ea','none',10);
+  perform public.configure_part_catalog(v_part,'UN3480','1234567890123','ean13',v_related_part,'alternative','approved rollback source');
+  select id into v_bin from public.bins where branch_id=v_branch and bin_type='storage' and status='active' limit 1;
+  perform public.post_stock_movement(v_org,v_branch,v_part,null,null,v_bin,5,4,'receipt','transactional',gen_random_uuid(),v_key||'-stock');
+  select id into v_balance from public.stock_balances where part_id=v_part and bin_id=v_bin and lot_id is null;
+  perform public.record_inventory_disposition(v_balance,1,'scrap','Damaged during rollback test','',v_key||'-scrap');
+  if not exists(select 1 from public.inventory_dispositions where part_id=v_part and quantity=1) then raise exception 'Inventory disposition was not recorded'; end if;
+  select id into v_supplier from public.create_supplier(v_org,'Transactional Supplier','','','');
+  insert into public.purchase_orders(organization_id,branch_id,supplier_id,po_number,status,currency,subtotal,tax_total,grand_total,created_by) values(v_org,v_branch,v_supplier,'PO-'||left(replace(v_key,'-',''),10),'received','JOD',20,0,20,v_admin) returning id into v_po;
+  insert into public.purchase_order_lines(organization_id,branch_id,purchase_order_id,line_no,part_id,ordered_quantity,received_quantity,unit_cost,tax_rate) values(v_org,v_branch,v_po,1,v_part,5,5,4,0) returning id into v_po_line;
+  insert into public.goods_receipts(organization_id,branch_id,purchase_order_id,receipt_number,status,received_by) values(v_org,v_branch,v_po,'GR-'||left(replace(v_key,'-',''),10),'posted',v_admin) returning id into v_receipt;
+  insert into public.goods_receipt_lines(organization_id,branch_id,goods_receipt_id,purchase_order_line_id,destination_bin_id,quantity,unit_cost) values(v_org,v_branch,v_receipt,v_po_line,v_bin,5,4) returning id into v_receipt_line;
+  select id into v_supplier_invoice from public.record_supplier_invoice(v_po,'SI-'||left(replace(v_key,'-',''),10),current_date,2,jsonb_build_array(jsonb_build_object('purchase_order_line_id',v_po_line,'quantity',5,'unit_cost',4)),'matched rollback invoice');
+  if not exists(select 1 from public.supplier_invoices where id=v_supplier_invoice and match_status='matched') then raise exception 'Supplier invoice did not three-way match'; end if;
+
+  -- Customer portal self-service and secured document rendering.
+  perform public.provision_customer_portal(v_customer,v_admin);
+  perform public.portal_update_consent('appointment_reminders','sms','granted');
+  perform public.portal_request_appointment(v_branch,v_vehicle,v_future+interval '30 days',v_future+interval '31 days',60,'workshop','wait_on_site','portal rollback request');
+  insert into public.invoices(organization_id,branch_id,repair_order_id,customer_id,invoice_number,status,currency,subtotal,tax_total,grand_total,paid_total,seller_snapshot,buyer_snapshot,posted_at,document_hash,created_by) values(v_org,v_branch,v_service_order,v_customer,'INV-'||left(replace(v_key,'-',''),10),'posted','JOD',10,0,10,0,'{}','{}',now(),repeat('c',64),v_admin) returning id into v_customer_invoice;
+  perform public.portal_request_payment_link(v_customer_invoice);
+  if (public.portal_document('invoice',v_customer_invoice)->>'number') is null then raise exception 'Portal document rendering failed'; end if;
 
   raise notice 'IDstore transactional workflow tests passed';
 end;
