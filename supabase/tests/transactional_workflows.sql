@@ -31,6 +31,10 @@ declare
   v_waitlist uuid;
   v_job uuid;
   v_job_version bigint;
+  v_hv_job uuid;
+  v_hv_permit uuid;
+  v_hv_type uuid;
+  v_hv_technician uuid;
   v_rework uuid;
   v_estimate uuid;
   v_supplement uuid;
@@ -313,6 +317,47 @@ begin
 
   -- Grouped estimate approvals, supplements, workshop narrative and rework.
   insert into public.repair_orders(organization_id,branch_id,ro_number,customer_id,vehicle_id,status,created_by) values(v_org,v_branch,'SVC-'||left(replace(v_key,'-',''),12),v_customer,v_vehicle,'diagnosis',v_admin) returning id into v_service_order;
+
+  -- Structured high-voltage evidence and fail-closed safety gates.
+  insert into public.branch_capabilities(organization_id,branch_id,capability_code,valid_from,status,evidence_path)
+  values(v_org,v_branch,'HV_SERVICE',current_date,'active','rollback-only test')
+  on conflict (branch_id,capability_code,valid_from) do update set status='active'
+  ;
+  insert into public.qualification_types(organization_id,code,name,scope_json)
+  values(v_org,'TEST-HV','Transactional HV qualification','{"scope":"rollback-only"}'::jsonb)
+  on conflict (organization_id,code) do update set name=excluded.name
+  returning id into v_hv_type;
+  insert into public.technician_profiles(organization_id,user_id,employee_no,labor_grade,active)
+  values(v_org,v_admin,'TEST-HV-ADMIN','HV test technician',true)
+  on conflict (organization_id,user_id) do update set active=true
+  returning id into v_hv_technician;
+  insert into public.technician_qualifications(organization_id,technician_id,qualification_type_id,issuer,certificate_reference,valid_from,valid_to,verified_at,verified_by)
+  values(v_org,v_hv_technician,v_hv_type,'Transactional test','ROLLBACK',current_date,current_date+30,now(),v_admin)
+  on conflict (technician_id,qualification_type_id,valid_from) do update set verified_at=excluded.verified_at, verified_by=excluded.verified_by
+  ;
+  select id into v_hv_job from public.create_job(v_service_order,'Transactional HV isolation','TEST-HV-ISO','hv_isolated','TEST-HV',60);
+  select id into v_hv_permit from public.create_hv_work_permit(v_hv_job,'TEST-PROCEDURE','{"hazards":"stored energy","controls":"rollback-only"}'::jsonb,now()-interval '5 minutes',now()+interval '4 hours');
+  perform public.record_hv_permit_evidence(v_hv_permit,'scope_review','pass',null,'',null,'',null,'','','[]'::jsonb,'Scope confirmed against test procedure');
+  perform public.record_hv_permit_evidence(v_hv_permit,'emergency_plan','pass',null,'',null,'',null,'','','[]'::jsonb,'Emergency contacts and response path confirmed');
+  perform public.transition_hv_work_permit(v_hv_permit,'risk_review');
+  perform public.transition_hv_work_permit(v_hv_permit,'authorized');
+  begin
+    perform public.record_hv_permit_evidence(v_hv_permit,'vehicle_secured','pass',null,'',null,'',null,'','','[]'::jsonb,'');
+    raise exception 'Vehicle-secured check unexpectedly passed without PPE evidence';
+  exception when sqlstate '22023' then null;
+  end;
+  perform public.record_hv_permit_evidence(v_hv_permit,'vehicle_secured','pass',null,'',null,'',null,'','','["insulated_gloves","face_shield"]'::jsonb,'');
+  perform public.record_hv_permit_evidence(v_hv_permit,'ignition_disabled','pass',null,'',null,'',null,'','','[]'::jsonb,'');
+  perform public.record_hv_permit_evidence(v_hv_permit,'lockout_tagout','pass',null,'',null,'',null,'LOCK-TEST','KEY-TEST','[]'::jsonb,'');
+  begin
+    perform public.record_hv_permit_evidence(v_hv_permit,'absence_of_voltage','pass',null,'METER-TEST',0,'V',current_date+30,'','','[]'::jsonb,'');
+    raise exception 'Absence-of-voltage check unexpectedly passed without an independent witness';
+  exception when sqlstate '22023' then null;
+  end;
+  if not exists(select 1 from public.hv_permit_checks where permit_id=v_hv_permit and check_code='lockout_tagout' and lock_identifier='LOCK-TEST' and disconnect_key_reference='KEY-TEST') then
+    raise exception 'Structured lockout evidence was not retained';
+  end if;
+
   select id into v_estimate from public.create_estimate_from_repair_order(v_service_order);
   perform public.add_estimate_line(v_estimate,'labor','Transactional diagnosis',1,50,0,16,'Diagnosis',null);
   perform public.send_estimate(v_estimate,7);

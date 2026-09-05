@@ -60,6 +60,7 @@ where routine_schema = 'public'
     'grant_technician_qualification',
     'create_hv_work_permit',
     'record_hv_permit_check',
+    'record_hv_permit_evidence',
     'transition_hv_work_permit',
     'start_diagnostic_session',
     'record_diagnostic_trouble_code',
@@ -90,6 +91,22 @@ where routine_schema = 'public'
     'receive_invoice_payment'
   )
 order by routine_name, grantee;
+
+-- Confirm structured high-voltage evidence fields are present.
+select column_name, data_type, is_nullable
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'hv_permit_checks'
+  and column_name in (
+    'measurement_value',
+    'measurement_unit',
+    'instrument_calibration_due',
+    'lock_identifier',
+    'disconnect_key_reference',
+    'ppe_json',
+    'notes'
+  )
+order by ordinal_position;
 
 -- These queries must return zero rows: every branch-scoped row must reference a
 -- branch in the same organization, and document numbers must not collide.

@@ -87,19 +87,34 @@ export async function createHvPermit(formData: FormData) {
   redirect(permitRoute(permitId, "created", "HV permit created."));
 }
 
-export async function recordHvCheck(formData: FormData) {
+export async function recordHvEvidence(formData: FormData) {
   await getCurrentStaff();
   const permitId = formText(formData, "permitId");
   const checkCode = formText(formData, "checkCode");
   const result = formText(formData, "result");
+  const measurementText = optionalText(formData, "measurementValue");
+  const measurementValue = measurementText === null ? null : Number(measurementText);
+  const permittedPpe = new Set(["insulated_gloves", "face_shield", "arc_rated_clothing", "insulated_footwear"]);
+  const ppe = formData.getAll("ppe").filter((item): item is string => typeof item === "string" && permittedPpe.has(item));
   if (!permitId || !checkCode || !["pass", "fail", "not_applicable"].includes(result)) {
     redirect(permitRoute(permitId || undefined, "error", "Check and result are required."));
   }
+  if (measurementValue !== null && (!Number.isFinite(measurementValue) || measurementValue < 0)) {
+    redirect(permitRoute(permitId, "error", "The electrical measurement must be zero or greater."));
+  }
   try {
     const supabase = await createClient();
-    const { error } = await supabase.rpc("record_hv_permit_check", {
+    const { error } = await supabase.rpc("record_hv_permit_evidence", {
       p_permit_id: permitId, p_check_code: checkCode, p_result: result,
-      p_witness_id: optionalText(formData, "witnessId") ?? null, p_tool_ref: optionalText(formData, "toolRef") ?? "",
+      p_witness_id: optionalText(formData, "witnessId") ?? null,
+      p_tool_ref: optionalText(formData, "toolRef") ?? "",
+      p_measurement_value: measurementValue,
+      p_measurement_unit: optionalText(formData, "measurementUnit") ?? "",
+      p_instrument_calibration_due: optionalText(formData, "calibrationDue") ?? null,
+      p_lock_identifier: optionalText(formData, "lockIdentifier") ?? "",
+      p_disconnect_key_reference: optionalText(formData, "disconnectKeyReference") ?? "",
+      p_ppe_json: ppe,
+      p_notes: optionalText(formData, "notes") ?? "",
     });
     if (error) throw error;
   } catch (error) {

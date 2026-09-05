@@ -1913,10 +1913,17 @@ export type Database = {
           actor_id: string | null
           branch_id: string
           check_code: string
+          disconnect_key_reference: string | null
           id: string
+          instrument_calibration_due: string | null
+          lock_identifier: string | null
+          measurement_unit: string | null
+          measurement_value: number | null
+          notes: string | null
           occurred_at: string
           organization_id: string
           permit_id: string
+          ppe_json: Json
           result: string
           tool_ref: string | null
           witness_id: string | null
@@ -1925,10 +1932,17 @@ export type Database = {
           actor_id?: string | null
           branch_id: string
           check_code: string
+          disconnect_key_reference?: string | null
           id?: string
+          instrument_calibration_due?: string | null
+          lock_identifier?: string | null
+          measurement_unit?: string | null
+          measurement_value?: number | null
+          notes?: string | null
           occurred_at?: string
           organization_id: string
           permit_id: string
+          ppe_json?: Json
           result: string
           tool_ref?: string | null
           witness_id?: string | null
@@ -1937,10 +1951,17 @@ export type Database = {
           actor_id?: string | null
           branch_id?: string
           check_code?: string
+          disconnect_key_reference?: string | null
           id?: string
+          instrument_calibration_due?: string | null
+          lock_identifier?: string | null
+          measurement_unit?: string | null
+          measurement_value?: number | null
+          notes?: string | null
           occurred_at?: string
           organization_id?: string
           permit_id?: string
+          ppe_json?: Json
           result?: string
           tool_ref?: string | null
           witness_id?: string | null
@@ -7984,10 +8005,58 @@ export type Database = {
           actor_id: string | null
           branch_id: string
           check_code: string
+          disconnect_key_reference: string | null
           id: string
+          instrument_calibration_due: string | null
+          lock_identifier: string | null
+          measurement_unit: string | null
+          measurement_value: number | null
+          notes: string | null
           occurred_at: string
           organization_id: string
           permit_id: string
+          ppe_json: Json
+          result: string
+          tool_ref: string | null
+          witness_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hv_permit_checks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_hv_permit_evidence: {
+        Args: {
+          p_check_code: string
+          p_disconnect_key_reference: string
+          p_instrument_calibration_due: string | null
+          p_lock_identifier: string
+          p_measurement_unit: string
+          p_measurement_value: number | null
+          p_notes: string
+          p_permit_id: string
+          p_ppe_json: Json
+          p_result: string
+          p_tool_ref: string
+          p_witness_id: string | null
+        }
+        Returns: {
+          actor_id: string | null
+          branch_id: string
+          check_code: string
+          disconnect_key_reference: string | null
+          id: string
+          instrument_calibration_due: string | null
+          lock_identifier: string | null
+          measurement_unit: string | null
+          measurement_value: number | null
+          notes: string | null
+          occurred_at: string
+          organization_id: string
+          permit_id: string
+          ppe_json: Json
           result: string
           tool_ref: string | null
           witness_id: string | null
