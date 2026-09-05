@@ -715,6 +715,7 @@ export type Database = {
           tax_registration: string | null
           timezone: string
           updated_at: string
+          whatsapp: string | null
         }
         Insert: {
           address_json?: Json
@@ -736,6 +737,7 @@ export type Database = {
           tax_registration?: string | null
           timezone?: string
           updated_at?: string
+          whatsapp?: string | null
         }
         Update: {
           address_json?: Json
@@ -757,6 +759,7 @@ export type Database = {
           tax_registration?: string | null
           timezone?: string
           updated_at?: string
+          whatsapp?: string | null
         }
         Relationships: [
           {
@@ -6676,6 +6679,7 @@ export type Database = {
           p_organization_id: string
           p_phone?: string
           p_tax_registration?: string
+          p_whatsapp?: string
         }
         Returns: {
           address_json: Json
@@ -6697,6 +6701,7 @@ export type Database = {
           tax_registration: string | null
           timezone: string
           updated_at: string
+          whatsapp: string | null
         }
         SetofOptions: {
           from: "*"
@@ -8938,6 +8943,68 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "appointment_waitlist"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_branch_contacts: {
+        Args: {
+          p_address_line1: string
+          p_branch_id: string
+          p_email: string | null
+          p_phone: string
+          p_whatsapp: string
+        }
+        Returns: {
+          address_json: Json
+          admin_area: string | null
+          city: string
+          code: string
+          country_code: string
+          created_at: string
+          currency: string
+          display_name: string
+          email: string | null
+          id: string
+          latitude: number | null
+          legal_name: string
+          longitude: number | null
+          organization_id: string
+          phone: string | null
+          status: string
+          tax_registration: string | null
+          timezone: string
+          updated_at: string
+          whatsapp: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "branches"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_membership_access: {
+        Args: {
+          p_branch_ids: string[]
+          p_membership_id: string
+          p_permission_codes: string[]
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_status: string
+        }
+        Returns: {
+          all_branches: boolean
+          created_at: string
+          id: string
+          organization_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "memberships"
           isOneToOne: true
           isSetofReturn: false
         }

@@ -91,9 +91,19 @@ where routine_schema = 'public'
     'audit_recent',
     'post_stock_movement',
     'post_invoice',
-    'receive_invoice_payment'
+    'receive_invoice_payment',
+    'update_branch_contacts',
+    'update_membership_access'
   )
 order by routine_name, grantee;
+
+-- Branches own independent public contact channels.
+select column_name, data_type, is_nullable
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'branches'
+  and column_name in ('address_json', 'phone', 'whatsapp')
+order by ordinal_position;
 
 -- This query must return zero rows: clients book through the catalog-validating wrapper.
 select routine_schema, routine_name, grantee, privilege_type

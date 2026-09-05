@@ -7,6 +7,7 @@ begin;
 do $$
 declare
   v_admin uuid;
+  v_admin_membership uuid;
   v_org uuid;
   v_branch uuid;
   v_customer uuid;
@@ -56,8 +57,8 @@ declare
   v_status text;
   v_key text := 'test-' || gen_random_uuid()::text;
 begin
-  select m.user_id, m.organization_id
-    into v_admin, v_org
+  select m.user_id, m.organization_id, m.id
+    into v_admin, v_org, v_admin_membership
   from public.memberships m
   where m.role = 'admin' and m.status = 'active'
   order by m.created_at
@@ -87,6 +88,29 @@ begin
     ) values (
       v_org, 'TEST-' || left(v_key, 8), 'Test Branch', 'Test Branch', 'Amman'
     ) returning id into v_branch;
+  end if;
+
+  perform public.update_branch_contacts(
+    v_branch, 'Transactional Test Street', '+962 6 000 0000', '+962 79 000 0000', 'branch-test@example.invalid'
+  );
+  if not exists (
+    select 1 from public.branches b
+    where b.id = v_branch
+      and b.address_json->>'line1' = 'Transactional Test Street'
+      and b.phone = '+962 6 000 0000'
+      and b.whatsapp = '+962 79 000 0000'
+  ) then
+    raise exception 'Branch-owned contact details did not persist';
+  end if;
+
+  perform public.update_membership_access(
+    v_admin_membership, 'admin', 'active', '{}'::uuid[], '{}'::text[]
+  );
+  if not exists (
+    select 1 from public.memberships m
+    where m.id = v_admin_membership and m.role = 'admin' and m.all_branches and m.status = 'active'
+  ) then
+    raise exception 'Administrator access assignment did not persist';
   end if;
 
   insert into public.customers (

@@ -26,14 +26,16 @@ def main() -> None:
         model = next(item for item in available if item.from_code == "en" and item.to_code == "ar")
         package.install_from_path(model.download())
 
-    translations = {}
-    for index, source in enumerate(strings, start=1):
+    existing = json.loads(output_path.read_text(encoding="utf-8")) if output_path.exists() else {}
+    translations = {source: existing[source] for source in strings if source in existing}
+    pending = [source for source in strings if source not in translations]
+    for index, source in enumerate(pending, start=1):
         translations[source] = translate.translate(source, "en", "ar")
         if index % 100 == 0:
-            print(f"translated {index}/{len(strings)}", flush=True)
+            print(f"translated {index}/{len(pending)}", flush=True)
 
     output_path.write_text(json.dumps(translations, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"wrote {len(translations)} translations to {output_path}")
+    print(f"wrote {len(translations)} translations to {output_path} ({len(pending)} new)")
 
 
 if __name__ == "__main__":

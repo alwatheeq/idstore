@@ -227,6 +227,50 @@ const arabicCorrections: Record<string, string> = {
   "Commercial documents visible after posting": "تظهر المستندات التجارية بعد ترحيلها", "Posted": "تاريخ الترحيل", "Paid": "المدفوع",
   "Actions": "الإجراءات", "PDF": "PDF", "Payment link": "رابط الدفع", "No posted invoices.": "لا توجد فواتير مرحلة.",
   "30 minutes": "30 دقيقة", "1 hour": "ساعة واحدة", "2 hours": "ساعتان", "4 hours": "4 ساعات", "· opened": "· فُتح",
+  "Access records could not be loaded.": "تعذر تحميل سجلات الصلاحيات.", "Account status": "حالة الحساب",
+  "Across Staff accounts": "عبر حسابات الموظفين", "Active administrators": "المديرون النشطون", "Active Staff": "الموظفون النشطون",
+  "Add staff": "إضافة موظف", "Address": "العنوان", "Address required": "العنوان مطلوب", "Phone required": "الهاتف مطلوب", "WhatsApp required": "واتساب مطلوب",
+  "Address, phone and WhatsApp number are required for every branch.": "العنوان ورقم الهاتف ورقم واتساب مطلوبة لكل فرع.",
+  "Admin": "مدير", "Admin has unrestricted organization access. Staff follows the branch and capability selections below.": "يملك المدير صلاحية كاملة للمؤسسة، بينما يلتزم الموظف بالفروع والصلاحيات المحددة أدناه.",
+  "All branches and capabilities": "جميع الفروع والصلاحيات", "Assigned access only": "الصلاحيات المسندة فقط", "Audited change": "تغيير خاضع للتدقيق",
+  "Available assignment scope": "نطاق الإسناد المتاح", "Branch configuration, staff, reporting, integrations and audit": "إعداد الفروع والموظفين والتقارير والتكاملات والتدقيق",
+  "Branch contacts ·": "بيانات اتصال الفرع ·", "Branch scope": "نطاق الفروع", "Choose an account to configure": "اختر حساباً لإعداد صلاحياته",
+  "Contacts": "بيانات الاتصال", "Control who can work in each city and which service, stock, finance or governance actions they can perform.": "حدد من يعمل في كل مدينة وما يمكنه تنفيذه في الصيانة والمخزون والمالية والإدارة.",
+  "Create a staff account before assigning roles and permissions.": "أنشئ حساب موظف قبل إسناد الأدوار والصلاحيات.",
+  "Customer, vehicle, appointment and estimate workflows": "إجراءات العملاء والمركبات والمواعيد وعروض الأسعار",
+  "Dispatch, technician work, price exceptions and HV authorization": "التوزيع وأعمال الفنيين واستثناءات الأسعار وتصاريح الجهد العالي",
+  "Editing access for": "تعديل صلاحيات", "Explicit grants": "الصلاحيات المباشرة", "Finance & reporting": "المالية والتقارير",
+  "Grant the minimum set needed for the person’s responsibilities. Changes take effect on their next request.": "امنح الحد الأدنى اللازم لمسؤوليات الموظف. تسري التغييرات مع طلبه التالي.",
+  "Integrations": "التكاملات", "Keep the public address, voice line and WhatsApp channel specific to this branch.": "احتفظ بعنوان الفرع ورقم هاتفه وقناة واتساب الخاصة به.",
+  "Live branch contacts and warehouse readiness": "بيانات اتصال الفروع وجاهزية المستودعات", "Network governance": "إدارة الشبكة", "No staff accounts": "لا توجد حسابات موظفين",
+  "Only administrators can manage roles and permissions.": "يمكن للمديرين فقط إدارة الأدوار والصلاحيات.",
+  "Only administrators can update branch contacts.": "يمكن للمديرين فقط تحديث بيانات اتصال الفروع.",
+  "Organization-wide control": "تحكم على مستوى المؤسسة", "Parts & supply": "القطع والتوريد", "People": "الموظفون",
+  "Posting, collections, refunds and financial visibility": "الترحيل والتحصيل والاسترداد والاطلاع المالي", "Reception & customer care": "الاستقبال وخدمة العملاء",
+  "Role & account state": "الدور وحالة الحساب", "Role, status, branch scope and grants are saved together.": "يُحفظ الدور والحالة ونطاق الفروع والصلاحيات معاً.",
+  "Roles & permissions": "الأدوار والصلاحيات", "Scoped by branch and capability": "محدد حسب الفرع والصلاحية", "Service branches": "فروع الصيانة",
+  "Service catalog": "دليل الخدمات", "Settings sections": "أقسام الإعدادات", "Staff": "موظف", "Staff accounts": "حسابات الموظفين",
+  "Staff must have at least one service branch. Admin accounts always cover the full network.": "يجب إسناد الموظف إلى فرع صيانة واحد على الأقل. حسابات المدير تغطي الشبكة كاملة.",
+  "Stock control, counts, suppliers and purchasing": "إدارة المخزون والجرد والموردين والمشتريات", "Suspended": "موقوف",
+  "WhatsApp number": "رقم واتساب", "Workshop & high voltage": "الورشة والجهد العالي", "No phone": "لا يوجد هاتف", "Required": "مطلوب",
+  "Active": "نشط", "All branches · All capabilities": "جميع الفروع · جميع الصلاحيات", "Capability grants": "الصلاحيات الممنوحة",
+  "Customer records": "سجلات العملاء", "Branch settings": "إعدادات الفروع", "Staff access": "صلاحيات الموظفين",
+  "Work orders": "أوامر العمل", "Price overrides": "تجاوزات الأسعار", "Workshop dispatch": "توزيع أعمال الورشة",
+  "Technician work": "أعمال الفنيين", "HV permits": "تصاريح الجهد العالي", "Invoice posting": "ترحيل الفواتير",
+  "Payments": "المدفوعات", "Finance reports": "التقارير المالية", "Operations reports": "التقارير التشغيلية", "Audit history": "سجل التدقيق",
+  "Create and update customers, contacts and vehicles": "إنشاء وتحديث العملاء وبيانات الاتصال والمركبات",
+  "Create and manage appointments": "إنشاء المواعيد وإدارتها", "Create and progress repair orders": "إنشاء أوامر العمل وتحديث مراحلها",
+  "Perform and complete inspections": "تنفيذ الفحوصات وإكمالها", "Create and send estimates": "إنشاء عروض الأسعار وإرسالها",
+  "Assign and dispatch workshop jobs": "إسناد مهام الورشة وتوزيعها", "Record work, time, diagnostics and parts requests": "تسجيل العمل والوقت والتشخيص وطلبات القطع",
+  "Override estimate pricing within assigned limits": "تجاوز أسعار عرض السعر ضمن الحدود المسندة",
+  "Authorize high-voltage work permits when qualified": "اعتماد تصاريح أعمال الجهد العالي عند استيفاء التأهيل",
+  "Manage parts, stock and counts": "إدارة القطع والمخزون والجرد", "Manage suppliers, purchase orders and receipts": "إدارة الموردين وطلبات الشراء والاستلام",
+  "Post invoices and credit notes": "ترحيل الفواتير والإشعارات الدائنة", "Receive and allocate payments": "استلام المدفوعات وتخصيصها",
+  "Refund payments within assigned limits": "استرداد المدفوعات ضمن الحدود المسندة", "Read financial reports": "عرض التقارير المالية",
+  "Manage branches, resources and opening configuration": "إدارة الفروع والموارد وإعدادات التشغيل",
+  "Invite Staff and assign branch/capability access": "دعوة الموظفين وإسناد الفروع والصلاحيات",
+  "Read operational reports": "عرض التقارير التشغيلية", "Configure external integrations": "إعداد التكاملات الخارجية", "Read audit history": "عرض سجل التدقيق",
+  "Settings · Identity & access": "الإعدادات · الهوية والصلاحيات", "Role & permissions": "الدور والصلاحيات",
 };
 
 function polishArabic(value: string) {
@@ -275,6 +319,9 @@ const arabic: Record<string, string> = {
   "Integrations & audit": "التكاملات والتدقيق",
   "Branches": "الفروع",
   "Staff & access": "الموظفون والصلاحيات",
+  "Settings": "الإعدادات",
+  "Staff accounts": "حسابات الموظفين",
+  "Roles & permissions": "الأدوار والصلاحيات",
   "Operating branch": "فرع التشغيل",
   "All branches": "جميع الفروع",
   "No branches configured": "لا توجد فروع مهيأة",
@@ -427,7 +474,7 @@ const pageArabic: Record<string, string> = {
 };
 
 const statusArabic: Record<string, string> = {
-  active: "نشط", inactive: "غير نشط", draft: "مسودة", published: "منشور",
+  active: "نشط", inactive: "غير نشط", admin: "مدير", staff: "موظف", suspended: "موقوف", draft: "مسودة", published: "منشور",
   requested: "مطلوب", confirmed: "مؤكد", checked_in: "تم الاستقبال", completed: "مكتمل",
   cancelled: "ملغي", no_show: "لم يحضر", diagnosis: "قيد التشخيص", awaiting_approval: "بانتظار الموافقة",
   approved: "موافق عليه", declined: "مرفوض", on_hold: "معلّق", qc: "فحص الجودة",
@@ -457,6 +504,8 @@ export function translatePageText(value: string, locale: UiLocale) {
   }
   const openInvoices = value.match(/^(\d+) open invoices$/);
   if (openInvoices) return `${openInvoices[1]} فواتير مفتوحة`;
+  const assignedAccess = value.match(/^(\d+) branches · (\d+) grants$/);
+  if (assignedAccess) return `${assignedAccess[1]} فروع · ${assignedAccess[2]} صلاحيات`;
   if (value.startsWith("Valid until ")) return `صالح حتى ${value.slice("Valid until ".length)}`;
   if (value.startsWith(" · due ")) return ` · مستحق ${value.slice(" · due ".length)}`;
   const translated = actionArabic[value] ?? actionArabic[concise] ?? arabicCorrections[value] ?? arabicCorrections[concise] ?? pageArabic[value] ?? pageArabic[concise] ?? arabic[value] ?? arabic[concise] ?? generatedArabic[value as keyof typeof generatedArabic] ?? generatedArabic[concise as keyof typeof generatedArabic] ?? concise;

@@ -7,7 +7,7 @@ import {
   ArrowLeftRight, Banknote, BarChart3, BookOpenCheck, Boxes, Building2, CalendarDays,
   CarFront, ChevronDown, CircleDollarSign, ClipboardCheck, ClipboardList, FileText,
   Gauge, Layers3, LogOut, Menu, Megaphone, PackageOpen, Paperclip, PlugZap, ScanLine,
-  Search, ShieldCheck, ShoppingCart, Sparkles, UserRoundCog, Users, Wrench, X,
+  KeyRound, Search, Settings2, ShieldCheck, ShoppingCart, Sparkles, UserRoundCog, Users, Wrench, X,
   type LucideIcon,
 } from "lucide-react";
 import type { CurrentStaff } from "@/lib/auth/session";
@@ -38,6 +38,7 @@ const routeIcons: Record<string, LucideIcon> = {
   "/governance": PlugZap,
   "/branches": Building2,
   "/staff": UserRoundCog,
+  "/settings/access": KeyRound,
 };
 
 const groupIcons: Record<(typeof navigationGroups)[number]["key"], LucideIcon> = {
@@ -46,7 +47,7 @@ const groupIcons: Record<(typeof navigationGroups)[number]["key"], LucideIcon> =
   workshop: Wrench,
   parts: PackageOpen,
   commercial: Layers3,
-  administration: UserRoundCog,
+  administration: Settings2,
 };
 
 function initials(name: string) {

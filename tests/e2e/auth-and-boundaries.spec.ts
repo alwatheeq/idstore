@@ -12,6 +12,8 @@ test("actions stay concise in English and Arabic", () => {
   expect(translatePageText("Record refund", "ar")).toBe("استرداد");
   expect(translatePageText("Create branch", "en")).toBe("Add branch");
   expect(translatePageText("High-voltage service", "ar")).toBe("خدمة الجهد العالي");
+  expect(translatePageText("Roles & permissions", "ar")).toBe("الأدوار والصلاحيات");
+  expect(translatePageText("Customer records", "ar")).toBe("سجلات العملاء");
 });
 
 test("staff navigation follows assigned functional permissions", () => {
@@ -24,6 +26,7 @@ test("staff navigation follows assigned functional permissions", () => {
   expect(routes).toContain("/diagnostics");
   expect(routes).toContain("/records");
   expect(routes).not.toContain("/staff");
+  expect(routes).not.toContain("/settings/access");
   expect(routes).not.toContain("/invoices");
 });
 
@@ -32,6 +35,7 @@ test("admins retain the complete navigation surface", () => {
   expect(routes).toContain("/staff");
   expect(routes).toContain("/branches");
   expect(routes).toContain("/finance-control");
+  expect(routes).toContain("/settings/access");
 });
 
 test("missing Supabase configuration fails closed", async () => {
@@ -116,7 +120,7 @@ test("login blocks malformed PINs before any authentication request", async ({ p
 });
 
 test("protected staff and customer routes do not leak content", async ({ page }) => {
-  for (const route of ["/dashboard", "/records", "/finance-control", "/quality-campaigns", "/reports", "/search", "/governance", "/portal", "/api/documents/invoice/00000000-0000-0000-0000-000000000000"]) {
+  for (const route of ["/dashboard", "/records", "/finance-control", "/quality-campaigns", "/reports", "/search", "/governance", "/settings/access", "/portal", "/api/documents/invoice/00000000-0000-0000-0000-000000000000"]) {
     await page.goto(route);
     await expect(page).toHaveURL(/\/login(?:\?.*)?$/);
   }
