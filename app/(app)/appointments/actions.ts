@@ -3,12 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formText, operationError, optionalNumber, optionalText, routeMessage, zonedLocalToIso } from "@/lib/actions/form";
-import { getCurrentStaff } from "@/lib/auth/session";
+import { getCurrentStaff, resolveOperatingBranch } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 export async function createAppointment(formData: FormData) {
   const staff = await getCurrentStaff();
-  const branchId = formText(formData, "branchId");
+  const branchId = resolveOperatingBranch(staff, formText(formData, "branchId"));
   const customerId = formText(formData, "customerId");
   const vehicleId = formText(formData, "vehicleId");
   const startLocal = formText(formData, "startAt");
@@ -113,7 +113,7 @@ export async function openWorkOrderFromCheckin(formData: FormData) {
 
 export async function createWaitlistEntry(formData: FormData) {
   const staff = await getCurrentStaff();
-  const branchId = formText(formData, "branchId");
+  const branchId = resolveOperatingBranch(staff, formText(formData, "branchId"));
   const customerId = formText(formData, "customerId");
   const vehicleId = formText(formData, "vehicleId");
   const preferredFrom = formText(formData, "preferredFrom");

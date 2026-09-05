@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formText, operationError, optionalNumber, optionalText, routeMessage } from "@/lib/actions/form";
-import { getCurrentStaff } from "@/lib/auth/session";
+import { getCurrentStaff, resolveOperatingBranch } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 const path = "/stock-control";
@@ -12,8 +12,8 @@ const done = (message: string) => { revalidatePath(path); revalidatePath("/inven
 const fail = (error: unknown, fallback: string) => redirect(routeMessage(path, "error", operationError(error, fallback)));
 
 export async function createStockTransfer(formData: FormData) {
-  await getCurrentStaff();
-  const source = formText(formData, "sourceBranchId"); const destination = formText(formData, "destinationBranchId");
+  const staff = await getCurrentStaff();
+  const source = resolveOperatingBranch(staff, formText(formData, "sourceBranchId")); const destination = formText(formData, "destinationBranchId");
   if (!source || !destination || source === destination) redirect(routeMessage(path, "error", "Choose two different branches."));
   try { const supabase = await createClient(); const { error } = await supabase.rpc("create_stock_transfer", { p_source_branch_id: source, p_destination_branch_id: destination }); if (error) throw error; }
   catch (error) { fail(error, "The stock transfer could not be created."); }

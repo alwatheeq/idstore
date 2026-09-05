@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formText, operationError, optionalNumber, optionalText, routeMessage } from "@/lib/actions/form";
-import { getCurrentStaff } from "@/lib/auth/session";
+import { getCurrentStaff, resolveOperatingBranch } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 const path = "/catalog";
@@ -88,8 +88,8 @@ export async function publishServiceTemplate(formData: FormData) {
 }
 
 export async function createResource(formData: FormData) {
-  await getCurrentStaff();
-  const branchId = formText(formData, "branchId");
+  const staff = await getCurrentStaff();
+  const branchId = resolveOperatingBranch(staff, formText(formData, "branchId"));
   const resourceType = formText(formData, "resourceType");
   const code = formText(formData, "code").toUpperCase();
   const name = formText(formData, "name");
@@ -127,8 +127,8 @@ export async function bookAppointmentResource(formData: FormData) {
 }
 
 export async function upsertOperatingHour(formData: FormData) {
-  await getCurrentStaff();
-  const branchId = formText(formData, "branchId");
+  const staff = await getCurrentStaff();
+  const branchId = resolveOperatingBranch(staff, formText(formData, "branchId"));
   const dayOfWeek = optionalNumber(formData, "dayOfWeek");
   const closed = formData.get("isClosed") === "on";
   if (!branchId || dayOfWeek === undefined || !Number.isSafeInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
@@ -152,8 +152,8 @@ export async function upsertOperatingHour(formData: FormData) {
 }
 
 export async function upsertBranchHoliday(formData: FormData) {
-  await getCurrentStaff();
-  const branchId = formText(formData, "branchId");
+  const staff = await getCurrentStaff();
+  const branchId = resolveOperatingBranch(staff, formText(formData, "branchId"));
   const holidayDate = formText(formData, "holidayDate");
   const name = formText(formData, "name");
   const closed = formData.get("isClosed") === "on";

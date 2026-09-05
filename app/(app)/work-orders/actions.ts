@@ -3,13 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formText, operationError, optionalNumber, optionalText, routeMessage, zonedLocalToIso } from "@/lib/actions/form";
-import { getCurrentStaff } from "@/lib/auth/session";
+import { getCurrentStaff, resolveOperatingBranch } from "@/lib/auth/session";
 import { createRepairOrder } from "@/lib/supabase/commands";
 import { createClient } from "@/lib/supabase/server";
 
 export async function createWorkOrder(formData: FormData) {
   const staff = await getCurrentStaff();
-  const branchId = formText(formData, "branchId");
+  const branchId = resolveOperatingBranch(staff, formText(formData, "branchId"));
   const customerId = formText(formData, "customerId");
   const vehicleId = formText(formData, "vehicleId");
   const odometerKm = optionalNumber(formData, "odometerKm");

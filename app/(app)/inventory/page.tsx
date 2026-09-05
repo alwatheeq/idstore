@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AlertTriangle, Boxes, Plus } from "lucide-react";
+import { BranchField } from "@/components/branch-field";
 import { EmptyState } from "@/components/empty-state";
 import { MetricStrip } from "@/components/metric-strip";
 import { PageHeader } from "@/components/page-header";
@@ -45,7 +46,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
     {showPartForm && branches?.length ? <section className="panel operation-form" id="new-part">
       <div className="panel-header"><div><div className="panel-title">Add a catalog part</div><div className="panel-subtitle">The first part also initializes standard stock, receiving, quarantine and returns bins.</div></div><Link className="panel-link" href="/inventory">Cancel</Link></div>
       <form action={createPart} className="form-grid panel-body">
-        <div className="form-field"><label htmlFor="part-branch">Setup branch</label><select id="part-branch" name="branchId" defaultValue={staff.selectedBranchId ?? ""} required><option value="">Select branch</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.city} · {branch.code}</option>)}</select></div>
+        <BranchField id="part-branch" label="Setup branch" branches={branches} selectedBranchId={staff.selectedBranchId} />
         <div className="form-field"><label htmlFor="part-number">Part number</label><input className="mono" id="part-number" name="partNumber" required /></div>
         <div className="form-field form-span-2"><label htmlFor="part-description">English description</label><input id="part-description" name="description" required /></div>
         <div className="form-field"><label htmlFor="part-unit">Stock unit</label><select id="part-unit" name="unit" defaultValue="ea"><option value="ea">Each</option><option value="l">Litre</option><option value="kg">Kilogram</option><option value="set">Set</option></select></div>
@@ -59,7 +60,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       <div className="panel-header"><div><div className="panel-title">Post a stock movement</div><div className="panel-subtitle">Receipts and gains add stock; losses use the current moving-average cost.</div></div><Link className="panel-link" href="/inventory">Cancel</Link></div>
       <form action={postInventoryMovement} className="form-grid panel-body">
         <div className="form-field"><label htmlFor="movement-part">Part</label><select id="movement-part" name="partId" required><option value="">Select part</option>{parts?.filter((part) => part.tracking === "none").map((part) => <option key={part.id} value={part.id}>{part.part_number} · {part.description_en}</option>)}</select><span className="field-help">Lot and serial workflows will be added with purchasing.</span></div>
-        <div className="form-field"><label htmlFor="movement-bin">Branch bin</label><select id="movement-bin" name="binId" required><option value="">Select bin</option>{bins?.map((bin) => <option key={bin.id} value={bin.id}>{bin.branch?.city} · {bin.warehouse?.name} · {bin.code}</option>)}</select></div>
+        <div className="form-field"><label htmlFor="movement-bin">Branch bin</label><select id="movement-bin" name="binId" required><option value="">Select bin</option>{bins?.filter((bin) => !staff.selectedBranchId || bin.branch_id === staff.selectedBranchId).map((bin) => <option key={bin.id} value={bin.id}>{bin.branch?.city} · {bin.warehouse?.name} · {bin.code}</option>)}</select></div>
         <div className="form-field"><label htmlFor="movement-type">Movement</label><select id="movement-type" name="movementType" defaultValue="receipt"><option value="receipt">Receive stock</option><option value="adjustment_gain">Adjustment gain</option><option value="adjustment_loss">Adjustment loss</option></select></div>
         <div className="form-field"><label htmlFor="movement-quantity">Quantity</label><input id="movement-quantity" name="quantity" type="number" min="0.001" step="0.001" required /></div>
         <div className="form-field"><label htmlFor="movement-cost">Unit cost (JOD)</label><input id="movement-cost" name="unitCost" type="number" min="0" step="0.001" required /><span className="field-help">Ignored for a loss; the recorded average cost is used.</span></div>

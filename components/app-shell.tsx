@@ -72,6 +72,7 @@ export function AppShell(props: AppShellProps) {
 
 function AppShellContent({ children, staff, branches }: AppShellProps) {
   const pathname = usePathname();
+  const pageModule = pathname.split("/").filter(Boolean)[0] ?? "dashboard";
   const router = useRouter();
   const { locale, setLocale, t } = useUiLocale();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -164,7 +165,7 @@ function AppShellContent({ children, staff, branches }: AppShellProps) {
           <div className="user-chip"><div className="avatar" aria-hidden="true">{initials(staff.displayName)}</div><div className="user-copy"><strong>{staff.displayName}</strong><span>{t(staff.role === "admin" ? "Administrator" : "Staff")}</span></div></div>
           <form className="topbar-signout-form" action="/auth/signout" method="post"><button className="icon-button signout-button" type="submit" title={t("Sign out")} aria-label={t("Sign out")}><LogOut /></button></form>
         </header>
-        <div className="page-content"><LocalizedContent>{children}</LocalizedContent></div>
+        <div className="page-content" data-module={pageModule}><LocalizedContent>{children}</LocalizedContent></div>
         <nav className="touch-dock" aria-label={t("Quick navigation")}>
           <Link className={`touch-dock-item ${pathname.startsWith("/dashboard") ? "active" : ""}`} href="/dashboard"><Gauge aria-hidden="true" /><span>{t("Home")}</span></Link>
           <Link className={`touch-dock-item ${pathname.startsWith("/appointments") ? "active" : ""}`} href="/appointments"><CalendarDays aria-hidden="true" /><span>{t("Visits")}</span></Link>

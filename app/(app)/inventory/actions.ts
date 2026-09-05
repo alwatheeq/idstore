@@ -4,12 +4,12 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formText, operationError, optionalNumber, routeMessage } from "@/lib/actions/form";
-import { getCurrentStaff } from "@/lib/auth/session";
+import { getCurrentStaff, resolveOperatingBranch } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 export async function createPart(formData: FormData) {
   const staff = await getCurrentStaff();
-  const branchId = formText(formData, "branchId");
+  const branchId = resolveOperatingBranch(staff, formText(formData, "branchId"));
   const partNumber = formText(formData, "partNumber").toUpperCase();
   const description = formText(formData, "description");
   const unit = formText(formData, "unit").toLowerCase();

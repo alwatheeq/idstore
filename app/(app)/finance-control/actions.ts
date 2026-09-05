@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formText, operationError, routeMessage } from "@/lib/actions/form";
-import { getCurrentStaff } from "@/lib/auth/session";
+import { getCurrentStaff, resolveOperatingBranch } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 function amount(formData: FormData, key: string) { const value = Number(formText(formData, key)); return Number.isFinite(value) ? value : NaN; }
@@ -25,7 +25,7 @@ export async function recordRefund(formData: FormData) {
 }
 
 export async function openCashSession(formData: FormData) {
-  await getCurrentStaff(); const branchId=formText(formData,"branchId"); const registerCode=formText(formData,"registerCode"); const openingFloat=amount(formData,"openingFloat");
+  const staff=await getCurrentStaff(); const branchId=resolveOperatingBranch(staff, formText(formData,"branchId")); const registerCode=formText(formData,"registerCode"); const openingFloat=amount(formData,"openingFloat");
   if(!branchId||!registerCode||openingFloat<0) redirect(routeMessage("/finance-control","error","Branch, register and a non-negative opening float are required."));
   try { const supabase=await createClient(); const { error }=await supabase.rpc("open_cash_session",{p_branch_id:branchId,p_register_code:registerCode,p_opening_float:openingFloat}); if(error) throw error; } catch(error){failed(error,"The cash session could not be opened.");}
   done("Cash session opened.");

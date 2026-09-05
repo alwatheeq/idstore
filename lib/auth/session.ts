@@ -17,6 +17,11 @@ export type CurrentStaff = {
   permissionCodes: string[];
 };
 
+/** Prefer the shell's operating branch over a stale or tampered form value. */
+export function resolveOperatingBranch(staff: Pick<CurrentStaff, "selectedBranchId">, requestedBranchId: string | null | undefined) {
+  return staff.selectedBranchId ?? requestedBranchId ?? null;
+}
+
 export const getCurrentStaff = cache(async (): Promise<CurrentStaff> => {
   const supabase = await createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();

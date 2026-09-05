@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PackageCheck, Plus, ShoppingCart, Truck } from "lucide-react";
+import { BranchField } from "@/components/branch-field";
 import { EmptyState } from "@/components/empty-state";
 import { MetricStrip } from "@/components/metric-strip";
 import { PageHeader } from "@/components/page-header";
@@ -88,7 +89,7 @@ export default async function PurchasingPage({ searchParams }: { searchParams: P
     {query.new === "order" && setupReady ? <section className="panel operation-form" id="new-order">
       <div className="panel-header"><div><div className="panel-title">Create a purchase order</div><div className="panel-subtitle">The first line starts a draft; add more lines before submitting.</div></div><Link className="panel-link" href="/purchasing">Cancel</Link></div>
       <form action={createPurchaseOrder} className="form-grid panel-body">
-        <div className="form-field"><label htmlFor="po-branch">Receiving branch</label><select id="po-branch" name="branchId" defaultValue={staff.selectedBranchId ?? ""} required><option value="">Select branch</option>{branches?.map((branch) => <option key={branch.id} value={branch.id}>{branch.city} · {branch.code}</option>)}</select></div>
+        <BranchField id="po-branch" label="Receiving branch" branches={branches} selectedBranchId={staff.selectedBranchId} />
         <div className="form-field"><label htmlFor="po-supplier">Supplier</label><select id="po-supplier" name="supplierId" required><option value="">Select supplier</option>{suppliers?.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></div>
         <div className="form-field form-span-2"><label htmlFor="po-part">First part</label><select id="po-part" name="partId" required><option value="">Select part</option>{parts?.map((part) => <option key={part.id} value={part.id}>{part.part_number} · {part.description_en} · {part.tracking}</option>)}</select></div>
         <div className="form-field"><label htmlFor="po-quantity">Quantity</label><input id="po-quantity" name="quantity" type="number" min="0.001" step="0.001" required /></div>

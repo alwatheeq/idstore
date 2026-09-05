@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ClipboardList, Plus, TimerReset, Wrench } from "lucide-react";
+import { BranchField } from "@/components/branch-field";
 import { EmptyState } from "@/components/empty-state";
 import { MetricStrip } from "@/components/metric-strip";
 import { PageHeader } from "@/components/page-header";
@@ -76,7 +77,7 @@ export default async function WorkOrdersPage({ searchParams }: { searchParams: P
     {showForm && setupReady ? <section className="panel operation-form" id="new-work-order">
       <div className="panel-header"><div><div className="panel-title">Open a work order</div><div className="panel-subtitle">Allocates the next branch repair-order number and records vehicle intake.</div></div><Link className="panel-link" href="/work-orders">Cancel</Link></div>
       <form action={createWorkOrder} className="form-grid panel-body">
-        <div className="form-field"><label htmlFor="work-branch">Branch</label><select id="work-branch" name="branchId" defaultValue={staff.selectedBranchId ?? ""} required><option value="">Select branch</option>{branches?.map((branch) => <option key={branch.id} value={branch.id}>{branch.city} · {branch.code}</option>)}</select></div>
+        <BranchField id="work-branch" label="Branch" branches={branches} selectedBranchId={staff.selectedBranchId} />
         <div className="form-field"><label htmlFor="work-customer">Customer</label><select id="work-customer" name="customerId" required><option value="">Select customer</option>{customers?.map((customer) => <option key={customer.id} value={customer.id}>{customer.display_name}</option>)}</select></div>
         <div className="form-field form-span-2"><label htmlFor="work-vehicle">Vehicle</label><select id="work-vehicle" name="vehicleId" required><option value="">Select vehicle</option>{vehicles?.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.model?.name ?? "Volkswagen ID"} · {vehicle.registration_no ?? vehicle.vin} · {vehicle.vehicle_ownerships[0]?.customer?.display_name ?? "No owner"}</option>)}</select></div>
         <div className="form-field"><label htmlFor="work-odometer">Odometer (km)</label><input id="work-odometer" name="odometerKm" type="number" min="0" step="1" /></div>

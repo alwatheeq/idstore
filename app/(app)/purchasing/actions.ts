@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formText, operationError, optionalNumber, optionalText, routeMessage } from "@/lib/actions/form";
-import { getCurrentStaff } from "@/lib/auth/session";
+import { getCurrentStaff, resolveOperatingBranch } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 const purchasingPath = "/purchasing";
@@ -44,7 +44,7 @@ export async function createSupplier(formData: FormData) {
 
 export async function createPurchaseOrder(formData: FormData) {
   const staff = await getCurrentStaff();
-  const branchId = formText(formData, "branchId");
+  const branchId = resolveOperatingBranch(staff, formText(formData, "branchId"));
   const supplierId = formText(formData, "supplierId");
   const partId = formText(formData, "partId");
   const commercial = commercialValues(formData);

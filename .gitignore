@@ -9,6 +9,9 @@ dist/
 coverage/
 playwright-report/
 test-results/
+.playwright-mcp/
+customer-overflow-check.png
+customer-overflow-fixed.png
 supabase/.branches/
 supabase/.temp/
 .vercel/

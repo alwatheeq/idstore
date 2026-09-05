@@ -3,13 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formText, operationError, optionalText, routeMessage } from "@/lib/actions/form";
-import { getCurrentStaff } from "@/lib/auth/session";
+import { getCurrentStaff, resolveOperatingBranch } from "@/lib/auth/session";
 import { normalizeMobile } from "@/lib/auth/mobile";
 import { createClient } from "@/lib/supabase/server";
 
 export async function createCustomer(formData: FormData) {
   const staff = await getCurrentStaff();
-  const branchId = formText(formData, "branchId");
+  const branchId = resolveOperatingBranch(staff, formText(formData, "branchId"));
   const customerType = formText(formData, "customerType");
   const displayName = formText(formData, "displayName");
   const rawMobile = formText(formData, "mobile");

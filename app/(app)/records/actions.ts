@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formText, operationError, routeMessage } from "@/lib/actions/form";
-import { getCurrentStaff } from "@/lib/auth/session";
+import { getCurrentStaff, resolveOperatingBranch } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
@@ -96,9 +96,9 @@ export async function uploadEvidence(formData: FormData) {
 }
 
 export async function queueCustomerMessage(formData: FormData) {
-  await getCurrentStaff();
+  const staff = await getCurrentStaff();
   const customerId = formText(formData, "customerId");
-  const branchId = formText(formData, "branchId");
+  const branchId = resolveOperatingBranch(staff, formText(formData, "branchId"));
   const templateCode = formText(formData, "templateCode");
   const channel = formText(formData, "channel");
   const dedupeKey = formText(formData, "dedupeKey");

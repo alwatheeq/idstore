@@ -5936,6 +5936,7 @@ export type Database = {
         Row: {
           battery_code: string | null
           battery_kwh: number | null
+          color: string | null
           connectivity_status: string
           created_at: string
           drive_unit: string | null
@@ -5944,6 +5945,7 @@ export type Database = {
           model_id: string | null
           model_year: number | null
           organization_id: string
+          primary_branch_id: string | null
           registration_country: string | null
           registration_no: string | null
           software_version: string | null
@@ -5958,6 +5960,7 @@ export type Database = {
         Insert: {
           battery_code?: string | null
           battery_kwh?: number | null
+          color?: string | null
           connectivity_status?: string
           created_at?: string
           drive_unit?: string | null
@@ -5966,6 +5969,7 @@ export type Database = {
           model_id?: string | null
           model_year?: number | null
           organization_id: string
+          primary_branch_id?: string | null
           registration_country?: string | null
           registration_no?: string | null
           software_version?: string | null
@@ -5980,6 +5984,7 @@ export type Database = {
         Update: {
           battery_code?: string | null
           battery_kwh?: number | null
+          color?: string | null
           connectivity_status?: string
           created_at?: string
           drive_unit?: string | null
@@ -5988,6 +5993,7 @@ export type Database = {
           model_id?: string | null
           model_year?: number | null
           organization_id?: string
+          primary_branch_id?: string | null
           registration_country?: string | null
           registration_no?: string | null
           software_version?: string | null
@@ -6000,6 +6006,13 @@ export type Database = {
           warranty_start_date?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "vehicles_primary_branch_id_fkey"
+            columns: ["primary_branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vehicles_model_id_fkey"
             columns: ["model_id"]
@@ -7257,6 +7270,7 @@ export type Database = {
         Args: {
           p_battery_kwh?: number
           p_branch_id: string
+          p_color?: string
           p_customer_id: string
           p_model_id: string
           p_model_year?: number
@@ -7269,6 +7283,7 @@ export type Database = {
         Returns: {
           battery_code: string | null
           battery_kwh: number | null
+          color: string | null
           connectivity_status: string
           created_at: string
           drive_unit: string | null
@@ -7277,6 +7292,7 @@ export type Database = {
           model_id: string | null
           model_year: number | null
           organization_id: string
+          primary_branch_id: string | null
           registration_country: string | null
           registration_no: string | null
           software_version: string | null
@@ -9012,6 +9028,7 @@ export type Database = {
       update_vehicle_profile: {
         Args: {
           p_branch_id: string
+          p_color?: string
           p_connectivity_status: string
           p_drive_unit: string
           p_first_registration_date: string | null
@@ -9024,6 +9041,7 @@ export type Database = {
         Returns: {
           battery_code: string | null
           battery_kwh: number | null
+          color: string | null
           connectivity_status: string
           created_at: string
           drive_unit: string | null
@@ -9032,6 +9050,7 @@ export type Database = {
           model_id: string | null
           model_year: number | null
           organization_id: string
+          primary_branch_id: string | null
           registration_country: string | null
           registration_no: string | null
           software_version: string | null
