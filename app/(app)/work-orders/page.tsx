@@ -44,25 +44,27 @@ export default async function WorkOrdersPage({ searchParams }: { searchParams: P
   const query = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
-  const [{ data: branches }, { data: customers }, { data: vehicles }, { data: workOrders, error }, { data: technicians }, { data: jobs }, { data: qualificationTypes }] = await Promise.all([
+  const [{ data: branches }, { data: customers }, { data: vehicles }, { data: workOrderRows, error }, { data: technicians }, { data: jobRows }, { data: qualificationTypes }] = await Promise.all([
     supabase.from("branches").select("id, code, city").eq("organization_id", staff.organizationId).eq("status", "active").order("city"),
     supabase.from("customers").select("id, display_name").eq("organization_id", staff.organizationId).eq("status", "active").order("display_name"),
     supabase.from("vehicles").select("id, vin, registration_no, model:vehicle_models(name), vehicle_ownerships(customer:customers(display_name))").eq("organization_id", staff.organizationId).eq("status", "active").order("registration_no"),
-    supabase.from("repair_orders").select("id, ro_number, status, risk_state, odometer_km, state_of_charge, customer_concern, opened_at, promised_at, version, customer:customers(display_name), vehicle:vehicles(registration_no, model:vehicle_models(name)), branch:branches(display_name, city)").eq("organization_id", staff.organizationId).order("opened_at", { ascending: false }),
+    supabase.from("repair_orders").select("id, branch_id, ro_number, status, risk_state, odometer_km, state_of_charge, customer_concern, opened_at, promised_at, version, customer:customers(display_name), vehicle:vehicles(registration_no, model:vehicle_models(name)), branch:branches(display_name, city)").eq("organization_id", staff.organizationId).order("opened_at", { ascending: false }),
     supabase.from("technician_profiles").select("id, user_id, employee_no, labor_grade, active").eq("organization_id", staff.organizationId).eq("active", true).order("employee_no"),
-    supabase.from("jobs").select("id, repair_order_id, operation_code, description_snapshot, status, safety_class, required_qualification_code, planned_minutes, started_at, completed_at, version, repair_order:repair_orders(ro_number), job_assignments(technician_id, assignment_kind, assigned_at, unassigned_at), labor_entries(technician_id, started_at, ended_at), hv_work_permits(id, state)").eq("organization_id", staff.organizationId).order("created_at", { ascending: false }),
+    supabase.from("jobs").select("id, branch_id, repair_order_id, operation_code, description_snapshot, status, safety_class, required_qualification_code, planned_minutes, started_at, completed_at, version, repair_order:repair_orders(ro_number), job_assignments(technician_id, assignment_kind, assigned_at, unassigned_at), labor_entries(technician_id, started_at, ended_at), hv_work_permits(id, state)").eq("organization_id", staff.organizationId).order("created_at", { ascending: false }),
     supabase.from("qualification_types").select("id, code, name").eq("organization_id", staff.organizationId).order("code"),
   ]);
+  const workOrders = staff.selectedBranchId ? (workOrderRows ?? []).filter((order) => order.branch_id === staff.selectedBranchId) : (workOrderRows ?? []);
+  const jobs = staff.selectedBranchId ? (jobRows ?? []).filter((job) => job.branch_id === staff.selectedBranchId) : (jobRows ?? []);
 
   const setupReady = Boolean(branches?.length && customers?.length && vehicles?.length);
   const showForm = query.new === "1" || Boolean(query.error && !query.job);
-  const activeOrders = (workOrders ?? []).filter((order) => !["delivered", "closed", "cancelled"].includes(order.status));
+  const activeOrders = workOrders.filter((order) => !["delivered", "closed", "cancelled"].includes(order.status));
   const showJobForm = query.job === "new" && activeOrders.length > 0;
   const currentTechnician = technicians?.find((technician) => technician.user_id === staff.userId);
   const now = new Date();
-  const activeTimers = (jobs ?? []).filter((job) => job.status === "in_progress").length;
-  const blockedJobs = (jobs ?? []).filter((job) => job.status === "blocked").length;
-  const unassignedJobs = (jobs ?? []).filter((job) => !job.job_assignments.some((assignment) => assignment.unassigned_at === null && assignment.assignment_kind === "primary") && !["completed", "cancelled"].includes(job.status)).length;
+  const activeTimers = jobs.filter((job) => job.status === "in_progress").length;
+  const blockedJobs = jobs.filter((job) => job.status === "blocked").length;
+  const unassignedJobs = jobs.filter((job) => !job.job_assignments.some((assignment) => assignment.unassigned_at === null && assignment.assignment_kind === "primary") && !["completed", "cancelled"].includes(job.status)).length;
 
   return <>
     <PageHeader eyebrow="Workshop" title="Work orders" description="Progress each repair, dispatch technician jobs and record accountable labor time from intake through handover.">
@@ -74,7 +76,7 @@ export default async function WorkOrdersPage({ searchParams }: { searchParams: P
     {showForm && setupReady ? <section className="panel operation-form" id="new-work-order">
       <div className="panel-header"><div><div className="panel-title">Open a work order</div><div className="panel-subtitle">Allocates the next branch repair-order number and records vehicle intake.</div></div><Link className="panel-link" href="/work-orders">Cancel</Link></div>
       <form action={createWorkOrder} className="form-grid panel-body">
-        <div className="form-field"><label htmlFor="work-branch">Branch</label><select id="work-branch" name="branchId" required><option value="">Select branch</option>{branches?.map((branch) => <option key={branch.id} value={branch.id}>{branch.city} · {branch.code}</option>)}</select></div>
+        <div className="form-field"><label htmlFor="work-branch">Branch</label><select id="work-branch" name="branchId" defaultValue={staff.selectedBranchId ?? ""} required><option value="">Select branch</option>{branches?.map((branch) => <option key={branch.id} value={branch.id}>{branch.city} · {branch.code}</option>)}</select></div>
         <div className="form-field"><label htmlFor="work-customer">Customer</label><select id="work-customer" name="customerId" required><option value="">Select customer</option>{customers?.map((customer) => <option key={customer.id} value={customer.id}>{customer.display_name}</option>)}</select></div>
         <div className="form-field form-span-2"><label htmlFor="work-vehicle">Vehicle</label><select id="work-vehicle" name="vehicleId" required><option value="">Select vehicle</option>{vehicles?.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.model?.name ?? "Volkswagen ID"} · {vehicle.registration_no ?? vehicle.vin} · {vehicle.vehicle_ownerships[0]?.customer?.display_name ?? "No owner"}</option>)}</select></div>
         <div className="form-field"><label htmlFor="work-odometer">Odometer (km)</label><input id="work-odometer" name="odometerKm" type="number" min="0" step="1" /></div>

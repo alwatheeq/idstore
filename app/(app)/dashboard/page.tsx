@@ -44,7 +44,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const staff = await getCurrentStaff();
   const supabase = await createClient();
   const { data: branches, error: branchError } = await supabase.from("branches").select("id, code, city, display_name").eq("organization_id", staff.organizationId).eq("status", "active").order("city");
-  const selectedBranch = branches?.find((branch) => branch.id === query.branch);
+  const selectedBranch = branches?.find((branch) => branch.id === (query.branch ?? staff.selectedBranchId));
   const selectedBranchId = selectedBranch?.id;
   const scopeBranches = selectedBranch ? [selectedBranch] : (branches ?? []);
   const scopeLabel = selectedBranch ? `${selectedBranch.city} · ${selectedBranch.code}` : "All accessible branches";

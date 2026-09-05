@@ -74,3 +74,108 @@ export async function transitionRecommendation(formData: FormData) {
   revalidatePath("/vehicles");
   redirect(routeMessage("/vehicles", "created", `Deferred work marked ${status}.`));
 }
+
+export async function updateVehicleProfile(formData: FormData) {
+  await getCurrentStaff();
+  const vehicleId = formText(formData, "vehicleId");
+  const branchId = formText(formData, "branchId");
+  const connectivityStatus = formText(formData, "connectivityStatus");
+  const warrantyDistanceKm = optionalNumber(formData, "warrantyDistanceKm");
+  if (!vehicleId || !branchId || !["unknown", "connected", "disconnected", "not_supported"].includes(connectivityStatus) || Number.isNaN(warrantyDistanceKm)) {
+    redirect(routeMessage("/vehicles", "error", "Vehicle, branch and a valid connectivity state are required."));
+  }
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("update_vehicle_profile", {
+      p_vehicle_id: vehicleId,
+      p_branch_id: branchId,
+      p_drive_unit: optionalText(formData, "driveUnit") ?? "",
+      p_connectivity_status: connectivityStatus,
+      p_software_version: optionalText(formData, "softwareVersion") ?? "",
+      p_first_registration_date: optionalText(formData, "firstRegistrationDate") ?? null,
+      p_warranty_start_date: optionalText(formData, "warrantyStartDate") ?? null,
+      p_warranty_end_date: optionalText(formData, "warrantyEndDate") ?? null,
+      p_warranty_distance_km: warrantyDistanceKm ?? null,
+    });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/vehicles", "error", operationError(error, "The vehicle profile could not be updated.")));
+  }
+  revalidatePath("/vehicles");
+  redirect(routeMessage("/vehicles", "created", "Vehicle technical and warranty profile updated."));
+}
+
+export async function addVehicleOwnership(formData: FormData) {
+  await getCurrentStaff();
+  const vehicleId = formText(formData, "vehicleId");
+  const branchId = formText(formData, "branchId");
+  const customerId = formText(formData, "customerId");
+  const relationship = formText(formData, "relationship");
+  const validFrom = formText(formData, "validFrom");
+  if (!vehicleId || !branchId || !customerId || !validFrom || !["owner", "driver", "fleet_manager", "authorized_contact"].includes(relationship)) {
+    redirect(routeMessage("/vehicles", "error", "Vehicle, branch, customer, relationship and start date are required."));
+  }
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("add_vehicle_ownership", {
+      p_vehicle_id: vehicleId,
+      p_branch_id: branchId,
+      p_customer_id: customerId,
+      p_relationship: relationship,
+      p_valid_from: validFrom,
+      p_verified: formData.get("verified") === "on",
+    });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/vehicles", "error", operationError(error, "The ownership relationship could not be added.")));
+  }
+  revalidatePath("/vehicles");
+  revalidatePath("/customers");
+  redirect(routeMessage("/vehicles", "created", "Vehicle ownership relationship added."));
+}
+
+export async function endVehicleOwnership(formData: FormData) {
+  await getCurrentStaff();
+  const ownershipId = formText(formData, "ownershipId");
+  const branchId = formText(formData, "branchId");
+  const validTo = formText(formData, "validTo");
+  const reason = formText(formData, "reason");
+  if (!ownershipId || !branchId || !validTo || !reason) redirect(routeMessage("/vehicles", "error", "Ownership, branch, end date and an audit reason are required."));
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("end_vehicle_ownership", { p_ownership_id: ownershipId, p_branch_id: branchId, p_valid_to: validTo, p_reason: reason });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/vehicles", "error", operationError(error, "The ownership relationship could not be ended.")));
+  }
+  revalidatePath("/vehicles");
+  revalidatePath("/customers");
+  redirect(routeMessage("/vehicles", "created", "Vehicle ownership relationship ended."));
+}
+
+export async function recordOdometerReading(formData: FormData) {
+  await getCurrentStaff();
+  const vehicleId = formText(formData, "vehicleId");
+  const branchId = formText(formData, "branchId");
+  const readingKm = optionalNumber(formData, "readingKm");
+  const source = formText(formData, "source");
+  if (!vehicleId || !branchId || readingKm === undefined || Number.isNaN(readingKm) || readingKm < 0 || !source) {
+    redirect(routeMessage("/vehicles", "error", "Vehicle, branch, odometer and source are required."));
+  }
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("record_odometer_reading", {
+      p_vehicle_id: vehicleId,
+      p_branch_id: branchId,
+      p_reading_km: readingKm,
+      p_source: source,
+      p_correction_reason: optionalText(formData, "correctionReason") ?? "",
+    });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/vehicles", "error", operationError(error, "The odometer reading could not be recorded.")));
+  }
+  revalidatePath("/vehicles");
+  revalidatePath("/work-orders");
+  redirect(routeMessage("/vehicles", "created", "Odometer reading recorded."));
+}

@@ -37,25 +37,26 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
   const now = new Date();
   const rangeStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const rangeEnd = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000).toISOString();
-  const [{ data: branches }, { data: customers }, { data: vehicles }, { data: appointments, error }] = await Promise.all([
+  const [{ data: branches }, { data: customers }, { data: vehicles }, { data: appointmentRows, error }] = await Promise.all([
     supabase.from("branches").select("id, code, city, timezone").eq("organization_id", staff.organizationId).eq("status", "active").order("city"),
     supabase.from("customers").select("id, display_name").eq("organization_id", staff.organizationId).eq("status", "active").order("display_name"),
     supabase.from("vehicles").select("id, vin, registration_no, model:vehicle_models(name), vehicle_ownerships(customer:customers(display_name))").eq("organization_id", staff.organizationId).eq("status", "active").order("registration_no"),
     supabase
       .from("appointments")
-      .select("id, start_at, end_at, promised_at, status, channel, notes, version, branch:branches(display_name, city), customer:customers(display_name), vehicle:vehicles(registration_no, vin, model:vehicle_models(name))")
+      .select("id, branch_id, start_at, end_at, promised_at, status, channel, notes, version, branch:branches(display_name, city), customer:customers(display_name), vehicle:vehicles(registration_no, vin, model:vehicle_models(name))")
       .eq("organization_id", staff.organizationId)
       .gte("end_at", rangeStart)
       .lte("start_at", rangeEnd)
       .order("start_at"),
   ]);
+  const appointments = staff.selectedBranchId ? (appointmentRows ?? []).filter((appointment) => appointment.branch_id === staff.selectedBranchId) : (appointmentRows ?? []);
 
   const todayKey = day.format(now);
-  const todayAppointments = (appointments ?? []).filter((appointment) => day.format(new Date(appointment.start_at)) === todayKey);
+  const todayAppointments = appointments.filter((appointment) => day.format(new Date(appointment.start_at)) === todayKey);
   const arrivals = todayAppointments.filter((appointment) => appointment.status === "confirmed" || appointment.status === "checked_in").length;
-  const pending = (appointments ?? []).filter((appointment) => appointment.status === "requested").length;
+  const pending = appointments.filter((appointment) => appointment.status === "requested").length;
   const completed = todayAppointments.filter((appointment) => appointment.status === "completed").length;
-  const historical = (appointments ?? []).filter((appointment) => appointment.status === "completed" || appointment.status === "no_show");
+  const historical = appointments.filter((appointment) => appointment.status === "completed" || appointment.status === "no_show");
   const noShows = historical.filter((appointment) => appointment.status === "no_show").length;
   const noShowRate = historical.length ? `${(noShows / historical.length * 100).toFixed(1)}%` : "—";
   const setupReady = Boolean(branches?.length && customers?.length && vehicles?.length);
@@ -71,7 +72,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
     {showForm ? <section className="panel operation-form" id="new-appointment">
       <div className="panel-header"><div><div className="panel-title">Schedule an appointment</div><div className="panel-subtitle">Times are interpreted in the selected branch’s time zone.</div></div><Link className="panel-link" href="/appointments">Cancel</Link></div>
       <form action={createAppointment} className="form-grid panel-body">
-        <div className="form-field"><label htmlFor="appointment-branch">Branch</label><select id="appointment-branch" name="branchId" required><option value="">Select branch</option>{branches?.map((branch) => <option key={branch.id} value={branch.id}>{branch.city} · {branch.code}</option>)}</select></div>
+        <div className="form-field"><label htmlFor="appointment-branch">Branch</label><select id="appointment-branch" name="branchId" defaultValue={staff.selectedBranchId ?? ""} required><option value="">Select branch</option>{branches?.map((branch) => <option key={branch.id} value={branch.id}>{branch.city} · {branch.code}</option>)}</select></div>
         <div className="form-field"><label htmlFor="appointment-customer">Customer</label><select id="appointment-customer" name="customerId" required><option value="">Select customer</option>{customers?.map((customer) => <option key={customer.id} value={customer.id}>{customer.display_name}</option>)}</select></div>
         <div className="form-field form-span-2"><label htmlFor="appointment-vehicle">Vehicle</label><select id="appointment-vehicle" name="vehicleId" required><option value="">Select vehicle</option>{vehicles?.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.model?.name ?? "Volkswagen ID"} · {vehicle.registration_no ?? vehicle.vin} · {vehicle.vehicle_ownerships[0]?.customer?.display_name ?? "No owner"}</option>)}</select></div>
         <div className="form-field"><label htmlFor="appointment-start">Starts</label><input id="appointment-start" name="startAt" type="datetime-local" required /></div>

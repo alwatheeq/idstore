@@ -15,6 +15,7 @@ declare
   v_other_vehicle uuid;
   v_contact_a uuid;
   v_contact_b uuid;
+  v_ownership uuid;
   v_message_a uuid;
   v_message_b uuid;
   v_attachment_a uuid;
@@ -100,6 +101,51 @@ begin
   if (select count(*) from public.consents where customer_id = v_customer) <> 2 then
     raise exception 'Consent history is not append-only';
   end if;
+
+  perform public.add_customer_address(
+    v_customer, 'service', 'JO', 'Amman', 'Amman', 'Test Street 1', '', '', true
+  );
+  perform public.add_customer_address(
+    v_customer, 'service', 'JO', 'Amman', 'Amman', 'Test Street 2', '', '', true
+  );
+  if (select count(*) from public.customer_addresses where customer_id = v_customer and address_type = 'service' and is_primary) <> 1 then
+    raise exception 'Customer address primary selection is inconsistent';
+  end if;
+
+  if not exists (
+    select 1 from public.find_customer_duplicates(v_org, null, '+962790000000', null)
+    where customer_id = v_customer and 'contact' = any(match_reasons)
+  ) then
+    raise exception 'Customer duplicate search did not find a shared contact';
+  end if;
+
+  select status into v_status from public.transition_customer_status(v_customer, 'restricted', 'transactional privacy hold');
+  if v_status <> 'restricted' then raise exception 'Customer restriction did not apply'; end if;
+  perform public.transition_customer_status(v_customer, 'active', 'transactional hold released');
+
+  perform public.update_vehicle_profile(
+    v_vehicle, v_branch, 'APP310', 'connected', '3.7', current_date - 30,
+    current_date - 30, current_date + 700, 100000
+  );
+  if not exists (select 1 from public.vehicles where id = v_vehicle and drive_unit = 'APP310' and connectivity_status = 'connected') then
+    raise exception 'Vehicle profile update did not persist';
+  end if;
+
+  select id into v_ownership from public.add_vehicle_ownership(
+    v_vehicle, v_branch, v_customer, 'driver', current_date, true
+  );
+  perform public.end_vehicle_ownership(v_ownership, v_branch, current_date, 'transactional relationship end');
+  if not exists (select 1 from public.vehicle_ownerships where id = v_ownership and valid_to = current_date) then
+    raise exception 'Ownership period did not close';
+  end if;
+
+  perform public.record_odometer_reading(v_vehicle, v_branch, 1000, 'transactional-test', '');
+  begin
+    perform public.record_odometer_reading(v_vehicle, v_branch, 900, 'transactional-test', '');
+    raise exception 'Odometer regression unexpectedly succeeded without a reason';
+  exception when sqlstate '42501' then null;
+  end;
+  perform public.record_odometer_reading(v_vehicle, v_branch, 900, 'correction', 'instrument replacement test');
 
   select id into v_message_a
   from public.queue_customer_message(

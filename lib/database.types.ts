@@ -4596,7 +4596,10 @@ export type Database = {
         Row: {
           battery_code: string | null
           battery_kwh: number | null
+          connectivity_status: string
           created_at: string
+          drive_unit: string | null
+          first_registration_date: string | null
           id: string
           model_id: string | null
           model_year: number | null
@@ -4608,11 +4611,17 @@ export type Database = {
           trim: string | null
           updated_at: string
           vin: string | null
+          warranty_distance_km: number | null
+          warranty_end_date: string | null
+          warranty_start_date: string | null
         }
         Insert: {
           battery_code?: string | null
           battery_kwh?: number | null
+          connectivity_status?: string
           created_at?: string
+          drive_unit?: string | null
+          first_registration_date?: string | null
           id?: string
           model_id?: string | null
           model_year?: number | null
@@ -4624,11 +4633,17 @@ export type Database = {
           trim?: string | null
           updated_at?: string
           vin?: string | null
+          warranty_distance_km?: number | null
+          warranty_end_date?: string | null
+          warranty_start_date?: string | null
         }
         Update: {
           battery_code?: string | null
           battery_kwh?: number | null
+          connectivity_status?: string
           created_at?: string
+          drive_unit?: string | null
+          first_registration_date?: string | null
           id?: string
           model_id?: string | null
           model_year?: number | null
@@ -4640,6 +4655,9 @@ export type Database = {
           trim?: string | null
           updated_at?: string
           vin?: string | null
+          warranty_distance_km?: number | null
+          warranty_end_date?: string | null
+          warranty_start_date?: string | null
         }
         Relationships: [
           {
@@ -4747,6 +4765,40 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_customer_address: {
+        Args: { p_address_line1: string; p_address_line2: string; p_address_type: string; p_admin_area: string; p_city: string; p_country_code: string; p_customer_id: string; p_is_primary: boolean; p_postal_code: string }
+        Returns: Database["public"]["Tables"]["customer_addresses"]["Row"]
+        SetofOptions: { from: "*"; to: "customer_addresses"; isOneToOne: true; isSetofReturn: false }
+      }
+      add_vehicle_ownership: {
+        Args: { p_branch_id: string; p_customer_id: string; p_relationship: string; p_valid_from: string; p_vehicle_id: string; p_verified: boolean }
+        Returns: Database["public"]["Tables"]["vehicle_ownerships"]["Row"]
+        SetofOptions: { from: "*"; to: "vehicle_ownerships"; isOneToOne: true; isSetofReturn: false }
+      }
+      end_vehicle_ownership: {
+        Args: { p_branch_id: string; p_ownership_id: string; p_reason: string; p_valid_to: string }
+        Returns: Database["public"]["Tables"]["vehicle_ownerships"]["Row"]
+        SetofOptions: { from: "*"; to: "vehicle_ownerships"; isOneToOne: true; isSetofReturn: false }
+      }
+      find_customer_duplicates: {
+        Args: { p_display_name?: string | null; p_normalized_contact?: string | null; p_organization_id: string; p_tax_number?: string | null }
+        Returns: { customer_id: string; display_name: string; match_reasons: string[]; status: string }[]
+      }
+      record_odometer_reading: {
+        Args: { p_branch_id: string; p_correction_reason: string; p_reading_km: number; p_source: string; p_vehicle_id: string }
+        Returns: Database["public"]["Tables"]["odometer_readings"]["Row"]
+        SetofOptions: { from: "*"; to: "odometer_readings"; isOneToOne: true; isSetofReturn: false }
+      }
+      transition_customer_status: {
+        Args: { p_customer_id: string; p_reason: string; p_to_status: string }
+        Returns: Database["public"]["Tables"]["customers"]["Row"]
+        SetofOptions: { from: "*"; to: "customers"; isOneToOne: true; isSetofReturn: false }
+      }
+      update_vehicle_profile: {
+        Args: { p_branch_id: string; p_connectivity_status: string; p_drive_unit: string; p_first_registration_date: string | null; p_software_version: string; p_vehicle_id: string; p_warranty_distance_km: number | null; p_warranty_end_date: string | null; p_warranty_start_date: string | null }
+        Returns: Database["public"]["Tables"]["vehicles"]["Row"]
+        SetofOptions: { from: "*"; to: "vehicles"; isOneToOne: true; isSetofReturn: false }
+      }
       audit_recent: { Args: { p_limit?: number; p_organization_id: string }; Returns: { action: string; actor_name: string | null; entity_id: string | null; entity_type: string; id: number; occurred_at: string }[] }
       integration_overview: { Args: { p_organization_id: string }; Returns: Json }
       add_customer_contact: { Args: { p_customer_id: string; p_is_primary: boolean; p_kind: string; p_normalized_value: string; p_value: string }; Returns: Database["public"]["Tables"]["customer_contacts"]["Row"]; SetofOptions: { from: "*"; to: "customer_contacts"; isOneToOne: true; isSetofReturn: false } }

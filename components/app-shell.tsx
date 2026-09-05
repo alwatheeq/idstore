@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Banknote, Bell, Boxes, Building2, CalendarDays, CarFront, CircleDollarSign,
@@ -44,8 +44,10 @@ type ShellBranch = { id: string; code: string; city: string; displayName: string
 
 export function AppShell({ children, staff, branches }: { children: React.ReactNode; staff: CurrentStaff; branches: ShellBranch[] }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isArabic, setIsArabic] = useState(false);
+  const [branchPending, setBranchPending] = useState(false);
 
   useEffect(() => {
     document.documentElement.dir = isArabic ? "rtl" : "ltr";
@@ -57,6 +59,21 @@ export function AppShell({ children, staff, branches }: { children: React.ReactN
       <Icon /> <span>{label}</span>
     </Link>
   ));
+
+  async function selectOperatingBranch(branchId: string) {
+    setBranchPending(true);
+    try {
+      const response = await fetch("/api/operating-branch", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ branchId: branchId === "all" ? null : branchId }),
+      });
+      if (!response.ok) throw new Error("Operating branch could not be changed.");
+      router.refresh();
+    } finally {
+      setBranchPending(false);
+    }
+  }
 
   return (
     <div className="app-frame">
@@ -73,7 +90,7 @@ export function AppShell({ children, staff, branches }: { children: React.ReactN
       <main className="app-main">
         <header className="topbar">
           <button className="icon-button mobile-menu" aria-label="Toggle menu" onClick={() => setMenuOpen((value) => !value)}>{menuOpen ? <X size={17} /> : <Menu size={17} />}</button>
-          <div className="branch-select"><label htmlFor="branch">Operating branch</label><select id="branch" defaultValue="all"><option value="all">{branches.length ? "All branches" : "No branches configured"}</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.city} · {branch.code}</option>)}</select></div>
+          <div className="branch-select"><label htmlFor="branch">Operating branch</label><select id="branch" value={staff.selectedBranchId ?? "all"} disabled={branchPending || !branches.length} onChange={(event) => void selectOperatingBranch(event.target.value)}><option value="all">{branches.length ? "All branches" : "No branches configured"}</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.city} · {branch.code}</option>)}</select></div>
           <form className="topbar-search" action="/search"><Search size={15} /><input name="q" aria-label="Global search" placeholder="Search VIN, RO, customer…" /></form>
           <div className="topbar-spacer" />
           <button className="icon-button locale-button" onClick={() => setIsArabic((value) => !value)}>{isArabic ? "EN" : "العربية"}</button>
