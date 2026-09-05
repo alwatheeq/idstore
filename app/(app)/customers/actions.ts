@@ -13,9 +13,16 @@ export async function createCustomer(formData: FormData) {
   const customerType = formText(formData, "customerType");
   const displayName = formText(formData, "displayName");
   const rawMobile = formText(formData, "mobile");
+  const portalPin = formText(formData, "portalPin");
 
   if (!branchId || !displayName || !["individual", "company"].includes(customerType)) {
     redirect(routeMessage("/customers", "error", "Branch, customer type and name are required."));
+  }
+  if (portalPin && !/^\d{6}$/.test(portalPin)) {
+    redirect(routeMessage("/customers", "error", "The portal PIN must be exactly six digits."));
+  }
+  if (portalPin && !rawMobile) {
+    redirect(routeMessage("/customers", "error", "Mobile number is required when a portal PIN is provided."));
   }
 
   let mobile: string | undefined;
@@ -47,7 +54,7 @@ export async function createCustomer(formData: FormData) {
 
   try {
     const supabase = await createClient();
-    const { error } = await supabase.rpc("create_customer", {
+    const { data: createdCustomer, error } = await supabase.rpc("create_customer", {
       p_organization_id: staff.organizationId,
       p_preferred_branch_id: branchId,
       p_customer_type: customerType,
@@ -60,6 +67,23 @@ export async function createCustomer(formData: FormData) {
       p_notes: optionalText(formData, "notes"),
     });
     if (error) throw error;
+    const customerId = typeof createdCustomer === "object" && createdCustomer ? (createdCustomer as { id?: string }).id : null;
+    if (!customerId) {
+      redirect(routeMessage("/customers", "error", "The customer could not be created."));
+    }
+    if (portalPin) {
+      try {
+        const provisionError = (await supabase.functions.invoke("provision-customer", {
+          body: { organizationId: staff.organizationId, customerId, mobile: mobile!, pin: portalPin },
+        })).error;
+        if (provisionError) throw provisionError;
+      } catch (error) {
+        const message = (await functionMessage(error)) ?? "The portal access could not be created.";
+        revalidatePath("/customers");
+        revalidatePath("/vehicles");
+        redirect(routeMessage("/customers", "created", `Customer created. ${message}`));
+      }
+    }
   } catch (error) {
     redirect(routeMessage("/customers", "error", operationError(error, "The customer could not be created.")));
   }
@@ -78,7 +102,9 @@ async function functionMessage(error: unknown) {
 
 export async function provisionCustomerPortal(formData: FormData) {
   const staff = await getCurrentStaff();
-  if (staff.role !== "admin") redirect(routeMessage("/customers", "error", "Only administrators can create customer portal access."));
+  if (staff.role !== "admin" && !staff.permissionCodes.includes("crm.manage")) {
+    redirect(routeMessage("/customers", "error", "You do not have permission to create customer portal access."));
+  }
   const customerId = formText(formData, "customerId"); const pin = formText(formData, "pin");
   if (!customerId || !/^\d{6}$/.test(pin)) redirect(routeMessage("/customers", "error", "Customer and a six-digit PIN are required."));
   let mobile: string;
@@ -91,11 +117,29 @@ export async function provisionCustomerPortal(formData: FormData) {
 }
 
 export async function addCustomerContact(formData: FormData) {
-  await getCurrentStaff(); const customerId=formText(formData,"customerId"),kind=formText(formData,"kind"),value=formText(formData,"value");
+  const staff = await getCurrentStaff();
+  const customerId = formText(formData, "customerId"), kind = formText(formData, "kind"), value = formText(formData, "value");
   if(!customerId||!value||!["mobile","phone","email","whatsapp"].includes(kind)) redirect(routeMessage("/customers","error","Customer, contact type and value are required."));
   let normalized=value.trim().toLowerCase();
   try { if(kind!=="email") normalized=normalizeMobile(formText(formData,"dialCode"),value); else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) throw new Error("Enter a valid email address."); }
   catch(error){redirect(routeMessage("/customers","error",error instanceof Error?error.message:"Enter a valid contact."));}
+  if (kind === "mobile") {
+    try {
+      const supabase = await createClient();
+      const { data: duplicates, error: duplicateError } = await supabase.rpc("find_customer_duplicates", {
+        p_organization_id: staff.organizationId,
+        p_display_name: null,
+        p_normalized_contact: normalized,
+        p_tax_number: null,
+      });
+      if (duplicateError) throw duplicateError;
+      if ((duplicates ?? []).some((entry: { customer_id: string }) => entry.customer_id !== customerId)) {
+        redirect(routeMessage("/customers", "error", "This mobile number is already used by another customer."));
+      }
+    } catch (error) {
+      redirect(routeMessage("/customers", "error", operationError(error, "Customer identity could not be checked.")));
+    }
+  }
   try{const supabase=await createClient();const {error}=await supabase.rpc("add_customer_contact",{p_customer_id:customerId,p_kind:kind,p_value:kind==="email"?value.trim():normalized,p_normalized_value:normalized,p_is_primary:formData.get("isPrimary")==="on"});if(error)throw error;}catch(error){redirect(routeMessage("/customers","error",operationError(error,"The contact could not be added.")));}
   revalidatePath("/customers");redirect(routeMessage("/customers","created","Customer contact added."));
 }
