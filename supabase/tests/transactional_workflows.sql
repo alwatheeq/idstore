@@ -29,6 +29,7 @@ declare
   v_appointment uuid;
   v_checkin uuid;
   v_waitlist uuid;
+  v_service_version uuid;
   v_job uuid;
   v_job_version bigint;
   v_hv_job uuid;
@@ -302,11 +303,21 @@ begin
   end if;
 
   -- Advanced scheduling, waitlist and guided check-in.
+  select id into v_service_version from public.create_service_template(v_org,'TEST-SERVICE-'||left(replace(v_key,'-',''),8),'Transactional service','خدمة اختبار','JO',current_date,12,15000,'TEST-SOURCE','{"model_codes":[]}'::jsonb);
+  perform public.add_service_template_task(v_service_version,'TEST-CHECK','Transactional catalog check','فحص اختبار',30,'','','TEST-PROCEDURE','{"capture":"confirmation"}'::jsonb);
+  perform public.publish_service_template_version(v_service_version);
   perform public.upsert_branch_operating_hour(v_branch, extract(dow from (v_future at time zone 'Asia/Amman'))::integer, '00:00', '23:59', false);
   delete from public.branch_holidays where branch_id=v_branch and holiday_date=(v_future at time zone 'Asia/Amman')::date;
-  select public.create_advanced_appointments(v_org,v_branch,v_customer,v_vehicle,v_future,v_future+interval '1 hour',null,'transactional appointment','workshop','customer_dropoff',null,null,'["diagnosis"]'::jsonb,2) into v_appointments;
+  begin
+    perform public.create_catalog_appointments(v_org,v_branch,v_customer,v_vehicle,v_future,v_future+interval '1 hour',null,'transactional appointment','workshop','customer_dropoff',null,null,array[]::uuid[],1);
+    raise exception 'Catalog appointment unexpectedly accepted an empty service list';
+  exception when sqlstate '22023' then null;
+  end;
+  select public.create_catalog_appointments(v_org,v_branch,v_customer,v_vehicle,v_future,v_future+interval '1 hour',null,'transactional appointment','workshop','customer_dropoff',null,null,array[v_service_version],2) into v_appointments;
   v_appointment:=v_appointments[1];
   if array_length(v_appointments,1)<>2 then raise exception 'Recurring appointment series was not created'; end if;
+  if (select count(*) from public.appointment_service_items where appointment_id=any(v_appointments))<>2 then raise exception 'Catalog services were not snapshotted for every recurring appointment'; end if;
+  if not exists(select 1 from public.appointment_service_items where appointment_id=v_appointment and template_version_id=v_service_version and planned_minutes=30 and jsonb_array_length(snapshot_json->'tasks')=1) then raise exception 'Appointment service snapshot is incomplete'; end if;
   select id into v_waitlist from public.create_waitlist_entry(v_branch,v_customer,v_vehicle,v_future+interval '20 days',v_future+interval '21 days',60,'workshop','customer_dropoff',3,'transactional waitlist');
   if v_waitlist is null then raise exception 'Waitlist entry was not created'; end if;
   select version into v_order_version from public.appointments where id=v_appointment;

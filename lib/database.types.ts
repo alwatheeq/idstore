@@ -14,6 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointment_service_items: {
+        Row: {
+          appointment_id: string
+          branch_id: string
+          created_at: string
+          id: string
+          organization_id: string
+          planned_minutes: number
+          snapshot_json: Json
+          template_code: string
+          template_name_ar: string | null
+          template_name_en: string
+          template_version_id: string
+          version_no: number
+        }
+        Insert: {
+          appointment_id: string
+          branch_id: string
+          created_at?: string
+          id?: string
+          organization_id: string
+          planned_minutes: number
+          snapshot_json: Json
+          template_code: string
+          template_name_ar?: string | null
+          template_name_en: string
+          template_version_id: string
+          version_no: number
+        }
+        Update: {
+          appointment_id?: string
+          branch_id?: string
+          created_at?: string
+          id?: string
+          organization_id?: string
+          planned_minutes?: number
+          snapshot_json?: Json
+          template_code?: string
+          template_name_ar?: string | null
+          template_name_en?: string
+          template_version_id?: string
+          version_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_service_items_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_service_items_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_service_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_service_items_template_version_id_fkey"
+            columns: ["template_version_id"]
+            isOneToOne: false
+            referencedRelation: "service_template_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_waitlist: {
         Row: {
           appointment_id: string | null
@@ -6552,6 +6626,25 @@ export type Database = {
           p_requested_services: Json
           p_resource_id: string | null
           p_service_mode: string
+          p_start_at: string
+          p_transport_mode: string
+          p_vehicle_id: string
+        }
+        Returns: string[]
+      }
+      create_catalog_appointments: {
+        Args: {
+          p_advisor_user_id: string | null
+          p_branch_id: string
+          p_customer_id: string
+          p_end_at: string
+          p_notes: string | null
+          p_organization_id: string
+          p_promised_at: string | null
+          p_recurrence_count: number
+          p_resource_id: string | null
+          p_service_mode: string
+          p_service_version_ids: string[]
           p_start_at: string
           p_transport_mode: string
           p_vehicle_id: string

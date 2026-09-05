@@ -56,6 +56,7 @@ where routine_schema = 'public'
   and routine_name in (
     'create_repair_order',
     'transition_repair_order',
+    'create_catalog_appointments',
     'create_qualification_type',
     'grant_technician_qualification',
     'create_hv_work_permit',
@@ -91,6 +92,20 @@ where routine_schema = 'public'
     'receive_invoice_payment'
   )
 order by routine_name, grantee;
+
+-- This query must return zero rows: clients book through the catalog-validating wrapper.
+select routine_schema, routine_name, grantee, privilege_type
+from information_schema.role_routine_grants
+where routine_schema = 'public'
+  and routine_name in ('create_appointment', 'create_advanced_appointments')
+  and grantee in ('anon', 'authenticated');
+
+-- Confirm the immutable appointment service snapshot.
+select column_name, data_type, is_nullable
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'appointment_service_items'
+order by ordinal_position;
 
 -- Confirm structured high-voltage evidence fields are present.
 select column_name, data_type, is_nullable

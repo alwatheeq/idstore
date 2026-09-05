@@ -34,11 +34,11 @@ export async function createAppointment(formData: FormData) {
     const serviceMode = formText(formData, "serviceMode") || "workshop";
     const transportMode = formText(formData, "transportMode") || "customer_dropoff";
     const recurrenceCount = optionalNumber(formData, "recurrenceCount") ?? 1;
-    if (!["workshop", "mobile"].includes(serviceMode) || !["customer_dropoff", "wait_on_site", "pickup_return", "loan_vehicle"].includes(transportMode) || !Number.isSafeInteger(recurrenceCount) || recurrenceCount < 1 || recurrenceCount > 12) {
+    const serviceVersionIds = Array.from(new Set(formData.getAll("serviceVersionId").filter((item): item is string => typeof item === "string" && item.length > 0)));
+    if (!["workshop", "mobile"].includes(serviceMode) || !["customer_dropoff", "wait_on_site", "pickup_return", "loan_vehicle"].includes(transportMode) || !Number.isSafeInteger(recurrenceCount) || recurrenceCount < 1 || recurrenceCount > 12 || serviceVersionIds.length < 1 || serviceVersionIds.length > 10) {
       throw new Error("Appointment service choices are invalid.");
     }
-    const requestedServices = formText(formData, "requestedServices").split(/[,\n]/).map((item) => item.trim()).filter(Boolean);
-    const { error } = await supabase.rpc("create_advanced_appointments", {
+    const { error } = await supabase.rpc("create_catalog_appointments", {
       p_organization_id: staff.organizationId,
       p_branch_id: branchId,
       p_customer_id: customerId,
@@ -51,7 +51,7 @@ export async function createAppointment(formData: FormData) {
       p_transport_mode: transportMode,
       p_advisor_user_id: optionalText(formData, "advisorUserId") ?? null,
       p_resource_id: optionalText(formData, "resourceId") ?? null,
-      p_requested_services: requestedServices,
+      p_service_version_ids: serviceVersionIds,
       p_recurrence_count: recurrenceCount,
     });
     if (error) throw error;

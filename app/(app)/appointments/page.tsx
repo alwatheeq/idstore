@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { RecordFeedback } from "@/components/record-feedback";
 import { StatusPill } from "@/components/status-pill";
 import { getCurrentStaff } from "@/lib/auth/session";
+import type { Json } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/server";
 import { completeVehicleCheckin, createAppointment, createWaitlistEntry, transitionAppointment, transitionWaitlistEntry } from "./actions";
 
@@ -30,6 +31,12 @@ function nextActions(status: string) {
   return [];
 }
 
+function modelScope(value: Json): string {
+  if (!value || typeof value !== "object" || Array.isArray(value) || !Array.isArray(value.model_codes)) return "All VW ID models";
+  const codes = value.model_codes.filter((item): item is string => typeof item === "string");
+  return codes.length ? codes.join(", ") : "All VW ID models";
+}
+
 export default async function AppointmentsPage({ searchParams }: { searchParams: Promise<PageQuery> }) {
   const query = await searchParams;
   const staff = await getCurrentStaff();
@@ -37,13 +44,13 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
   const now = new Date();
   const rangeStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const rangeEnd = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000).toISOString();
-  const [{ data: branches }, { data: customers }, { data: vehicles }, { data: appointmentRows, error }, { data: resources }, { data: advisors }, { data: waitlistRows }, { data: operatingHours }, { data: holidays }, { data: checkins }] = await Promise.all([
+  const [{ data: branches }, { data: customers }, { data: vehicles }, { data: appointmentRows, error }, { data: resources }, { data: advisors }, { data: waitlistRows }, { data: operatingHours }, { data: holidays }, { data: checkins }, { data: serviceVersionRows }] = await Promise.all([
     supabase.from("branches").select("id, code, city, timezone").eq("organization_id", staff.organizationId).eq("status", "active").order("city"),
     supabase.from("customers").select("id, display_name").eq("organization_id", staff.organizationId).eq("status", "active").order("display_name"),
     supabase.from("vehicles").select("id, vin, registration_no, model:vehicle_models(name), vehicle_ownerships(customer:customers(display_name))").eq("organization_id", staff.organizationId).eq("status", "active").order("registration_no"),
     supabase
       .from("appointments")
-      .select("id, branch_id, start_at, end_at, promised_at, status, channel, notes, version, service_mode, transport_mode, recurrence_group_id, recurrence_sequence, requested_services, branch:branches(display_name, city), customer:customers(display_name), vehicle:vehicles(registration_no, vin, model:vehicle_models(name))")
+      .select("id, branch_id, start_at, end_at, promised_at, status, channel, notes, version, service_mode, transport_mode, recurrence_group_id, recurrence_sequence, requested_services, appointment_service_items(template_code, template_name_en, version_no, planned_minutes), branch:branches(display_name, city), customer:customers(display_name), vehicle:vehicles(registration_no, vin, model:vehicle_models(name))")
       .eq("organization_id", staff.organizationId)
       .gte("end_at", rangeStart)
       .lte("start_at", rangeEnd)
@@ -54,6 +61,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
     supabase.from("branch_operating_hours").select("branch_id, day_of_week, opens_at, closes_at, is_closed").eq("organization_id", staff.organizationId).order("day_of_week"),
     supabase.from("branch_holidays").select("branch_id, holiday_date, name, is_closed, opens_at, closes_at").eq("organization_id", staff.organizationId).gte("holiday_date", new Date().toISOString().slice(0,10)).order("holiday_date").limit(12),
     supabase.from("vehicle_checkins").select("id, appointment_id, odometer_km, state_of_charge, keys_count, warning_lights, ownership_verified, diagnosis_authorized, road_test_authorized, signer_name, signature_hash, signed_at, checkin_condition_items(zone, condition, notes)").eq("organization_id", staff.organizationId).order("created_at", { ascending: false }),
+    supabase.from("service_template_versions").select("id, version_no, effective_from, effective_to, interval_months, interval_km, applicability_json, template:service_templates(code, name_en, name_ar, market), service_template_tasks(standard_minutes)").eq("organization_id", staff.organizationId).eq("status", "published").order("effective_from", { ascending: false }),
   ]);
   const appointments = staff.selectedBranchId ? (appointmentRows ?? []).filter((appointment) => appointment.branch_id === staff.selectedBranchId) : (appointmentRows ?? []);
   const waitlist = staff.selectedBranchId ? (waitlistRows ?? []).filter((entry) => entry.branch_id === staff.selectedBranchId) : (waitlistRows ?? []);
@@ -66,8 +74,10 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
   const historical = appointments.filter((appointment) => appointment.status === "completed" || appointment.status === "no_show");
   const noShows = historical.filter((appointment) => appointment.status === "no_show").length;
   const noShowRate = historical.length ? `${(noShows / historical.length * 100).toFixed(1)}%` : "—";
+  const publishedServices = serviceVersionRows ?? [];
   const setupReady = Boolean(branches?.length && customers?.length && vehicles?.length);
-  const showForm = query.new === "1" && setupReady;
+  const catalogReady = publishedServices.length > 0;
+  const showForm = query.new === "1" && setupReady && catalogReady;
   const showWaitlistForm = query.new === "waitlist" && setupReady;
   const checkinAppointment = appointments.find((appointment) => appointment.id === query.checkin && appointment.status === "confirmed");
 
@@ -75,7 +85,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
     <PageHeader eyebrow="Reception planning" title="Appointments" description="Schedule arrivals by branch and move each booking through confirmation, check-in and completion.">
       <Link className="button" href="/appointments">Today</Link>
       {setupReady ? <Link className="button" href="/appointments?new=waitlist#new-waitlist"><ListPlus /> Add to waitlist</Link> : null}
-      {setupReady ? <Link className="button primary" href="/appointments?new=1#new-appointment"><Plus /> New appointment</Link> : <Link className="button primary" href={branches?.length ? customers?.length ? "/vehicles?new=1#new-vehicle" : "/customers?new=1#new-customer" : "/branches?new=1#new-branch"}><Plus /> Complete setup</Link>}
+      {setupReady && catalogReady ? <Link className="button primary" href="/appointments?new=1#new-appointment"><Plus /> New appointment</Link> : setupReady ? <Link className="button primary" href="/catalog?new=template#template-form"><Plus /> Create service list</Link> : <Link className="button primary" href={branches?.length ? customers?.length ? "/vehicles?new=1#new-vehicle" : "/customers?new=1#new-customer" : "/branches?new=1#new-branch"}><Plus /> Complete setup</Link>}
     </PageHeader>
     <RecordFeedback created={query.created} error={query.error ?? (error ? "Appointments could not be loaded." : undefined)} />
 
@@ -93,7 +103,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
         <div className="form-field"><label htmlFor="appointment-advisor">Advisor / technician</label><select id="appointment-advisor" name="advisorUserId" defaultValue=""><option value="">Unassigned</option>{advisors?.map(advisor=><option key={advisor.user_id} value={advisor.user_id}>{advisor.employee_no} · {advisor.labor_grade}</option>)}</select></div>
         <div className="form-field"><label htmlFor="appointment-resource">Primary resource</label><select id="appointment-resource" name="resourceId" defaultValue=""><option value="">Allocate later</option>{resources?.filter(resource=>!staff.selectedBranchId || resource.branch_id===staff.selectedBranchId).map(resource=><option key={resource.id} value={resource.id}>{resource.code} · {resource.name} · {resource.resource_type}</option>)}</select></div>
         <div className="form-field"><label htmlFor="appointment-recurrence">Weekly occurrences</label><input id="appointment-recurrence" name="recurrenceCount" type="number" min="1" max="12" defaultValue="1"/><span className="field-hint">Use for recurring fleet visits.</span></div>
-        <div className="form-field form-span-2"><label htmlFor="appointment-services">Requested services</label><input id="appointment-services" name="requestedServices" placeholder="Inspection, software update, battery diagnosis"/></div>
+        <fieldset className="access-fieldset form-span-2"><legend>Requested services</legend><p>Select one or more published service recipes. The database verifies the market, effective date, vehicle model and total booking duration.</p><div className="permission-grid">{publishedServices.map((version) => { const minutes = version.service_template_tasks.reduce((sum, task) => sum + task.standard_minutes, 0); return <label className="check-field" key={version.id}><input name="serviceVersionId" type="checkbox" value={version.id}/><span><strong>{version.template?.name_en ?? "Service"}</strong><small>{version.template?.code} · V{version.version_no} · {minutes} min · from {version.effective_from} · {modelScope(version.applicability_json)}</small></span></label>; })}</div></fieldset>
         <div className="form-field form-span-2"><label htmlFor="appointment-notes">Reception notes</label><textarea id="appointment-notes" name="notes" rows={3} placeholder="Requested service, symptoms or arrival instructions." /></div>
         <div className="form-actions form-span-2"><Link className="button" href="/appointments">Cancel</Link><button className="button primary" type="submit">Schedule appointment</button></div>
       </form>
@@ -114,12 +124,12 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
 
     {waitlist.length ? <section className="panel"><div className="panel-header"><div><div className="panel-title">Appointment waitlist</div><div className="panel-subtitle">Priority queue for matching new capacity and cancellations.</div></div><span className="status-pill amber">{waitlist.length} waiting</span></div><div className="data-scroll"><table className="data-table"><thead><tr><th>Priority</th><th>Customer & vehicle</th><th>Preferred window</th><th>Mode</th><th>Status / action</th></tr></thead><tbody>{waitlist.map(entry=><tr key={entry.id}><td className="mono">P{entry.priority}</td><td><div className="cell-main">{entry.customer?.display_name}</div><div className="cell-sub">{entry.vehicle?.model?.name} · {entry.vehicle?.registration_no ?? entry.vehicle?.vin}</div></td><td><div>{appointmentDate.format(new Date(entry.preferred_from))} – {appointmentDate.format(new Date(entry.preferred_to))}</div><div className="cell-sub">{entry.duration_minutes} min · {entry.branch?.city}</div></td><td>{entry.service_mode} · {entry.transport_mode.replaceAll("_"," ")}</td><td><form action={transitionWaitlistEntry} className="inline-actions"><input type="hidden" name="waitlistId" value={entry.id}/><input type="hidden" name="reason" value="Scheduling team update"/><select name="status" defaultValue={entry.status==="waiting"?"offered":"cancelled"}><option value="offered">Offer slot</option><option value="cancelled">Cancel</option><option value="expired">Expire</option></select><button className="button compact" type="submit">Apply</button></form></td></tr>)}</tbody></table></div></section> : null}
 
-    {!appointments?.length ? <EmptyState icon={CalendarDays} title="No appointments scheduled" description={setupReady ? "Schedule the first customer arrival and confirm it from this queue." : "Create a branch, customer and vehicle before scheduling an appointment."} action={setupReady ? <Link className="button primary" href="/appointments?new=1#new-appointment">Schedule first appointment</Link> : undefined} /> : <section className="panel">
+    {!appointments?.length ? <EmptyState icon={CalendarDays} title="No appointments scheduled" description={setupReady ? catalogReady ? "Schedule the first customer arrival using a published catalog service." : "Publish at least one service recipe before scheduling customer work." : "Create a branch, customer and vehicle before scheduling an appointment."} action={setupReady ? catalogReady ? <Link className="button primary" href="/appointments?new=1#new-appointment">Schedule first appointment</Link> : <Link className="button primary" href="/catalog?new=template#template-form">Create service list</Link> : undefined} /> : <section className="panel">
       <div className="panel-header"><div><div className="panel-title">Arrival ledger</div><div className="panel-subtitle">Recent and upcoming appointments · Asia/Amman display time</div></div></div>
       <div className="data-scroll"><table className="data-table appointment-ledger"><thead><tr><th>Date & time</th><th>Customer & vehicle</th><th>Branch</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead><tbody>{appointments.map((appointment) => {
         const actions = nextActions(appointment.status);
         const checkin = checkins?.find((item) => item.appointment_id === appointment.id);
-        return <tr key={appointment.id}><td className="nowrap"><div className="cell-main">{appointmentDate.format(new Date(appointment.start_at))}</div><div className="cell-sub mono">{appointmentTime.format(new Date(appointment.start_at))}–{appointmentTime.format(new Date(appointment.end_at))}{appointment.recurrence_group_id ? ` · Series ${appointment.recurrence_sequence}` : ""}</div></td><td><div className="cell-main">{appointment.vehicle?.model?.name ?? "Volkswagen ID"} · {appointment.vehicle?.registration_no ?? appointment.vehicle?.vin}</div><div className="cell-sub">{appointment.customer?.display_name ?? "Unknown customer"}{checkin ? ` · ${checkin.odometer_km.toLocaleString()} km · signed ${checkin.signer_name}` : ""}</div></td><td>{appointment.branch?.city ?? appointment.branch?.display_name ?? "—"}</td><td><StatusPill label={appointment.status} tone={statusTone(appointment.status)} /></td><td><span className="cell-sub">{appointment.service_mode} · {appointment.transport_mode.replaceAll("_", " ")}{appointment.notes ? ` · ${appointment.notes}` : ""}</span></td><td><div className="inline-actions">{appointment.status === "confirmed" ? <Link className="button compact primary" href={`/appointments?checkin=${appointment.id}#vehicle-checkin`}>Guided check-in</Link> : null}{actions.map((action) => <form action={transitionAppointment} key={action.value}><input type="hidden" name="appointmentId" value={appointment.id} /><input type="hidden" name="version" value={appointment.version} /><input type="hidden" name="toStatus" value={action.value} /><button className={`button compact ${action.value === "confirmed" || action.value === "completed" ? "primary" : ""}`} type="submit">{action.label}</button></form>)}</div></td></tr>;
+        return <tr key={appointment.id}><td className="nowrap"><div className="cell-main">{appointmentDate.format(new Date(appointment.start_at))}</div><div className="cell-sub mono">{appointmentTime.format(new Date(appointment.start_at))}–{appointmentTime.format(new Date(appointment.end_at))}{appointment.recurrence_group_id ? ` · Series ${appointment.recurrence_sequence}` : ""}</div></td><td><div className="cell-main">{appointment.vehicle?.model?.name ?? "Volkswagen ID"} · {appointment.vehicle?.registration_no ?? appointment.vehicle?.vin}</div><div className="cell-sub">{appointment.customer?.display_name ?? "Unknown customer"}{checkin ? ` · ${checkin.odometer_km.toLocaleString()} km · signed ${checkin.signer_name}` : ""}</div></td><td>{appointment.branch?.city ?? appointment.branch?.display_name ?? "—"}</td><td><StatusPill label={appointment.status} tone={statusTone(appointment.status)} /></td><td><div className="cell-main">{appointment.appointment_service_items.length ? appointment.appointment_service_items.map((service) => service.template_name_en).join(", ") : "Legacy service request"}</div><span className="cell-sub">{appointment.appointment_service_items.length ? `${appointment.appointment_service_items.reduce((sum, service) => sum + service.planned_minutes, 0)} planned min · ` : ""}{appointment.service_mode} · {appointment.transport_mode.replaceAll("_", " ")}{appointment.notes ? ` · ${appointment.notes}` : ""}</span></td><td><div className="inline-actions">{appointment.status === "confirmed" ? <Link className="button compact primary" href={`/appointments?checkin=${appointment.id}#vehicle-checkin`}>Guided check-in</Link> : null}{actions.map((action) => <form action={transitionAppointment} key={action.value}><input type="hidden" name="appointmentId" value={appointment.id} /><input type="hidden" name="version" value={appointment.version} /><input type="hidden" name="toStatus" value={action.value} /><button className={`button compact ${action.value === "confirmed" || action.value === "completed" ? "primary" : ""}`} type="submit">{action.label}</button></form>)}</div></td></tr>;
       })}</tbody></table></div>
     </section>}
   </>;
