@@ -305,6 +305,11 @@ begin
 
   -- Advanced scheduling, waitlist and guided check-in.
   select id into v_service_version from public.create_service_template(v_org,'TEST-SERVICE-'||left(replace(v_key,'-',''),8),'Transactional service','خدمة اختبار','JO',current_date,12,15000,'TEST-SOURCE','{"model_codes":[]}'::jsonb);
+  begin
+    perform public.add_service_template_task(v_service_version,'TEST-HV-INVALID','Invalid HV task','',30,'','','','{"capture":"confirmation","safety_class":"hv_isolated"}'::jsonb);
+    raise exception 'HV catalog task unexpectedly accepted without a qualification code';
+  exception when sqlstate '23514' then null;
+  end;
   perform public.add_service_template_task(v_service_version,'TEST-CHECK','Transactional catalog check','فحص اختبار',30,'','','TEST-PROCEDURE','{"capture":"confirmation"}'::jsonb);
   perform public.publish_service_template_version(v_service_version);
   perform public.upsert_branch_operating_hour(v_branch, extract(dow from (v_future at time zone 'Asia/Amman'))::integer, '00:00', '23:59', false);
@@ -328,6 +333,7 @@ begin
   if v_checkin is null or not exists(select 1 from public.appointments where id=v_appointment and status='checked_in') then raise exception 'Guided check-in did not complete'; end if;
   select id into v_intake_order from public.open_repair_order_from_checkin(v_appointment);
   if not exists(select 1 from public.repair_orders where id=v_intake_order and appointment_id=v_appointment and odometer_km=1100 and state_of_charge=80 and customer_concern like 'Booked services:%') then raise exception 'Checked-in appointment did not create a linked repair order from signed evidence'; end if;
+  if not exists(select 1 from public.jobs where repair_order_id=v_intake_order and operation_code='TEST-CHECK' and description_snapshot='Transactional catalog check' and status='ready' and safety_class='ev_aware' and planned_minutes=30) then raise exception 'Catalog task was not instantiated as a ready workshop job'; end if;
   begin
     perform public.open_repair_order_from_checkin(v_appointment);
     raise exception 'A duplicate repair order was opened for one appointment';

@@ -41,8 +41,15 @@ export async function addServiceTask(formData: FormData) {
   const taskCode = formText(formData, "taskCode").toUpperCase();
   const descriptionEn = formText(formData, "descriptionEn");
   const minutes = optionalNumber(formData, "standardMinutes");
-  if (!versionId || !taskCode || !descriptionEn || minutes === undefined || !Number.isSafeInteger(minutes) || minutes < 0) {
+  const safetyClass = formText(formData, "safetyClass") || "ev_aware";
+  if (!versionId || !taskCode || !descriptionEn || minutes === undefined || !Number.isSafeInteger(minutes) || minutes < 0 || minutes > 1440) {
     redirect(routeMessage(path, "error", "Task code, description and whole standard minutes are required."));
+  }
+  if (!["normal", "ev_aware", "hv_isolated", "hv_battery_open"].includes(safetyClass)) {
+    redirect(routeMessage(path, "error", "Select a valid task safety class."));
+  }
+  if (["hv_isolated", "hv_battery_open"].includes(safetyClass) && !optionalText(formData, "qualificationCode")) {
+    redirect(routeMessage(path, "error", "High-voltage tasks require a qualification code."));
   }
   try {
     const supabase = await createClient();
@@ -52,7 +59,10 @@ export async function addServiceTask(formData: FormData) {
       p_required_permission: optionalText(formData, "requiredPermission") ?? "",
       p_required_qualification_code: optionalText(formData, "qualificationCode") ?? "",
       p_procedure_ref: optionalText(formData, "procedureRef") ?? "",
-      p_result_schema: { capture: formText(formData, "capture") || "pass_warn_fail" },
+      p_result_schema: {
+        capture: formText(formData, "capture") || "pass_warn_fail",
+        safety_class: safetyClass,
+      },
     });
     if (error) throw error;
   } catch (error) {

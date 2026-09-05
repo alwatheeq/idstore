@@ -108,6 +108,13 @@ where table_schema = 'public'
   and table_name = 'appointment_service_items'
 order by ordinal_position;
 
+-- Confirm the checked-in appointment handoff automatically creates catalog jobs.
+select event_object_schema, event_object_table, trigger_name, action_timing, event_manipulation
+from information_schema.triggers
+where event_object_schema = 'public'
+  and event_object_table = 'repair_orders'
+  and trigger_name = 'populate_catalog_jobs_from_appointment';
+
 -- Confirm structured high-voltage evidence fields are present.
 select column_name, data_type, is_nullable
 from information_schema.columns
