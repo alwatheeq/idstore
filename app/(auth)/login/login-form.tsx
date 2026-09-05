@@ -61,7 +61,7 @@ export function LoginForm() {
       </div>
 
       <button className="button primary" type="submit" disabled={pending}>
-        {pending ? "Signing in…" : "Sign in securely"}
+        {pending ? "Signing in…" : "Sign in"}
       </button>
     </form>
   );

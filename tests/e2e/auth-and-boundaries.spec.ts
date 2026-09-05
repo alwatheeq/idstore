@@ -5,6 +5,14 @@ import { GET as getReadiness } from "../../app/api/readiness/route";
 import { renderServiceDocument } from "../../lib/documents/service-document";
 import { updateSession } from "../../lib/supabase/proxy";
 import { visibleNavigationGroups } from "../../lib/navigation";
+import { translatePageText } from "../../lib/i18n/ui";
+
+test("actions stay concise in English and Arabic", () => {
+  expect(translatePageText("Record refund", "en")).toBe("Refund");
+  expect(translatePageText("Record refund", "ar")).toBe("استرداد");
+  expect(translatePageText("Create branch", "en")).toBe("Add branch");
+  expect(translatePageText("High-voltage service", "ar")).toBe("خدمة الجهد العالي");
+});
 
 test("staff navigation follows assigned functional permissions", () => {
   const groups = visibleNavigationGroups("staff", ["crm.manage", "job.perform"]);
@@ -127,11 +135,15 @@ test("mobile login does not overflow horizontally", async ({ page }, testInfo) =
   expect(overflow).toBe(false);
 });
 
-test("Arabic preference is server-rendered with RTL direction", async ({ context, page }) => {
+test("Arabic preference renders translated RTL login", async ({ context, page }) => {
   await context.addCookies([{ name: "idstore_locale", value: "ar", domain: "127.0.0.1", path: "/", sameSite: "Lax" }]);
   await page.goto("/login");
   await expect(page.locator("html")).toHaveAttribute("lang", "ar");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await expect(page.getByRole("heading", { name: "أهلاً بعودتك" })).toBeVisible();
+  await expect(page.getByLabel("رقم الهاتف")).toBeVisible();
+  await expect(page.getByLabel("رقم سري من 6 أرقام")).toBeVisible();
+  await expect(page.getByRole("button", { name: "دخول" })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflow).toBe(false);
 });

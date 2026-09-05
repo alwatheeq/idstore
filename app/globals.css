@@ -100,6 +100,7 @@ a { color: inherit; text-decoration: none; }
 .user-copy span { font-size: 10px; color: var(--muted); }
 .signout-button { color: var(--muted); }
 .page-content { padding: 34px 32px 52px; max-width: 1600px; margin: 0 auto; }
+.localized-content { display: contents; }
 
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
 .eyebrow { color: var(--blue-deep); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; }
@@ -535,7 +536,9 @@ h1 { margin: 4px 0 5px; font-size: clamp(27px, 3vw, 39px); line-height: 1.08; le
 .login-story h1 { max-width: 580px; font-size: clamp(40px, 6vw, 74px); line-height: .98; letter-spacing: -.055em; margin-top: 100px; position: relative; z-index: 1; }
 .login-story h1 span { color: #6db1ff; }
 .login-story p { max-width: 520px; color: #b7c9dc; position: relative; z-index: 1; }
-.login-panel { padding: 48px clamp(30px, 8vw, 120px); display: grid; align-content: center; }
+.login-panel { padding: 48px clamp(30px, 8vw, 120px); display: grid; align-content: center; position: relative; }
+.public-locale-toggle svg { width: 15px; height: 15px; }
+.login-locale-toggle { position: absolute; inset-block-start: 28px; inset-inline-end: 30px; width: auto !important; margin: 0 !important; }
 .login-eyebrow { color: var(--blue-deep); font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 10px; }
 .login-panel h2 { font-size: 28px; margin: 0 0 8px; }
 .login-panel > p { color: var(--muted); margin: 0 0 30px; }
@@ -697,6 +700,8 @@ h1 { margin: 4px 0 5px; font-size: clamp(27px, 3vw, 39px); line-height: 1.08; le
 @media (max-width: 980px) { .finance-control-grid, .quality-grid { grid-template-columns: 1fr; } .cash-open-form, .campaign-match-form { grid-template-columns: 1fr 1fr; } .campaign-board article { grid-template-columns: 1fr auto; } }
 .portal-page { min-height: 100vh; background: #eef3f7; color: var(--ink); }
 .portal-header { height: 72px; padding: 0 max(22px, calc((100vw - 1180px)/2)); display: flex; align-items: center; justify-content: space-between; background: var(--navy); color: #fff; }
+.portal-header-actions { display: flex; align-items: center; gap: 8px; }
+.portal-header .public-locale-toggle { color: #fff; border-color: rgba(255,255,255,.24); background: rgba(255,255,255,.08); }
 .portal-header .brand-sub, .portal-identity span { color: #a9bed2; }
 .portal-identity { display: flex; align-items: center; gap: 18px; }
 .portal-identity > div { display: grid; text-align: end; }

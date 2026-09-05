@@ -14,6 +14,7 @@ import type { CurrentStaff } from "@/lib/auth/session";
 import { navigationGroups, visibleNavigationGroups } from "@/lib/navigation";
 import type { UiLocale } from "@/lib/i18n/ui";
 import { UiLocaleProvider, useUiLocale } from "@/components/ui-locale";
+import { LocalizedContent } from "@/components/localized-content";
 
 const routeIcons: Record<string, LucideIcon> = {
   "/dashboard": Gauge,
@@ -162,7 +163,7 @@ function AppShellContent({ children, staff, branches }: AppShellProps) {
           <div className="user-chip"><div className="avatar" aria-hidden="true">{initials(staff.displayName)}</div><div className="user-copy"><strong>{staff.displayName}</strong><span>{t(staff.role === "admin" ? "Administrator" : "Staff")}</span></div></div>
           <form className="topbar-signout-form" action="/auth/signout" method="post"><button className="icon-button signout-button" type="submit" title={t("Sign out")} aria-label={t("Sign out")}><LogOut /></button></form>
         </header>
-        <div className="page-content">{children}</div>
+        <div className="page-content"><LocalizedContent>{children}</LocalizedContent></div>
       </main>
     </div>
   );
