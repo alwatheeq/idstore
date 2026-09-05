@@ -90,6 +90,27 @@ export async function transitionAppointment(formData: FormData) {
   redirect(routeMessage("/appointments", "created", `Appointment marked ${toStatus.replaceAll("_", " ")}.`));
 }
 
+export async function openWorkOrderFromCheckin(formData: FormData) {
+  await getCurrentStaff();
+  const appointmentId = formText(formData, "appointmentId");
+  if (!appointmentId) redirect(routeMessage("/appointments", "error", "The checked-in appointment is invalid."));
+
+  let orderNumber = "";
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("open_repair_order_from_checkin", { p_appointment_id: appointmentId });
+    if (error || !data) throw error ?? new Error("Repair order was not created.");
+    orderNumber = data.ro_number;
+  } catch (error) {
+    redirect(routeMessage("/appointments", "error", operationError(error, "The checked-in appointment could not be moved into the workshop.")));
+  }
+
+  revalidatePath("/appointments");
+  revalidatePath("/work-orders");
+  revalidatePath("/dashboard");
+  redirect(routeMessage("/work-orders", "created", `Work order ${orderNumber} opened from signed check-in.`));
+}
+
 export async function createWaitlistEntry(formData: FormData) {
   const staff = await getCurrentStaff();
   const branchId = formText(formData, "branchId");

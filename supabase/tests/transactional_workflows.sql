@@ -25,6 +25,7 @@ declare
   v_order uuid;
   v_order_version bigint;
   v_service_order uuid;
+  v_intake_order uuid;
   v_appointments uuid[];
   v_appointment uuid;
   v_checkin uuid;
@@ -325,6 +326,13 @@ begin
   select version into v_order_version from public.appointments where id=v_appointment;
   select id into v_checkin from public.complete_vehicle_checkin(v_appointment,v_order_version,1100,80,2,'["charging cable"]'::jsonb,'[]'::jsonb,true,true,true,'Transactional Customer','[{"zone":"front","condition":"clear"}]'::jsonb,'');
   if v_checkin is null or not exists(select 1 from public.appointments where id=v_appointment and status='checked_in') then raise exception 'Guided check-in did not complete'; end if;
+  select id into v_intake_order from public.open_repair_order_from_checkin(v_appointment);
+  if not exists(select 1 from public.repair_orders where id=v_intake_order and appointment_id=v_appointment and odometer_km=1100 and state_of_charge=80 and customer_concern like 'Booked services:%') then raise exception 'Checked-in appointment did not create a linked repair order from signed evidence'; end if;
+  begin
+    perform public.open_repair_order_from_checkin(v_appointment);
+    raise exception 'A duplicate repair order was opened for one appointment';
+  exception when sqlstate '23505' then null;
+  end;
 
   -- Grouped estimate approvals, supplements, workshop narrative and rework.
   insert into public.repair_orders(organization_id,branch_id,ro_number,customer_id,vehicle_id,status,created_by) values(v_org,v_branch,'SVC-'||left(replace(v_key,'-',''),12),v_customer,v_vehicle,'diagnosis',v_admin) returning id into v_service_order;

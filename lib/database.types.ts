@@ -7562,6 +7562,36 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      open_repair_order_from_checkin: {
+        Args: { p_appointment_id: string }
+        Returns: {
+          appointment_id: string | null
+          branch_id: string
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          customer_concern: string | null
+          customer_id: string
+          id: string
+          odometer_km: number | null
+          opened_at: string
+          organization_id: string
+          promised_at: string | null
+          risk_state: string
+          ro_number: string
+          state_of_charge: number | null
+          status: string
+          updated_at: string
+          vehicle_id: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "repair_orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       portal_dashboard: { Args: never; Returns: Json }
       portal_document: {
         Args: { p_document_id: string; p_document_type: string }
