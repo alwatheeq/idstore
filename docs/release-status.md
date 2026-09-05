@@ -7,9 +7,11 @@ The connected development project has 26 synchronized migrations and JWT-protect
 Verification completed on 5 September 2026:
 
 - TypeScript, ESLint and the optimized Next.js build pass.
-- Playwright passes 9 desktop/mobile Chromium tests with one intentional desktop skip for the mobile-only overflow assertion.
+- Playwright passes 11 desktop/mobile Chromium tests with one intentional desktop skip for the mobile-only overflow assertion.
+- GitHub Actions now runs type-checking, linting, a production Next.js build and credential-free production-server Playwright tests, retaining failure artifacts.
+- Missing Supabase public configuration now fails closed: protected requests redirect to login instead of exposing application routes.
 - Axe reports no serious or critical WCAG A/AA violations on mobile/PIN login.
-- Live rolled-back database transactions cover service-template immutability, resource conflicts, stock transfer/short receipt, blind counts, deferred work, evidence/message idempotency, tenant rejection, credit/refund limits, cash reconciliation, QC release, campaign verification and portal data/decision scope.
+- The checked-in, repeatable rolled-back database suite covers authenticated CRM commands, consent history, evidence/message idempotency, tenant rejection, QC release and campaign verification. Additional live rolled-back transactions cover service-template immutability, resource conflicts, stock transfer/short receipt, blind counts, deferred work, credit/refund limits, cash reconciliation and portal data/decision scope.
 - Supabase performance advisor has no warning-level database finding after removal of the duplicate resource index. Informational unused-index results are expected on an empty development dataset; foreign-key index candidates should be selected from measured production query plans, not added indiscriminately.
 - Supabase's security-definer advisor flags the intentional authenticated command RPC boundary. Every callable command uses a fixed empty search path, revoked `PUBLIC`/`anon` execution and an in-function identity/permission check. Leaked-password protection remains a project Auth setting to enable before production.
 

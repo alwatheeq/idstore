@@ -73,7 +73,7 @@ Integration payloads are server-only. Do not grant browser access to that bucket
 
 ## 6. Verification
 
-Execute `supabase/tests/schema_verification.sql` against the linked project. Then run both Supabase advisors and review every finding before application rollout. The authenticated `SECURITY DEFINER` command functions are intentional API boundaries: each must retain explicit in-function authorization checks, a fixed `search_path`, and revoked access for `PUBLIC` and `anon`.
+Execute `supabase/tests/schema_verification.sql` and `supabase/tests/transactional_workflows.sql` against a linked development or staging project. The workflow suite discovers an active Admin, creates isolated fixtures and rolls the entire transaction back. Then run both Supabase advisors and review every finding before application rollout. The authenticated `SECURITY DEFINER` command functions are intentional API boundaries: each must retain explicit in-function authorization checks, a fixed `search_path`, and revoked access for `PUBLIC` and `anon`.
 
 Required manual checks:
 

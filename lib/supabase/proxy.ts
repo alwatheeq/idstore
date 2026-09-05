@@ -6,9 +6,17 @@ export async function updateSession(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   let response = NextResponse.next({ request });
+  const isAuthRoute = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/auth");
 
-  // Keep the local UI preview available before the paid project is provisioned.
-  if (!url || !publishableKey) return response;
+  // A missing deployment configuration must never expose protected application routes.
+  if (!url || !publishableKey) {
+    if (isAuthRoute) return response;
+
+    const destination = request.nextUrl.clone();
+    destination.pathname = "/login";
+    destination.searchParams.set("next", request.nextUrl.pathname);
+    return NextResponse.redirect(destination);
+  }
 
   const supabase = createServerClient<Database>(url, publishableKey, {
     cookies: {
@@ -23,7 +31,6 @@ export async function updateSession(request: NextRequest) {
 
   const { data } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims?.sub);
-  const isAuthRoute = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/auth");
 
   if (!signedIn && !isAuthRoute) {
     const destination = request.nextUrl.clone();

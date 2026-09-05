@@ -1,5 +1,29 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { NextRequest } from "next/server";
+import { updateSession } from "../../lib/supabase/proxy";
+
+test("missing Supabase configuration fails closed", async () => {
+  const previousUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const previousKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+  delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  try {
+    const response = await updateSession(new NextRequest("http://127.0.0.1:3100/dashboard"));
+    expect(response.status).toBe(307);
+    const location = new URL(response.headers.get("location") ?? "http://invalid");
+    expect(location.pathname).toBe("/login");
+    expect(location.searchParams.get("next")).toBe("/dashboard");
+  } finally {
+    if (previousUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    else process.env.NEXT_PUBLIC_SUPABASE_URL = previousUrl;
+
+    if (previousKey === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    else process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = previousKey;
+  }
+});
 
 test("unauthenticated visitors are routed to the mobile login", async ({ page }) => {
   await page.goto("/");
