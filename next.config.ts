@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Vercel's adapter owns output tracing there; standalone remains enabled for
+  // the container deployment documented in this repository.
+  ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
   deploymentId: process.env.DEPLOYMENT_VERSION,
   poweredByHeader: false,
   reactStrictMode: true,
