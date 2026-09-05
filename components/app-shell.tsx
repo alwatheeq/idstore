@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   ArrowLeftRight, Banknote, BarChart3, BookOpenCheck, Boxes, Building2, CalendarDays,
   CarFront, ChevronDown, CircleDollarSign, ClipboardCheck, ClipboardList, FileText,
-  Gauge, Layers3, LogOut, Menu, Megaphone, PackageOpen, Paperclip, PlugZap, ScanLine,
+  Gauge, Layers3, LogOut, Menu, Megaphone, PackageOpen, Paperclip, PlugZap, Plus, ScanLine,
   KeyRound, Search, Settings2, ShieldCheck, ShoppingCart, Sparkles, UserRoundCog, Users, Wrench, X,
   type LucideIcon,
 } from "lucide-react";
@@ -165,6 +165,13 @@ function AppShellContent({ children, staff, branches }: AppShellProps) {
           <form className="topbar-signout-form" action="/auth/signout" method="post"><button className="icon-button signout-button" type="submit" title={t("Sign out")} aria-label={t("Sign out")}><LogOut /></button></form>
         </header>
         <div className="page-content"><LocalizedContent>{children}</LocalizedContent></div>
+        <nav className="touch-dock" aria-label={t("Quick navigation")}>
+          <Link className={`touch-dock-item ${pathname.startsWith("/dashboard") ? "active" : ""}`} href="/dashboard"><Gauge aria-hidden="true" /><span>{t("Home")}</span></Link>
+          <Link className={`touch-dock-item ${pathname.startsWith("/appointments") ? "active" : ""}`} href="/appointments"><CalendarDays aria-hidden="true" /><span>{t("Visits")}</span></Link>
+          <Link className="touch-dock-primary" href="/work-orders?new=1#new-work-order" aria-label={t("Open work order")}><Plus aria-hidden="true" /><span>{t("New order")}</span></Link>
+          <Link className={`touch-dock-item ${pathname.startsWith("/work-orders") ? "active" : ""}`} href="/work-orders"><ClipboardList aria-hidden="true" /><span>{t("Workshop")}</span></Link>
+          <button className={`touch-dock-item ${menuOpen ? "active" : ""}`} type="button" aria-label={t("Open navigation")} aria-controls="primary-navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)}><Menu aria-hidden="true" /><span>{t("More")}</span></button>
+        </nav>
       </main>
     </div>
   );
