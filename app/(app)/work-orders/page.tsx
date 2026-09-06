@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IntakeIdentityFields } from "@/components/intake-identity-fields";
 import { ClipboardList, Plus, TimerReset, Wrench } from "lucide-react";
 import { BranchField } from "@/components/branch-field";
 import { EmptyState } from "@/components/empty-state";
@@ -9,8 +10,9 @@ import { StatusPill } from "@/components/status-pill";
 import { getCurrentStaff } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { assignJob, createJob, createReworkJob, createWorkOrder, finishJob, interruptJob, recordJobNarrative, resumeJob, startJob, transitionWorkOrder } from "./actions";
+import { workOrderConcernIssues } from "./concerns";
 
-type PageQuery = { new?: string; job?: string; created?: string; error?: string };
+type PageQuery = { order?: string; customer?: string; vehicle?: string; new?: string; job?: string; created?: string; error?: string };
 type PillTone = "blue" | "green" | "amber" | "red" | "gray";
 
 const progressByStatus: Record<string, number> = {
@@ -48,13 +50,15 @@ export default async function WorkOrdersPage({ searchParams }: { searchParams: P
   const [{ data: branches }, { data: customers }, { data: vehicles }, { data: workOrderRows, error }, { data: technicians }, { data: jobRows }, { data: qualificationTypes }] = await Promise.all([
     supabase.from("branches").select("id, code, city").eq("organization_id", staff.organizationId).eq("status", "active").order("city"),
     supabase.from("customers").select("id, display_name").eq("organization_id", staff.organizationId).eq("status", "active").order("display_name"),
-    supabase.from("vehicles").select("id, vin, registration_no, model:vehicle_models(name), vehicle_ownerships(customer:customers(display_name))").eq("organization_id", staff.organizationId).eq("status", "active").order("registration_no"),
+    supabase.from("vehicles").select("id, vin, registration_no, model:vehicle_models(name), vehicle_ownerships(customer_id, valid_from, valid_to, customer:customers(display_name))").eq("organization_id", staff.organizationId).eq("status", "active").order("registration_no"),
     supabase.from("repair_orders").select("id, branch_id, ro_number, status, risk_state, odometer_km, state_of_charge, customer_concern, opened_at, promised_at, version, customer:customers(display_name), vehicle:vehicles(registration_no, model:vehicle_models(name)), branch:branches(display_name, city)").eq("organization_id", staff.organizationId).order("opened_at", { ascending: false }),
     supabase.from("technician_profiles").select("id, user_id, employee_no, labor_grade, active").eq("organization_id", staff.organizationId).eq("active", true).order("employee_no"),
     supabase.from("jobs").select("id, branch_id, repair_order_id, operation_code, description_snapshot, status, safety_class, required_qualification_code, planned_minutes, started_at, completed_at, version, cause_text, correction_text, original_job_id, rework_kind, rework_reason, repair_order:repair_orders(ro_number), job_assignments(technician_id, assignment_kind, assigned_at, unassigned_at), labor_entries(technician_id, started_at, ended_at), hv_work_permits(id, state), job_interruptions(interruption_type, reason, started_at, ended_at)").eq("organization_id", staff.organizationId).order("created_at", { ascending: false }),
     supabase.from("qualification_types").select("id, code, name").eq("organization_id", staff.organizationId).order("code"),
   ]);
-  const workOrders = staff.selectedBranchId ? (workOrderRows ?? []).filter((order) => order.branch_id === staff.selectedBranchId) : (workOrderRows ?? []);
+  // Explicit links locate an accessible historical record even if the header
+  // currently selects another branch. Supabase RLS remains the access boundary.
+  const workOrders = query.order ? (workOrderRows ?? []).filter(order => order.id === query.order) : staff.selectedBranchId ? (workOrderRows ?? []).filter((order) => order.branch_id === staff.selectedBranchId) : (workOrderRows ?? []);
   const jobs = staff.selectedBranchId ? (jobRows ?? []).filter((job) => job.branch_id === staff.selectedBranchId) : (jobRows ?? []);
 
   const setupReady = Boolean(branches?.length && customers?.length && vehicles?.length);
@@ -78,12 +82,18 @@ export default async function WorkOrdersPage({ searchParams }: { searchParams: P
       <div className="panel-header"><div><div className="panel-title">Open a work order</div><div className="panel-subtitle">Allocates the next branch repair-order number and records vehicle intake.</div></div><Link className="panel-link" href="/work-orders">Cancel</Link></div>
       <form action={createWorkOrder} className="form-grid panel-body">
         <BranchField id="work-branch" label="Branch" branches={branches} selectedBranchId={staff.selectedBranchId} />
-        <div className="form-field"><label htmlFor="work-customer">Customer</label><select id="work-customer" name="customerId" required><option value="">Select customer</option>{customers?.map((customer) => <option key={customer.id} value={customer.id}>{customer.display_name}</option>)}</select></div>
-        <div className="form-field form-span-2"><label htmlFor="work-vehicle">Vehicle</label><select id="work-vehicle" name="vehicleId" required><option value="">Select vehicle</option>{vehicles?.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.model?.name ?? "Volkswagen ID"} · {vehicle.registration_no ?? vehicle.vin} · {vehicle.vehicle_ownerships[0]?.customer?.display_name ?? "No owner"}</option>)}</select></div>
+        <IntakeIdentityFields customers={customers ?? []} initialCustomerId={query.customer} initialVehicleId={query.vehicle} vehicles={(vehicles ?? []).map(vehicle => ({ ...vehicle, customerIds: vehicle.vehicle_ownerships.filter(o => o.valid_from <= new Date().toISOString().slice(0,10) && (!o.valid_to || o.valid_to >= new Date().toISOString().slice(0,10))).map(o => o.customer_id) }))} />
         <div className="form-field"><label htmlFor="work-odometer">Odometer (km)</label><input id="work-odometer" name="odometerKm" type="number" min="0" step="1" /></div>
         <div className="form-field"><label htmlFor="work-charge">State of charge (%)</label><input id="work-charge" name="stateOfCharge" type="number" min="0" max="100" step="0.1" /></div>
         <div className="form-field"><label htmlFor="work-promise">Promised handover</label><input id="work-promise" name="promisedAt" type="datetime-local" /></div>
-        <div className="form-field form-span-2"><label htmlFor="work-concern">Customer concern</label><textarea id="work-concern" name="customerConcern" rows={3} placeholder="Describe symptoms in the customer's words." /></div>
+        <fieldset className="concern-capture form-span-2">
+          <legend>Customer concern</legend>
+          <div className="concern-capture-head"><div><strong>Reported issues</strong><span>Select every symptom mentioned by the customer.</span></div><span>Multiple selection</span></div>
+          <div className="concern-option-grid">
+            {workOrderConcernIssues.map((issue) => <label className="concern-option" key={issue.code}><input type="checkbox" name="concernIssue" value={issue.code} /><span>{issue.label}</span></label>)}
+          </div>
+          <div className="form-field concern-notes"><label htmlFor="work-concern-notes">Additional notes</label><textarea id="work-concern-notes" name="customerConcernNotes" rows={4} maxLength={2000} placeholder="Add the customer's exact words, when the issue occurs, warning messages or other context." /><span className="field-help">{"Use the customer's own words where possible."}</span></div>
+        </fieldset>
         <div className="form-actions form-span-2"><Link className="button" href="/work-orders">Cancel</Link><button className="button primary" type="submit">Open work order</button></div>
       </form>
     </section> : null}
@@ -111,7 +121,7 @@ export default async function WorkOrdersPage({ searchParams }: { searchParams: P
     {!workOrders?.length ? <EmptyState icon={ClipboardList} title="No work orders open" description={setupReady ? "Open the first work order when a vehicle arrives for service." : "A branch, customer and registered vehicle are required first."} action={setupReady ? <Link className="button primary" href="/work-orders?new=1#new-work-order">Open first work order</Link> : undefined} /> : <div className="stack">
       <section className="panel"><div className="panel-header"><div><div className="panel-title">Repair-order control</div><div className="panel-subtitle">Valid next states are enforced by the database</div></div></div><div className="data-scroll"><table className="data-table work-order-ledger"><thead><tr><th>Order</th><th>Customer & vehicle</th><th>Branch</th><th>Status</th><th>Risk</th><th>Progress</th><th>Next action</th></tr></thead><tbody>{workOrders.map((order) => {
         const progress = progressByStatus[order.status] ?? 0;
-        return <tr key={order.id}><td><div className="cell-main mono">{order.ro_number}</div><div className="cell-sub">Opened {new Date(order.opened_at).toLocaleDateString("en-JO")}</div></td><td><div className="cell-main">{order.vehicle?.model?.name ?? "Volkswagen ID"} · {order.vehicle?.registration_no ?? "No registration"}</div><div className="cell-sub">{order.customer?.display_name ?? "Unknown customer"}</div></td><td>{order.branch?.city ?? order.branch?.display_name ?? "—"}</td><td><StatusPill label={order.status} tone={statusTone(order.status)} /></td><td><StatusPill label={order.risk_state} tone={order.risk_state === "quarantine" || order.risk_state === "emergency_escalation" ? "red" : order.risk_state === "restricted" ? "amber" : "gray"} /></td><td style={{ minWidth: 110 }}><div className="cell-sub mono">{progress}%</div><div className="progress-track"><div className="progress-fill" style={{ width: `${progress}%` }} /></div></td><td><div className="inline-actions"><Link className="button compact" href={`/inspections?order=${order.id}#inspection-workspace`}>Inspect</Link><Link className="button compact" href={`/diagnostics?new=session&order=${order.id}#new-diagnostic`}>Diagnose</Link><Link className="button compact" href={`/estimates?order=${order.id}#estimate-workspace`}>Estimate</Link>{orderActions(order.status).map((action) => <form action={transitionWorkOrder} key={action.value}><input type="hidden" name="repairOrderId" value={order.id} /><input type="hidden" name="version" value={order.version} /><input type="hidden" name="toStatus" value={action.value} /><button className={`button compact ${action.value === orderActions(order.status)[0]?.value ? "primary" : ""}`} type="submit">{action.label}</button></form>)}</div></td></tr>;
+        return <tr key={order.id} id={`order-${order.id}`}><td><div className="cell-main mono">{order.ro_number}</div><div className="cell-sub">Opened {new Date(order.opened_at).toLocaleDateString("en-JO")}</div></td><td><div className="cell-main">{order.vehicle?.model?.name ?? "Volkswagen ID"} · {order.vehicle?.registration_no ?? "No registration"}</div><div className="cell-sub">{order.customer?.display_name ?? "Unknown customer"}</div></td><td>{order.branch?.city ?? order.branch?.display_name ?? "—"}</td><td><StatusPill label={order.status} tone={statusTone(order.status)} /></td><td><StatusPill label={order.risk_state} tone={order.risk_state === "quarantine" || order.risk_state === "emergency_escalation" ? "red" : order.risk_state === "restricted" ? "amber" : "gray"} /></td><td style={{ minWidth: 110 }}><div className="cell-sub mono">{progress}%</div><div className="progress-track"><div className="progress-fill" style={{ width: `${progress}%` }} /></div></td><td><div className="inline-actions"><Link className="button compact" href={`/inspections?order=${order.id}#inspection-workspace`}>Inspect</Link><Link className="button compact" href={`/diagnostics?new=session&order=${order.id}#new-diagnostic`}>Diagnose</Link><Link className="button compact" href={`/estimates?order=${order.id}#estimate-workspace`}>Estimate</Link>{orderActions(order.status).map((action) => <form action={transitionWorkOrder} key={action.value}><input type="hidden" name="repairOrderId" value={order.id} /><input type="hidden" name="version" value={order.version} /><input type="hidden" name="toStatus" value={action.value} /><button className={`button compact ${action.value === orderActions(order.status)[0]?.value ? "primary" : ""}`} type="submit">{action.label}</button></form>)}</div></td></tr>;
       })}</tbody></table></div></section>
 
       <section className="panel"><div className="panel-header"><div><div className="panel-title">Technician job ledger</div><div className="panel-subtitle">Assignment, safety classification, cause/correction and interruption evidence</div></div></div><div className="data-scroll"><table className="data-table workshop-job-ledger"><thead><tr><th>Job</th><th>Work order</th><th>Safety</th><th>Plan / actual</th><th>Primary technician</th><th>Status</th><th>Evidence</th><th>Dispatch or timer</th></tr></thead><tbody>{(jobs ?? []).map((job) => {

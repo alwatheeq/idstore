@@ -23,16 +23,17 @@ export async function createVehicle(formData: FormData) {
   const batteryKwh = optionalNumber(formData, "batteryKwh");
   const odometerKm = optionalNumber(formData, "odometerKm");
 
-  if (!branchId || !customerId || !modelId || !/^[A-HJ-NPR-Z0-9]{17}$/.test(vin) || !registration) {
-    redirect(routeMessage("/vehicles", "error", "Branch, customer, model, valid VIN and registration are required."));
+  if (!branchId || !customerId || !modelId || (!vin && !registration) || (vin && !/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) || registration.length > 40) {
+    redirect(routeMessage("/vehicles", "error", "Branch, customer, model and a plate or valid VIN are required."));
   }
   if ([modelYear, batteryKwh, odometerKm].some((value) => Number.isNaN(value))) {
     redirect(routeMessage("/vehicles", "error", "Vehicle measurements must be valid numbers."));
   }
 
+  let vehicleId: string | undefined;
   try {
     const supabase = await createClient();
-    const { error } = await supabase.rpc("create_vehicle", {
+    const { data, error } = await supabase.rpc("create_vehicle", {
       p_organization_id: staff.organizationId,
       p_branch_id: branchId,
       p_customer_id: customerId,
@@ -46,6 +47,7 @@ export async function createVehicle(formData: FormData) {
       p_color: optionalText(formData, "color"),
     });
     if (error) throw error;
+    vehicleId = data.id;
   } catch (error) {
     redirect(routeMessage("/vehicles", "error", operationError(error, "The vehicle could not be registered.")));
   }
@@ -53,7 +55,27 @@ export async function createVehicle(formData: FormData) {
   revalidatePath("/vehicles");
   revalidatePath("/customers");
   revalidatePath("/work-orders");
-  redirect(routeMessage("/vehicles", "created", "Vehicle registered."));
+  redirect(vehicleRecordMessage(vehicleId!, "profile", "created", "Vehicle registered."));
+}
+
+export async function completeVehicleIdentity(formData: FormData) {
+  const staff = await getCurrentStaff();
+  const vehicleId = formText(formData, "vehicleId");
+  const branchId = resolveOperatingBranch(staff, formText(formData, "branchId"));
+  if (!vehicleId || !branchId) redirect(vehicleRecordMessage(vehicleId, "profile", "error", "Branch is invalid"));
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("complete_vehicle_identity", {
+      p_vehicle_id: vehicleId, p_branch_id: branchId,
+      p_vin: formText(formData, "vin"), p_registration_no: formText(formData, "registrationNo"),
+    });
+    if (error) throw error;
+  } catch (error) {
+    redirect(vehicleRecordMessage(vehicleId, "profile", "error", operationError(error, "Vehicle identity could not be completed.")));
+  }
+  revalidatePath("/vehicles");
+  revalidatePath("/customers");
+  redirect(vehicleRecordMessage(vehicleId, "profile", "created", "Vehicle identity completed."));
 }
 
 export async function createRecommendation(formData: FormData) {
@@ -87,22 +109,18 @@ export async function updateVehicleProfile(formData: FormData) {
   const vehicleId = formText(formData, "vehicleId");
   const branchId = resolveOperatingBranch(staff, formText(formData, "branchId"));
   const connectivityStatus = formText(formData, "connectivityStatus");
-  const warrantyDistanceKm = optionalNumber(formData, "warrantyDistanceKm");
-  if (!vehicleId || !branchId || !["unknown", "connected", "disconnected", "not_supported"].includes(connectivityStatus) || Number.isNaN(warrantyDistanceKm)) {
+  if (!vehicleId || !branchId || !["unknown", "connected", "disconnected", "not_supported"].includes(connectivityStatus)) {
     redirect(vehicleRecordMessage(vehicleId, "profile", "error", "Vehicle, branch and a valid connectivity state are required."));
   }
   try {
     const supabase = await createClient();
-    const { error } = await supabase.rpc("update_vehicle_profile", {
+    const { error } = await supabase.rpc("update_vehicle_service_profile", {
       p_vehicle_id: vehicleId,
       p_branch_id: branchId,
       p_drive_unit: optionalText(formData, "driveUnit") ?? "",
       p_connectivity_status: connectivityStatus,
       p_software_version: optionalText(formData, "softwareVersion") ?? "",
       p_first_registration_date: optionalText(formData, "firstRegistrationDate") ?? null,
-      p_warranty_start_date: optionalText(formData, "warrantyStartDate") ?? null,
-      p_warranty_end_date: optionalText(formData, "warrantyEndDate") ?? null,
-      p_warranty_distance_km: warrantyDistanceKm ?? null,
       p_color: optionalText(formData, "color") ?? "",
     });
     if (error) throw error;
@@ -110,7 +128,7 @@ export async function updateVehicleProfile(formData: FormData) {
     redirect(vehicleRecordMessage(vehicleId, "profile", "error", operationError(error, "The vehicle profile could not be updated.")));
   }
   revalidatePath("/vehicles");
-  redirect(vehicleRecordMessage(vehicleId, "profile", "created", "Vehicle technical and warranty profile updated."));
+  redirect(vehicleRecordMessage(vehicleId, "profile", "created", "Vehicle profile updated."));
 }
 
 export async function addVehicleOwnership(formData: FormData) {

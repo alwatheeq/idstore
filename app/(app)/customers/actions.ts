@@ -15,8 +15,8 @@ export async function createCustomer(formData: FormData) {
   const rawMobile = formText(formData, "mobile");
   const portalPin = formText(formData, "portalPin");
 
-  if (!branchId || !displayName || !["individual", "company"].includes(customerType)) {
-    redirect(routeMessage("/customers", "error", "Branch, customer type and name are required."));
+  if (!branchId || !displayName || !rawMobile || !["individual", "company"].includes(customerType)) {
+    redirect(routeMessage("/customers", "error", "Name, mobile number and branch are required."));
   }
   if (portalPin && !/^\d{6}$/.test(portalPin)) {
     redirect(routeMessage("/customers", "error", "The portal PIN must be exactly six digits."));
@@ -32,7 +32,7 @@ export async function createCustomer(formData: FormData) {
     redirect(routeMessage("/customers", "error", error instanceof Error ? error.message : "Enter a valid mobile number."));
   }
 
-  let duplicateFound = false;
+  let duplicateIds: string[] = [];
   if (mobile || optionalText(formData, "taxNumber")) {
     try {
       const supabase = await createClient();
@@ -43,15 +43,18 @@ export async function createCustomer(formData: FormData) {
         p_tax_number: optionalText(formData, "taxNumber") ?? null,
       });
       if (duplicateError) throw duplicateError;
-      duplicateFound = Boolean(duplicates?.length);
+      duplicateIds = [...new Set((duplicates ?? []).map((entry: { customer_id: string }) => entry.customer_id))];
     } catch (error) {
       redirect(routeMessage("/customers", "error", operationError(error, "Customer identity could not be checked.")));
     }
   }
-  if (duplicateFound) {
-    redirect(routeMessage("/customers", "error", "A customer already uses this mobile or tax number. Open the duplicate review before creating another record."));
+  if (duplicateIds.length) {
+    const params = new URLSearchParams({ duplicate: duplicateIds.join(","), error: "A customer already uses this mobile or tax number. Open the existing record below." });
+    redirect(`/customers?${params}#duplicate-customers`);
   }
 
+  let customerId: string | undefined;
+  let portalWarning: string | undefined;
   try {
     const supabase = await createClient();
     const { data: createdCustomer, error } = await supabase.rpc("create_customer", {
@@ -67,9 +70,9 @@ export async function createCustomer(formData: FormData) {
       p_notes: optionalText(formData, "notes"),
     });
     if (error) throw error;
-    const customerId = typeof createdCustomer === "object" && createdCustomer ? (createdCustomer as { id?: string }).id : null;
+    customerId = typeof createdCustomer === "object" && createdCustomer ? (createdCustomer as { id?: string }).id : undefined;
     if (!customerId) {
-      redirect(routeMessage("/customers", "error", "The customer could not be created."));
+      throw new Error("The customer could not be created.");
     }
     if (portalPin) {
       try {
@@ -78,10 +81,7 @@ export async function createCustomer(formData: FormData) {
         })).error;
         if (provisionError) throw provisionError;
       } catch (error) {
-        const message = (await functionMessage(error)) ?? "The portal access could not be created.";
-        revalidatePath("/customers");
-        revalidatePath("/vehicles");
-        redirect(routeMessage("/customers", "created", `Customer created. ${message}`));
+        portalWarning = (await functionMessage(error)) ?? "The portal access could not be created.";
       }
     }
   } catch (error) {
@@ -90,7 +90,9 @@ export async function createCustomer(formData: FormData) {
 
   revalidatePath("/customers");
   revalidatePath("/vehicles");
-  redirect(routeMessage("/customers", "created", "Customer created."));
+  const params = new URLSearchParams({ manage: customerId!, created: "Customer created." });
+  if (portalWarning) params.set("error", portalWarning);
+  redirect(`/customers?${params}#customer-controls`);
 }
 
 async function functionMessage(error: unknown) {

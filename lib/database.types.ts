@@ -2144,9 +2144,216 @@ export type Database = {
           },
         ]
       }
+      inspection_check_definitions: {
+        Row: {
+          active: boolean
+          category: string
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_required: boolean
+          label_ar: string
+          label_en: string
+          organization_id: string | null
+          rules: Json
+          sort_order: number
+          updated_at: string
+          vehicle_model_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_required?: boolean
+          label_ar: string
+          label_en: string
+          organization_id?: string | null
+          rules?: Json
+          sort_order?: number
+          updated_at?: string
+          vehicle_model_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_required?: boolean
+          label_ar?: string
+          label_en?: string
+          organization_id?: string | null
+          rules?: Json
+          sort_order?: number
+          updated_at?: string
+          vehicle_model_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_check_definitions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_check_definitions_vehicle_model_id_fkey"
+            columns: ["vehicle_model_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_check_results: {
+        Row: {
+          attempt: number
+          branch_id: string
+          details: Json
+          id: string
+          inspection_item_id: string | null
+          organization_id: string
+          recorded_at: string
+          recorded_by: string
+          result: string
+          task_id: string
+          technician_id: string | null
+        }
+        Insert: {
+          attempt: number
+          branch_id: string
+          details: Json
+          id?: string
+          inspection_item_id?: string | null
+          organization_id: string
+          recorded_at?: string
+          recorded_by: string
+          result: string
+          task_id: string
+          technician_id?: string | null
+        }
+        Update: {
+          attempt?: number
+          branch_id?: string
+          details?: Json
+          id?: string
+          inspection_item_id?: string | null
+          organization_id?: string
+          recorded_at?: string
+          recorded_by?: string
+          result?: string
+          task_id?: string
+          technician_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_check_results_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_check_results_inspection_item_id_fkey"
+            columns: ["inspection_item_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_check_results_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_check_results_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_checklist_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_check_results_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "technician_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_checklist_tasks: {
+        Row: {
+          branch_id: string
+          created_at: string
+          definition_id: string
+          id: string
+          inspection_id: string
+          organization_id: string
+          sequence: number
+          snapshot: Json
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          definition_id: string
+          id?: string
+          inspection_id: string
+          organization_id: string
+          sequence: number
+          snapshot: Json
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          definition_id?: string
+          id?: string
+          inspection_id?: string
+          organization_id?: string
+          sequence?: number
+          snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_checklist_tasks_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_checklist_tasks_definition_id_fkey"
+            columns: ["definition_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_check_definitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_checklist_tasks_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_checklist_tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inspection_items: {
         Row: {
           branch_id: string
+          check_definition_id: string | null
           created_at: string
           customer_text: string | null
           finding_text: string | null
@@ -2161,6 +2368,7 @@ export type Database = {
         }
         Insert: {
           branch_id: string
+          check_definition_id?: string | null
           created_at?: string
           customer_text?: string | null
           finding_text?: string | null
@@ -2175,6 +2383,7 @@ export type Database = {
         }
         Update: {
           branch_id?: string
+          check_definition_id?: string | null
           created_at?: string
           customer_text?: string | null
           finding_text?: string | null
@@ -2193,6 +2402,13 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_items_check_definition_id_fkey"
+            columns: ["check_definition_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_check_definitions"
             referencedColumns: ["id"]
           },
           {
@@ -2220,12 +2436,16 @@ export type Database = {
       }
       inspections: {
         Row: {
+          assignment: Json
           branch_id: string
+          checklist_generated_at: string | null
           completed_at: string | null
           created_at: string
           id: string
           organization_id: string
           repair_order_id: string
+          review_note: string | null
+          reviewed_by: string | null
           started_at: string | null
           status: string
           technician_id: string | null
@@ -2233,12 +2453,16 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assignment?: Json
           branch_id: string
+          checklist_generated_at?: string | null
           completed_at?: string | null
           created_at?: string
           id?: string
           organization_id: string
           repair_order_id: string
+          review_note?: string | null
+          reviewed_by?: string | null
           started_at?: string | null
           status?: string
           technician_id?: string | null
@@ -2246,12 +2470,16 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assignment?: Json
           branch_id?: string
+          checklist_generated_at?: string | null
           completed_at?: string | null
           created_at?: string
           id?: string
           organization_id?: string
           repair_order_id?: string
+          review_note?: string | null
+          reviewed_by?: string | null
           started_at?: string | null
           status?: string
           technician_id?: string | null
@@ -3830,6 +4058,77 @@ export type Database = {
           description?: string
         }
         Relationships: []
+      }
+      portal_payment_requests: {
+        Row: {
+          amount: number
+          branch_id: string
+          created_at: string
+          currency: string
+          customer_id: string
+          id: string
+          invoice_id: string
+          organization_id: string
+          requested_by: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          branch_id: string
+          created_at?: string
+          currency: string
+          customer_id: string
+          id?: string
+          invoice_id: string
+          organization_id: string
+          requested_by: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          branch_id?: string
+          created_at?: string
+          currency?: string
+          customer_id?: string
+          id?: string
+          invoice_id?: string
+          organization_id?: string
+          requested_by?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_payment_requests_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_payment_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_payment_requests_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_payment_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -6007,13 +6306,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "vehicles_primary_branch_id_fkey"
-            columns: ["primary_branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "vehicles_model_id_fkey"
             columns: ["model_id"]
             isOneToOne: false
@@ -6025,6 +6317,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_primary_branch_id_fkey"
+            columns: ["primary_branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
             referencedColumns: ["id"]
           },
         ]
@@ -6183,6 +6482,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      add_inspection_catalog_items: {
+        Args: { p_inspection_id: string; p_items: Json }
+        Returns: number
+      }
       add_inspection_item: {
         Args: {
           p_check_label: string
@@ -6195,6 +6498,7 @@ export type Database = {
         }
         Returns: {
           branch_id: string
+          check_definition_id: string | null
           created_at: string
           customer_text: string | null
           finding_text: string | null
@@ -6534,12 +6838,16 @@ export type Database = {
       complete_inspection: {
         Args: { p_inspection_id: string }
         Returns: {
+          assignment: Json
           branch_id: string
+          checklist_generated_at: string | null
           completed_at: string | null
           created_at: string
           id: string
           organization_id: string
           repair_order_id: string
+          review_note: string | null
+          reviewed_by: string | null
           started_at: string | null
           status: string
           technician_id: string | null
@@ -6597,6 +6905,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      configure_inspection_check: {
+        Args: { p_data: Json; p_organization_id: string }
+        Returns: string
+      }
       configure_part_catalog: {
         Args: {
           p_barcode: string
@@ -6642,25 +6954,6 @@ export type Database = {
           p_requested_services: Json
           p_resource_id: string | null
           p_service_mode: string
-          p_start_at: string
-          p_transport_mode: string
-          p_vehicle_id: string
-        }
-        Returns: string[]
-      }
-      create_catalog_appointments: {
-        Args: {
-          p_advisor_user_id: string | null
-          p_branch_id: string
-          p_customer_id: string
-          p_end_at: string
-          p_notes: string | null
-          p_organization_id: string
-          p_promised_at: string | null
-          p_recurrence_count: number
-          p_resource_id: string | null
-          p_service_mode: string
-          p_service_version_ids: string[]
           p_start_at: string
           p_transport_mode: string
           p_vehicle_id: string
@@ -6722,6 +7015,25 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      create_catalog_appointments: {
+        Args: {
+          p_advisor_user_id: string | null
+          p_branch_id: string
+          p_customer_id: string
+          p_end_at: string
+          p_notes: string | null
+          p_organization_id: string
+          p_promised_at: string | null
+          p_recurrence_count: number
+          p_resource_id: string | null
+          p_service_mode: string
+          p_service_version_ids: string[]
+          p_start_at: string
+          p_transport_mode: string
+          p_vehicle_id: string
+        }
+        Returns: string[]
       }
       create_customer: {
         Args: {
@@ -6820,12 +7132,16 @@ export type Database = {
       create_inspection: {
         Args: { p_repair_order_id: string }
         Returns: {
+          assignment: Json
           branch_id: string
+          checklist_generated_at: string | null
           completed_at: string | null
           created_at: string
           id: string
           organization_id: string
           repair_order_id: string
+          review_note: string | null
+          reviewed_by: string | null
           started_at: string | null
           status: string
           technician_id: string | null
@@ -6835,6 +7151,40 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "inspections"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_inspection_check_definition: {
+        Args: {
+          p_category: string
+          p_code: string
+          p_is_required: boolean
+          p_label_ar: string
+          p_label_en: string
+          p_organization_id: string
+          p_sort_order: number
+          p_vehicle_model_id: string | null
+        }
+        Returns: {
+          active: boolean
+          category: string
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_required: boolean
+          label_ar: string
+          label_en: string
+          organization_id: string | null
+          rules: Json
+          sort_order: number
+          updated_at: string
+          vehicle_model_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "inspection_check_definitions"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -7266,6 +7616,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      complete_vehicle_identity: {
+        Args: { p_vehicle_id: string; p_branch_id: string; p_vin: string; p_registration_no: string }
+        Returns: string
+      }
       create_vehicle: {
         Args: {
           p_battery_kwh?: number
@@ -7488,6 +7842,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      inspection_workflow: {
+        Args: { p_action: string; p_data?: Json; p_inspection_id: string }
+        Returns: Json
+      }
+      inspection_workspace: {
+        Args: { p_inspection_id?: string; p_organization_id: string }
+        Returns: Json
+      }
       integration_overview: {
         Args: { p_organization_id: string }
         Returns: Json
@@ -7661,10 +8023,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      service_document: {
-        Args: { p_document_id: string; p_document_type: string }
-        Returns: Json
-      }
       portal_request_appointment: {
         Args: {
           p_branch_id: string
@@ -7676,16 +8034,76 @@ export type Database = {
           p_transport_mode: string
           p_vehicle_id: string
         }
-        Returns: Json
+        Returns: {
+          appointment_id: string | null
+          branch_id: string
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          duration_minutes: number
+          id: string
+          notes: string | null
+          offered_at: string | null
+          organization_id: string
+          preferred_from: string
+          preferred_to: string
+          priority: number
+          service_mode: string
+          status: string
+          transport_mode: string
+          updated_at: string
+          vehicle_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "appointment_waitlist"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       portal_request_payment_link: {
         Args: { p_invoice_id: string }
-        Returns: Json
+        Returns: {
+          amount: number
+          branch_id: string
+          created_at: string
+          currency: string
+          customer_id: string
+          id: string
+          invoice_id: string
+          organization_id: string
+          requested_by: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "portal_payment_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       portal_service_options: { Args: never; Returns: Json }
       portal_update_consent: {
         Args: { p_channel: string; p_purpose: string; p_state: string }
-        Returns: Json
+        Returns: {
+          channel: string
+          customer_id: string
+          id: string
+          organization_id: string
+          policy_version: string
+          purpose: string
+          recorded_at: string
+          recorded_by: string | null
+          source: string
+          state: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "consents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       post_credit_note: {
         Args: { p_invoice_id: string; p_lines: Json; p_reason: string }
@@ -8493,12 +8911,16 @@ export type Database = {
       remove_inspection_item: {
         Args: { p_inspection_item_id: string }
         Returns: {
+          assignment: Json
           branch_id: string
+          checklist_generated_at: string | null
           completed_at: string | null
           created_at: string
           id: string
           organization_id: string
           repair_order_id: string
+          review_note: string | null
+          reviewed_by: string | null
           started_at: string | null
           status: string
           technician_id: string | null
@@ -8606,6 +9028,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      service_document: {
+        Args: { p_document_id: string; p_document_type: string }
+        Returns: Json
       }
       set_diagnostic_trouble_code_outcome: {
         Args: { p_after_status: string; p_trouble_code_id: string }
@@ -9024,6 +9450,18 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      update_vehicle_service_profile: {
+        Args: {
+          p_vehicle_id: string
+          p_branch_id: string
+          p_drive_unit: string
+          p_connectivity_status: string
+          p_software_version: string
+          p_first_registration_date: string | null
+          p_color: string
+        }
+        Returns: string
       }
       update_vehicle_profile: {
         Args: {

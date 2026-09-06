@@ -20,6 +20,11 @@ const TARGETS = {
 
 type TargetType = keyof typeof TARGETS;
 
+function evidenceRoute(linkedType: string, linkedId: string, key: "error" | "created", message: string) {
+  if (linkedType !== "vehicle" || !/^[0-9a-f-]{36}$/i.test(linkedId)) return routeMessage("/records", key, message);
+  return `/records?${new URLSearchParams({ vehicle: linkedId, [key]: message })}#record-upload`;
+}
+
 function safeFileName(value: string) {
   const cleaned = value.normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
   return (cleaned || "evidence").slice(-120);
@@ -33,11 +38,11 @@ export async function uploadEvidence(formData: FormData) {
   const file = formData.get("file");
   const target = TARGETS[linkedType];
   if (!target || !linkedId || !["internal", "confidential", "restricted"].includes(classification) || !(file instanceof File) || file.size < 1) {
-    redirect(routeMessage("/records", "error", "Choose a valid record, classification and evidence file."));
+    redirect(evidenceRoute(linkedType, linkedId, "error", "Choose a valid record, classification and evidence file."));
   }
   const mimeType = file.type || "application/octet-stream";
   if (file.size > MAX_FILE_BYTES || !MIME_TYPES.has(mimeType)) {
-    redirect(routeMessage("/records", "error", "Files must be PDF, JSON, text, JPEG, PNG, WebP or binary evidence up to 50 MB."));
+    redirect(evidenceRoute(linkedType, linkedId, "error", "Files must be PDF, JSON, text, JPEG, PNG, WebP or binary evidence up to 50 MB."));
   }
 
   const supabase = await createClient();
@@ -64,7 +69,7 @@ export async function uploadEvidence(formData: FormData) {
   const bytes = Buffer.from(await file.arrayBuffer());
   const sha256 = createHash("sha256").update(bytes).digest("hex");
   const { data: duplicate } = await supabase.from("attachments").select("id").eq("organization_id", staff.organizationId).eq("sha256", sha256).eq("linked_type", linkedType).eq("linked_id", linkedId).maybeSingle();
-  if (duplicate) redirect(routeMessage("/records", "created", "That evidence is already registered on this record."));
+  if (duplicate) redirect(evidenceRoute(linkedType, linkedId, "created", "That evidence is already registered on this record."));
 
   const objectPath = `${staff.organizationId}/${linkedType}/${linkedId}/${randomUUID()}-${safeFileName(file.name)}`;
   let uploaded = false;
@@ -88,11 +93,13 @@ export async function uploadEvidence(formData: FormData) {
     if (attachment.object_path !== objectPath) await supabase.storage.from(target.bucket).remove([objectPath]);
   } catch (error) {
     if (uploaded) await supabase.storage.from(target.bucket).remove([objectPath]);
-    redirect(routeMessage("/records", "error", operationError(error, "The evidence file could not be secured.")));
+    redirect(evidenceRoute(linkedType, linkedId, "error", operationError(error, "The evidence file could not be secured.")));
   }
   revalidatePath("/records");
   revalidatePath("/diagnostics");
-  redirect(routeMessage("/records", "created", "Evidence uploaded, checksummed and registered."));
+  revalidatePath("/vehicles");
+  revalidatePath("/customers");
+  redirect(evidenceRoute(linkedType, linkedId, "created", "Evidence uploaded, checksummed and registered."));
 }
 
 export async function queueCustomerMessage(formData: FormData) {

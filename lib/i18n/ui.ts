@@ -1,4 +1,8 @@
 import generatedArabic from "@/lib/i18n/ar.generated.json";
+import workshopArabic from "@/lib/i18n/workshop-ar.json";
+
+// Human-reviewed workshop vocabulary takes precedence over generated copy.
+const workshopTerms: Record<string, string> = workshopArabic;
 
 export type UiLocale = "en" | "ar";
 
@@ -284,8 +288,12 @@ function polishArabic(value: string) {
     .replaceAll("الخدمات ذات التأثير العالي", "خدمة الجهد العالي")
     .replaceAll("شبكة المعلومات الشخصية", "رقم الهيكل")
     .replaceAll("الكاتالوج", "دليل الخدمات")
-    .replaceAll("أمر إصلاح", "أمر عمل")
-    .replaceAll("أوامر إصلاح", "أوامر عمل")
+    .replaceAll("أمر إصلاح", "أمر صيانة")
+    .replaceAll("أوامر إصلاح", "أوامر صيانة")
+    .replaceAll("أمر العمل", "أمر الصيانة")
+    .replaceAll("أوامر العمل", "أوامر الصيانة")
+    .replaceAll("أمر عمل", "أمر صيانة")
+    .replaceAll("أوامر عمل", "أوامر صيانة")
     .replaceAll("السرد الوظيفي", "وصف المهمة");
 }
 
@@ -523,7 +531,7 @@ const statusArabic: Record<string, string> = {
   in_progress: "قيد التنفيذ", paused: "متوقف مؤقتاً", blocked: "متعذر", normal: "طبيعي",
   ev_aware: "مؤهل للمركبات الكهربائية", hv_isolated: "جهد عالٍ معزول", hv_battery_open: "بطارية الجهد العالي مفتوحة",
   prepared: "مُحضّر", risk_review: "مراجعة المخاطر", authorized: "مصرّح", isolated: "معزول",
-  reenergization_pending: "بانتظار إعادة التغذية", revoked: "مسحوب", pass: "ناجح", fail: "راسب",
+  reenergization_pending: "بانتظار إعادة التغذية", revoked: "مسحوب", pass: "سليم", fail: "غير سليم",
   warning: "تحذير", open: "مفتوح", posted: "مُرحّل", partially_paid: "مدفوع جزئياً", paid: "مدفوع",
   credited: "دائن", received: "مستلم", refunded: "مسترد", partially_refunded: "مسترد جزئياً",
   pending: "قيد الانتظار", error: "خطأ", verified: "موثّق", retired: "متقاعد", advisory: "إرشادي",
@@ -532,7 +540,7 @@ const statusArabic: Record<string, string> = {
 };
 
 export function translateUi(value: string, locale: UiLocale) {
-  return locale === "ar" ? arabic[value] ?? value : value;
+  return locale === "ar" ? polishArabic(workshopTerms[value] ?? arabic[value] ?? value) : value;
 }
 
 export function translatePageText(value: string, locale: UiLocale) {
@@ -540,6 +548,8 @@ export function translatePageText(value: string, locale: UiLocale) {
   if (/^[A-Z0-9 .:/+%°_-]+$/.test(value)) return value;
   const concise = conciseEnglish[value] ?? value;
   if (locale !== "ar") return concise;
+  const workshopTerm = workshopTerms[value] ?? workshopTerms[concise];
+  if (workshopTerm) return workshopTerm;
   if (value.startsWith("Live workshop, customer and commercial signals · ")) {
     return `إشارات مباشرة للورشة والعملاء والعمليات التجارية · ${value.split(" · ")[1]}`;
   }

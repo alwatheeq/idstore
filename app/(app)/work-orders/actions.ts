@@ -6,6 +6,7 @@ import { formText, operationError, optionalNumber, optionalText, routeMessage, z
 import { getCurrentStaff, resolveOperatingBranch } from "@/lib/auth/session";
 import { createRepairOrder } from "@/lib/supabase/commands";
 import { createClient } from "@/lib/supabase/server";
+import { workOrderConcernIssues } from "./concerns";
 
 export async function createWorkOrder(formData: FormData) {
   const staff = await getCurrentStaff();
@@ -15,6 +16,9 @@ export async function createWorkOrder(formData: FormData) {
   const odometerKm = optionalNumber(formData, "odometerKm");
   const stateOfCharge = optionalNumber(formData, "stateOfCharge");
   const promisedLocal = optionalText(formData, "promisedAt");
+  const selectedIssueCodes = new Set(formData.getAll("concernIssue").filter((value): value is string => typeof value === "string"));
+  const selectedIssues = workOrderConcernIssues.filter((issue) => selectedIssueCodes.has(issue.code)).map((issue) => issue.label);
+  const concernNotes = optionalText(formData, "customerConcernNotes");
 
   if (!branchId || !customerId || !vehicleId) {
     redirect(routeMessage("/work-orders", "error", "Branch, customer and vehicle are required."));
@@ -22,9 +26,26 @@ export async function createWorkOrder(formData: FormData) {
   if ([odometerKm, stateOfCharge].some((value) => Number.isNaN(value))) {
     redirect(routeMessage("/work-orders", "error", "Odometer and charge level must be valid numbers."));
   }
+  if (!selectedIssues.length && !concernNotes) {
+    redirect(routeMessage("/work-orders", "error", "Select at least one reported issue or enter additional notes."));
+  }
+  if (concernNotes && concernNotes.length > 2000) {
+    redirect(routeMessage("/work-orders", "error", "Additional notes must be 2,000 characters or fewer."));
+  }
+
+  const customerConcern = [
+    selectedIssues.length ? `Reported issues: ${selectedIssues.join("; ")}` : undefined,
+    concernNotes ? `Customer notes: ${concernNotes}` : undefined,
+  ].filter((value): value is string => Boolean(value)).join("\n");
 
   try {
     const supabase = await createClient();
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: ownerships, error: ownershipError } = await supabase.from("vehicle_ownerships")
+      .select("id").eq("organization_id", staff.organizationId).eq("customer_id", customerId)
+      .eq("vehicle_id", vehicleId).lte("valid_from", today).or(`valid_to.is.null,valid_to.gte.${today}`).limit(1);
+    if (ownershipError) throw ownershipError;
+    if (!ownerships?.length) throw { code: "23514", message: "Link this customer to the vehicle before opening a visit." };
     let promisedAt: string | undefined;
     if (promisedLocal) {
       const { data: branch, error: branchError } = await supabase
@@ -43,7 +64,7 @@ export async function createWorkOrder(formData: FormData) {
       vehicleId,
       odometerKm,
       stateOfCharge,
-      customerConcern: optionalText(formData, "customerConcern"),
+      customerConcern,
       promisedAt,
     });
   } catch (error) {
