@@ -12,7 +12,9 @@ export function simpleServiceValues(form: FormData) {
   const nameAr = String(form.get("nameAr") ?? "").trim();
   const priceText = String(form.get("customerPrice") ?? "").trim();
   const minutesText = String(form.get("estimatedMinutes") ?? "").trim();
-  const price = Number(priceText), minutes = Number(minutesText);
-  if (!name || name.length > 160 || nameAr.length > 160 || !/^\d+(\.\d{1,3})?$/.test(priceText) || !Number.isFinite(price) || price > 999999.999 || !/^\d+$/.test(minutesText) || !Number.isInteger(minutes) || minutes < 1 || minutes > 1440) return null;
+  const price = priceText ? Number(priceText) : null, minutes = minutesText ? Number(minutesText) : null;
+  if (!name || name.length > 160 || nameAr.length > 160
+      || (price !== null && (!/^\d+(\.\d{1,3})?$/.test(priceText) || !Number.isFinite(price) || price > 999999.999))
+      || (minutes !== null && (!/^\d+$/.test(minutesText) || !Number.isInteger(minutes) || minutes < 1 || minutes > 1440))) return null;
   return { name, nameAr, price, minutes };
 }

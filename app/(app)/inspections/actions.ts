@@ -7,6 +7,21 @@ import { getCurrentStaff } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/database.types";
 
+export async function selectInspectionServices(_state: { error: string; success: boolean }, form: FormData) {
+  const staff = await getCurrentStaff();
+  const ids = [...new Set(form.getAll("serviceIds").map(String))];
+  if (!ids.length || ids.length > 100) return { error: "Select between 1 and 100 services.", success: false };
+  try {
+    const supabase = await createClient();
+    const { data: inspection, error: lookupError } = await supabase.from("inspections").select("id, branch_id").eq("organization_id", staff.organizationId).eq("id", formText(form, "inspectionId")).single();
+    if (lookupError || !inspection || (staff.selectedBranchId && staff.selectedBranchId !== inspection.branch_id)) return { error: "Select the inspection's branch before making changes.", success: false };
+    const { error } = await supabase.rpc("select_inspection_services", { p_inspection_id: inspection.id, p_service_ids: ids, p_note: formText(form, "note") });
+    if (error) return { error: operationError(error, "The services could not be selected."), success: false };
+    revalidatePath("/work-orders"); revalidatePath("/inspections");
+    return { error: "", success: true };
+  } catch (error) { return { error: operationError(error, "The services could not be selected."), success: false }; }
+}
+
 export async function saveInspectionWorkflow(formData: FormData): Promise<{ error?: string; success?: boolean }> {
   const staff = await getCurrentStaff();
   const action = formText(formData, "workflowAction");

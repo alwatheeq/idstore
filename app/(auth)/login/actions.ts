@@ -44,5 +44,5 @@ export async function signIn(_previousState: LoginState, formData: FormData): Pr
     return { error: "Sign-in is temporarily unavailable. Please try again." };
   }
 
-  redirect("/dashboard");
+  redirect("/work-orders");
 }

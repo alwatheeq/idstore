@@ -445,3 +445,21 @@ tr[id^="order-"]:target, tr[id^="invoice-"]:target { background: var(--accent-so
   .journey-visit { padding: 14px; }
   .journey-actions .button { min-height: 44px; }
 }
+/* Maintenance pricing: one vertical flow, without the dispatch ledger. */
+.order-items-section { min-width: 0; padding-block: 8px 20px; border-bottom: 1px solid var(--border, #d9dce2); }
+.order-items-section h3 { margin: 0 0 16px; font-size: 17px; }
+.order-item-row { display: grid; grid-template-columns: minmax(160px, 2fr) repeat(3, minmax(90px, 1fr)) auto; gap: 16px; align-items: center; padding-block: 16px; }
+.order-item-row + .order-item-row { border-top: 1px solid #d9dce2; }
+.order-item-row > div { display: grid; gap: 4px; min-width: 0; }
+.order-item-description { overflow-wrap: anywhere; }
+.order-add-item { margin-top: 16px; padding: 16px; background: #fff; border: 1px solid #d9dce2; border-radius: 12px; }
+.order-add-item > summary { cursor: pointer; color: #18365d; font-weight: 600; }
+.order-item-form { margin-top: 20px; }
+.order-price-summary { width: min(100%, 360px); margin-inline-start: auto; margin-block: 0; }
+.order-price-summary > div { display: flex; justify-content: space-between; gap: 24px; padding-block: 10px; }
+.order-price-summary dd { margin: 0; font-variant-numeric: tabular-nums; }
+.order-grand-total { border-top: 1px solid #d9dce2; font-size: 20px; font-weight: 700; }
+@media (max-width: 1100px) {
+  .order-item-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .order-item-description { grid-column: 1 / -1; }
+}

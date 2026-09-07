@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      work_order_service_choices: {
+        Row: {
+          branch_id: string
+          created_at: string
+          description_ar: string | null
+          description_en: string
+          id: string
+          inspection_id: string
+          note: string | null
+          organization_id: string
+          repair_order_id: string
+          selected_by: string
+          service_code: string
+          service_version_id: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          description_ar?: string | null
+          description_en: string
+          id?: string
+          inspection_id: string
+          note?: string | null
+          organization_id: string
+          repair_order_id: string
+          selected_by: string
+          service_code: string
+          service_version_id: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          description_ar?: string | null
+          description_en?: string
+          id?: string
+          inspection_id?: string
+          note?: string | null
+          organization_id?: string
+          repair_order_id?: string
+          selected_by?: string
+          service_code?: string
+          service_version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_service_choices_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_service_choices_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_service_choices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_service_choices_repair_order_id_fkey"
+            columns: ["repair_order_id"]
+            isOneToOne: false
+            referencedRelation: "repair_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_service_choices_service_version_id_fkey"
+            columns: ["service_version_id"]
+            isOneToOne: false
+            referencedRelation: "service_template_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_service_items: {
         Row: {
           appointment_id: string
@@ -4480,6 +4561,7 @@ export type Database = {
           id: string
           odometer_km: number | null
           opened_at: string
+          order_type: string
           organization_id: string
           promised_at: string | null
           risk_state: string
@@ -4501,6 +4583,7 @@ export type Database = {
           id?: string
           odometer_km?: number | null
           opened_at?: string
+          order_type?: string
           organization_id: string
           promised_at?: string | null
           risk_state?: string
@@ -4522,6 +4605,7 @@ export type Database = {
           id?: string
           odometer_km?: number | null
           opened_at?: string
+          order_type?: string
           organization_id?: string
           promised_at?: string | null
           risk_state?: string
@@ -4871,6 +4955,7 @@ export type Database = {
           name_ar: string | null
           name_en: string
           organization_id: string | null
+          work_order_type: string
         }
         Insert: {
           code: string
@@ -4880,6 +4965,7 @@ export type Database = {
           name_ar?: string | null
           name_en: string
           organization_id?: string | null
+          work_order_type?: string
         }
         Update: {
           code?: string
@@ -4889,6 +4975,7 @@ export type Database = {
           name_ar?: string | null
           name_en?: string
           organization_id?: string | null
+          work_order_type?: string
         }
         Relationships: [
           {
@@ -6381,6 +6468,67 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_workshop_order: {
+        Args: {
+          p_branch_id: string
+          p_customer_concern?: string
+          p_customer_id: string
+          p_odometer_km?: number
+          p_order_type: string
+          p_organization_id: string
+          p_promised_at?: string
+          p_state_of_charge?: number
+          p_vehicle_id: string
+        }
+        Returns: {
+          appointment_id: string | null
+          branch_id: string
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          customer_concern: string | null
+          customer_id: string
+          id: string
+          odometer_km: number | null
+          opened_at: string
+          order_type: string
+          organization_id: string
+          promised_at: string | null
+          risk_state: string
+          ro_number: string
+          state_of_charge: number | null
+          status: string
+          updated_at: string
+          vehicle_id: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "repair_orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_workshop_service: {
+        Args: {
+          p_minutes: number | null
+          p_name: string
+          p_name_ar: string
+          p_order_type: string
+          p_organization_id: string
+          p_price: number | null
+          p_template_id: string | null
+        }
+        Returns: string
+      }
+      select_inspection_services: {
+        Args: {
+          p_inspection_id: string
+          p_note?: string
+          p_service_ids: string[]
+        }
+        Returns: number
+      }
       add_customer_address: {
         Args: {
           p_address_line1: string

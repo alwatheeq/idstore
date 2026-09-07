@@ -16,7 +16,9 @@ function load(filename: string): unknown {
   const loaded = { exports: {} }; cache.set(filename, loaded);
   const output = ts.transpileModule(fs.readFileSync(filename,"utf8"), { compilerOptions: { jsx:ts.JsxEmit.ReactJSX, module:ts.ModuleKind.CommonJS, target:ts.ScriptTarget.ES2022, esModuleInterop:true } }).outputText;
   const requireSource = (specifier: string): unknown => {
+    if (specifier === "@/app/(app)/work-orders/item-actions") return { addOrderItem: async () => ({ error: "" }) };
     if (specifier === "@/app/(app)/catalog/actions") return { createSimpleService: async () => ({ error: "" }) };
+    if (specifier === "@/app/(app)/inspections/actions") return { selectInspectionServices: async () => ({ error: "", success: true }) };
     if (specifier === "next/navigation") return { usePathname: () => "/vehicles", useRouter: () => ({ refresh() {} }) };
     if (!specifier.startsWith("@/") && !specifier.startsWith(".")) return runtimeRequire(specifier);
     const base = specifier.startsWith("@/") ? path.resolve(specifier.slice(2)) : path.resolve(path.dirname(filename),specifier);
@@ -38,6 +40,50 @@ const { SimpleServiceForm } = load(path.resolve("components/simple-service-form.
 const { ServiceList } = load(path.resolve("components/service-list.tsx")) as typeof import("../../components/service-list");
 const { UiLocaleProvider } = load(path.resolve("components/ui-locale.tsx")) as typeof import("../../components/ui-locale");
 const h = React.createElement;
+const { InspectionServicesForm } = load(path.resolve("components/inspection-services-form.tsx")) as typeof import("../../components/inspection-services-form");
+for (const locale of ["en", "ar"] as const) {
+  for (const width of [390, 1280]) {
+    test(`inspection service selection ${locale} at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8");
+      const services = ["Brake pads", "Brake discs", "Cabin filter"].map((name, index) => ({ id: String(index), code: `MNT-00${index}`, name, nameAr: ["فحمات الفرامل", "أقراص الفرامل", "فلتر المقصورة"][index] }));
+      const markup = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: h("section", { className: "panel", style: { margin: 16 } }, h(InspectionServicesForm, { inspectionId: "inspection", services, selectedIds: ["0"], canSelect: true })) }));
+      await page.setContent(`<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"><head><style>${css}</style></head><body>${markup}</body></html>`);
+      await expect(page.getByRole("checkbox").first()).toBeChecked();
+      await expect(page.getByRole("checkbox").first()).toBeDisabled();
+      await page.locator(".concern-option").nth(1).click();
+      await page.locator(".concern-option").nth(2).click();
+      expect(await page.locator("form").evaluate(form => new FormData(form as HTMLFormElement).getAll("serviceIds"))).toEqual(["1", "2"]);
+      await expect(page.getByRole("button")).toHaveText(locale === "ar" ? "إضافة الخدمات المختارة" : "Add selected services");
+      await expect(page.locator("fieldset")).toContainText(locale === "ar" ? "فحمات الفرامل" : "Brake pads");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+  }
+}
+const { OrderItemForm } = load(path.resolve("components/order-item-form.tsx")) as typeof import("../../components/order-item-form");
+for (const locale of ["en", "ar"] as const) {
+  for (const width of [390, 1280]) {
+    test(`maintenance item form ${locale} at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8");
+      const html = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: null }, h("section", { className: "panel", style: { margin: 16, padding: 24 } },
+        h(OrderItemForm, { orderId: "order", estimateId: "estimate", type: "part", currency: "JOD", choices: [{ id: "part", name: "Cabin filter", nameAr: "فلتر المكيف", price: 12 }] }))));
+      await page.setContent(`<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style></head><body>${html}</body></html>`);
+      expect(await page.locator("body").evaluate(el => el.scrollWidth <= window.innerWidth)).toBe(true);
+      const controls = page.locator('select, input:not([type="hidden"])');
+      for (const control of await controls.all()) {
+        if (!await control.isVisible()) continue;
+        const box = await control.boundingBox();
+        expect(box!.width).toBeGreaterThan(90);
+        expect(box!.x).toBeGreaterThanOrEqual(16);
+        expect(box!.x + box!.width).toBeLessThanOrEqual(width - 16);
+        await expect(control).toHaveAccessibleName(/.+/);
+      }
+      await expect(page.locator('input[name="unitPrice"]')).toHaveAttribute("dir", "ltr");
+      await expect(page.getByRole("button", { name: locale === "ar" ? "إضافة قطعة" : "Add part", exact: true })).toBeVisible();
+    });
+  }
+}
 for (const locale of ["en", "ar"] as const) {
   for (const width of [390, 1280]) {
     test(`simple service setup ${locale} at ${width}px`, async ({ page }, testInfo) => {
@@ -45,16 +91,17 @@ for (const locale of ["en", "ar"] as const) {
       const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8");
       const markup = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: h("main", { className: "app-main" }, h("div", { className: "page-content" }, h("section", { className: "panel" }, h(SimpleServiceForm)), h(ServiceList, { services: [{ id: "service-1", name: "Brake inspection", nameAr: "فحص الفرامل", price: 25.5, minutes: 45, status: "published" }, { id: "legacy", name: "Existing service", nameAr: "خدمة سابقة", price: null, minutes: 60, status: "draft" }] }))) }));
       await page.setContent(`<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${markup}</body></html>`);
-      await expect(page.locator("form input:visible")).toHaveCount(3);
-      await expect(page.locator("#service-name-ar")).toBeHidden();
+      await expect(page.locator("form input:visible")).toHaveCount(2);
+      await expect(page.locator("#service-name-ar")).toBeVisible();
       await page.locator("#service-name").fill(locale === "ar" ? "فحص الفرامل" : "Brake inspection");
+      expect(await page.locator("form").evaluate(form => (form as HTMLFormElement).checkValidity())).toBe(true);
+      await page.locator("summary").click();
       await page.locator("#service-price").fill("25.500");
       await page.locator("#service-minutes").fill("45");
       expect(await page.locator("form").evaluate(form => (form as HTMLFormElement).checkValidity())).toBe(true);
       await page.locator("#service-minutes").fill("0");
       expect(await page.locator("form").evaluate(form => (form as HTMLFormElement).checkValidity())).toBe(false);
       await page.locator("#service-minutes").fill("45");
-      await page.locator("summary").click();
       await expect(page.locator("#service-name-ar")).toBeVisible();
       for (const id of ["service-price", "service-minutes"]) await expect(page.locator(`#${id}`)).toHaveCSS("direction", "ltr");
       await expect(page.locator(".simple-service-row").first()).toContainText(locale === "ar" ? "فحص الفرامل" : "Brake inspection");

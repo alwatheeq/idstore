@@ -14,7 +14,7 @@ import type { Json } from "@/lib/database.types";
 import { createClient } from "@/lib/supabase/server";
 import { addServiceTask, bookAppointmentResource, createResource, createServiceTemplate, publishServiceTemplate, upsertBranchHoliday, upsertOperatingHour } from "./actions";
 
-type PageQuery = { tab?: "services" | "capacity" | "advanced"; new?: "service" | "template" | "task" | "resource" | "booking" | "hours" | "holiday"; version?: string; created?: string; error?: string };
+type PageQuery = { service?: string; tab?: "services" | "capacity" | "advanced"; new?: "service" | "template" | "task" | "resource" | "booking" | "hours" | "holiday"; version?: string; created?: string; error?: string };
 const dt = new Intl.DateTimeFormat("en-JO", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Amman" });
 function capability(value: Json) { return value && typeof value === "object" && !Array.isArray(value) ? value : {}; }
 function taskSafetyClass(value: Json) {
@@ -27,7 +27,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
   const staff = await getCurrentStaff();
   const supabase = await createClient();
   const [{ data: templates, error }, { data: resources }, { data: branches }, { data: appointments }, { data: bookings }, { data: permissions }, { data: hours }, { data: holidays }] = await Promise.all([
-    supabase.from("service_templates").select("id, code, name_en, name_ar, market, service_template_versions(id, version_no, effective_from, interval_months, interval_km, source_uri, status, applicability_json, service_template_tasks(id, sequence, task_code, description_en, standard_minutes, required_permission, required_qualification_code, procedure_ref, result_schema))").eq("organization_id", staff.organizationId).order("created_at", { ascending: false }),
+    supabase.from("service_templates").select("id, code, name_en, name_ar, market, work_order_type, service_template_versions(id, version_no, effective_from, interval_months, interval_km, source_uri, status, applicability_json, service_template_tasks(id, sequence, task_code, description_en, standard_minutes, required_permission, required_qualification_code, procedure_ref, result_schema))").eq("organization_id", staff.organizationId).order("created_at", { ascending: false }),
     supabase.from("resources").select("id, branch_id, code, name, resource_type, capabilities, status, branch:branches(code, city)").eq("organization_id", staff.organizationId).order("resource_type"),
     supabase.from("branches").select("id, code, city").eq("organization_id", staff.organizationId).eq("status", "active").order("city"),
     supabase.from("appointments").select("id, branch_id, start_at, end_at, status, customer:customers(display_name), vehicle:vehicles(registration_no, vin)").eq("organization_id", staff.organizationId).in("status", ["requested", "confirmed"]).order("start_at"),
@@ -44,11 +44,11 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
   const tab = show && ["template", "task"].includes(show) ? "advanced" : show && ["resource", "booking", "hours", "holiday"].includes(show) ? "capacity" : query.tab === "advanced" || query.tab === "capacity" ? query.tab : "services";
   const serviceSummaries = (templates ?? []).flatMap(template => {
     const version = [...template.service_template_versions].sort((a, b) => b.version_no - a.version_no).find(v => v.status === "published") ?? [...template.service_template_versions].sort((a, b) => b.version_no - a.version_no).find(v => v.status === "draft");
-    return version ? [{ id: version.id, name: template.name_en, nameAr: template.name_ar, price: servicePrice(version.applicability_json), minutes: version.service_template_tasks.reduce((sum, task) => sum + task.standard_minutes, 0), status: version.status }] : [];
+    return version ? [{ id: version.id, templateId: template.id, code: template.code, orderType: template.work_order_type, name: template.name_en, nameAr: template.name_ar, price: servicePrice(version.applicability_json), minutes: version.service_template_tasks.reduce((sum, task) => sum + task.standard_minutes, 0), status: version.status }] : [];
   });
 
   return <>
-    <PageHeader eyebrow="Workshop configuration" title="Services" description="Define a service, set its price and estimate the time needed.">
+    <PageHeader eyebrow="Workshop configuration" title="Services" description="Define service IDs and descriptions for Maintenance and Bodyshop orders.">
       {tab === "capacity" ? <><Link className="button" href="/catalog?new=hours#hours-form">Opening hours</Link><Link className="button" href="/catalog?new=holiday#holiday-form">Holiday</Link><Link className="button primary" href="/catalog?new=resource#resource-form"><Plus /> Add resource</Link></> : tab === "advanced" ? <Link className="button" href="/catalog?new=template#template-form"><Plus /> New template</Link> : staff.role === "admin" ? <Link className="button primary" href="/catalog?new=service#service-form"><Plus /> Add service</Link> : null}
     </PageHeader>
     <RecordFeedback created={query.created} error={query.error ?? (error ? "Catalog records could not be loaded." : undefined)} />
@@ -57,8 +57,8 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
       <Link className={tab === "capacity" ? "active" : ""} aria-current={tab === "capacity" ? "page" : undefined} href="/catalog?tab=capacity">Workshop capacity</Link>
       <Link className={tab === "advanced" ? "active" : ""} aria-current={tab === "advanced" ? "page" : undefined} href="/catalog?tab=advanced">Detailed templates</Link>
     </nav>
-    {show === "service" && staff.role === "admin" ? <section className="panel operation-form" id="service-form"><div className="panel-header"><div><div className="panel-title">Add service</div><div className="panel-subtitle">Save once. The service is ready to select when booking.</div></div><Link className="panel-link" href="/catalog">Cancel</Link></div><SimpleServiceForm /></section> : null}
-    {tab === "services" ? <ServiceList services={serviceSummaries} /> : null}
+    {show === "service" && staff.role === "admin" ? <section className="panel operation-form" id="service-form"><div className="panel-header"><div><div className="panel-title">Add service</div><div className="panel-subtitle">Define a service, then select it after the work order inspection.</div></div><Link className="panel-link" href="/catalog">Cancel</Link></div><SimpleServiceForm initial={serviceSummaries.find(service => service.templateId === query.service)} /></section> : null}
+    {tab === "services" ? <ServiceList services={serviceSummaries} canEdit={staff.role === "admin"} /> : null}
 
     {show === "hours" ? <section className="panel operation-form" id="hours-form"><div className="panel-header"><div><div className="panel-title">Branch operating hours</div><div className="panel-subtitle">Appointments outside these hours are rejected transactionally.</div></div><Link className="panel-link" href="/catalog">Cancel</Link></div><form action={upsertOperatingHour} className="form-grid panel-body"><BranchField id="hours-branch" label="Branch" branches={branches} selectedBranchId={staff.selectedBranchId} /><div className="form-field"><label htmlFor="hours-day">Weekday</label><select id="hours-day" name="dayOfWeek"><option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option></select></div><div className="form-field"><label htmlFor="hours-open">Opens</label><input id="hours-open" name="opensAt" type="time" defaultValue="08:00"/></div><div className="form-field"><label htmlFor="hours-close">Closes</label><input id="hours-close" name="closesAt" type="time" defaultValue="17:00"/></div><label className="check-field form-span-2"><input name="isClosed" type="checkbox"/><span>Closed all day</span></label><div className="form-actions form-span-2"><button className="button primary" type="submit">Save operating day</button></div></form></section> : null}
 

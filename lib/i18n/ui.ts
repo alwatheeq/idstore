@@ -543,13 +543,18 @@ export function translateUi(value: string, locale: UiLocale) {
   return locale === "ar" ? polishArabic(workshopTerms[value] ?? arabic[value] ?? value) : value;
 }
 
-export function translatePageText(value: string, locale: UiLocale) {
+export function translatePageText(value: string, locale: UiLocale): string {
   if (["IDstore", "Volkswagen"].includes(value)) return value;
   if (/^[A-Z0-9 .:/+%°_-]+$/.test(value)) return value;
   const concise = conciseEnglish[value] ?? value;
   if (locale !== "ar") return concise;
   const workshopTerm = workshopTerms[value] ?? workshopTerms[concise];
   if (workshopTerm) return workshopTerm;
+  if (value.startsWith("Reported issues: ")) {
+    const [issues, ...notes] = value.slice("Reported issues: ".length).split("\n");
+    return ["المشكلات المبلّغ عنها: " + issues.split("; ").map(issue => translatePageText(issue, locale)).join("؛ "), ...notes.map(note => note.replace(/^Customer notes: /, "ملاحظات العميل: "))].join("\n");
+  }
+  if (value.startsWith("Customer notes: ")) return "ملاحظات العميل: " + value.slice("Customer notes: ".length);
   const dashboardCount = value.match(/^(\d+) (overdue promises?|open workshop jobs|scheduled today|visits)$/);
   if (dashboardCount) {
     const captions: Record<string, string> = { "overdue promise": "مواعيد تسليم متأخرة", "overdue promises": "مواعيد تسليم متأخرة", "open workshop jobs": "مهام ورشة مفتوحة", "scheduled today": "مواعيد مجدولة اليوم", "visits": "زيارات" };

@@ -11,10 +11,16 @@ export type CreateRepairOrderInput = {
   stateOfCharge?: number;
   customerConcern?: string;
   promisedAt?: string;
+  orderType?: "maintenance" | "bodyshop";
 };
 
 export async function createRepairOrder(client: SupabaseClient<Database>, input: CreateRepairOrderInput) {
-  const { data, error } = await client.rpc("create_repair_order", {
+  const { data, error } = input.orderType ? await client.rpc("create_workshop_order", {
+    p_organization_id: input.organizationId, p_branch_id: input.branchId,
+    p_customer_id: input.customerId, p_vehicle_id: input.vehicleId, p_order_type: input.orderType,
+    p_odometer_km: input.odometerKm, p_state_of_charge: input.stateOfCharge,
+    p_customer_concern: input.customerConcern, p_promised_at: input.promisedAt,
+  }) : await client.rpc("create_repair_order", {
     p_organization_id: input.organizationId,
     p_branch_id: input.branchId,
     p_customer_id: input.customerId,

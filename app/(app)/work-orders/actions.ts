@@ -13,6 +13,8 @@ export async function createWorkOrder(formData: FormData) {
   const branchId = resolveOperatingBranch(staff, formText(formData, "branchId"));
   const customerId = formText(formData, "customerId");
   const vehicleId = formText(formData, "vehicleId");
+  const orderType = formText(formData, "orderType") || "maintenance";
+  if (orderType !== "maintenance" && orderType !== "bodyshop") redirect(routeMessage("/work-orders", "error", "Choose Maintenance or Bodyshop."));
   const odometerKm = optionalNumber(formData, "odometerKm");
   const stateOfCharge = optionalNumber(formData, "stateOfCharge");
   const promisedLocal = optionalText(formData, "promisedAt");
@@ -26,9 +28,6 @@ export async function createWorkOrder(formData: FormData) {
   if ([odometerKm, stateOfCharge].some((value) => Number.isNaN(value))) {
     redirect(routeMessage("/work-orders", "error", "Odometer and charge level must be valid numbers."));
   }
-  if (!selectedIssues.length && !concernNotes) {
-    redirect(routeMessage("/work-orders", "error", "Select at least one reported issue or enter additional notes."));
-  }
   if (concernNotes && concernNotes.length > 2000) {
     redirect(routeMessage("/work-orders", "error", "Additional notes must be 2,000 characters or fewer."));
   }
@@ -38,6 +37,7 @@ export async function createWorkOrder(formData: FormData) {
     concernNotes ? `Customer notes: ${concernNotes}` : undefined,
   ].filter((value): value is string => Boolean(value)).join("\n");
 
+  let createdOrderId: string | undefined;
   try {
     const supabase = await createClient();
     const today = new Date().toISOString().slice(0, 10);
@@ -57,23 +57,25 @@ export async function createWorkOrder(formData: FormData) {
       if (branchError || !branch) throw branchError ?? new Error("Branch not found.");
       promisedAt = zonedLocalToIso(promisedLocal, branch.timezone);
     }
-    await createRepairOrder(supabase, {
+    const createdOrder = await createRepairOrder(supabase, {
       organizationId: staff.organizationId,
       branchId,
       customerId,
       vehicleId,
+      orderType,
       odometerKm,
       stateOfCharge,
       customerConcern,
       promisedAt,
     });
+    createdOrderId = createdOrder.id;
   } catch (error) {
     redirect(routeMessage("/work-orders", "error", operationError(error, "The work order could not be opened.")));
   }
 
   revalidatePath("/work-orders");
   revalidatePath("/dashboard");
-  redirect(routeMessage("/work-orders", "created", "Work order opened."));
+  redirect(`/work-orders?order=${encodeURIComponent(createdOrderId!)}&created=${encodeURIComponent("Work order opened.")}#work-order-workspace`);
 }
 
 export async function transitionWorkOrder(formData: FormData) {

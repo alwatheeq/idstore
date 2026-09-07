@@ -31,7 +31,8 @@ function actionFixture(role = "admin", failure = false) {
 
 test("service definition validates price precision and duration without inventing defaults", () => {
   expect(simpleServiceValues(form(valid))).toEqual({ name: valid.name, nameAr: valid.nameAr, price: 25.5, minutes: 45 });
-  for (const change of [{ customerPrice: "" }, { customerPrice: "-1" }, { customerPrice: "NaN" }, { customerPrice: "1.0001" }, { customerPrice: "1000000" }, { estimatedMinutes: "0" }, { estimatedMinutes: "1441" }, { estimatedMinutes: "1.5" }, { name: " " }]) expect(simpleServiceValues(form({ ...valid, ...change }))).toBeNull();
+  expect(simpleServiceValues(form({ name: valid.name }))).toEqual({ name: valid.name, nameAr: "", price: null, minutes: null });
+  for (const change of [{ customerPrice: "-1" }, { customerPrice: "NaN" }, { customerPrice: "1.0001" }, { customerPrice: "1000000" }, { estimatedMinutes: "0" }, { estimatedMinutes: "1441" }, { estimatedMinutes: "1.5" }, { name: " " }]) expect(simpleServiceValues(form({ ...valid, ...change }))).toBeNull();
   expect(simpleServiceValues(form({ ...valid, customerPrice: "0", estimatedMinutes: "1440" }))).not.toBeNull();
   expect(servicePrice({})).toBeNull();
   expect(servicePrice({ service_pricing: { currency: "JOD", customer_price: 25.5 } })).toBe(25.5);
@@ -39,7 +40,7 @@ test("service definition validates price precision and duration without inventin
 test("simple service saves in one authorized RPC", async () => {
   const { calls, action } = actionFixture();
   await expect(action({ error: "" }, form(valid))).rejects.toThrow("created=");
-  expect(calls).toEqual([{ name: "create_simple_service", args: { p_organization_id: "org", p_name: valid.name, p_name_ar: valid.nameAr, p_customer_price: 25.5, p_estimated_minutes: 45 } }]);
+  expect(calls).toEqual([{ name: "save_workshop_service", args: { p_organization_id: "org", p_name: valid.name, p_name_ar: valid.nameAr, p_template_id: null, p_order_type: "maintenance", p_price: 25.5, p_minutes: 45 } }]);
 });
 test("staff and invalid submissions cannot create services", async () => {
   for (const [role, values] of [["staff", valid], ["admin", { ...valid, customerPrice: "-1" }]] as const) {

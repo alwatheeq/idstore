@@ -13,19 +13,21 @@ export async function createSimpleService(_state: { error: string }, formData: F
   const staff = await getCurrentStaff();
   if (staff.role !== "admin") return { error: "Only administrators can define services." };
   const values = simpleServiceValues(formData);
-  if (!values) return { error: "Enter a service name, a valid JOD price and 1 to 1440 whole minutes." };
+  const orderType = formText(formData, "orderType") || "maintenance";
+  if (!values || !["maintenance", "bodyshop"].includes(orderType)) return { error: "Enter a description and valid optional price and time." };
   try {
     const supabase = await createClient();
-    const { error } = await supabase.rpc("create_simple_service", {
+    const { error } = await supabase.rpc("save_workshop_service", {
       p_organization_id: staff.organizationId, p_name: values.name, p_name_ar: values.nameAr,
-      p_customer_price: values.price, p_estimated_minutes: values.minutes,
+      p_template_id: optionalText(formData, "templateId") ?? null, p_order_type: orderType,
+      p_price: values.price, p_minutes: values.minutes,
     });
     if (error) return { error: operationError(error, "The service could not be saved. Please try again.") };
   } catch (error) {
     return { error: operationError(error, "The service could not be saved. Please try again.") };
   }
   revalidatePath(path); revalidatePath("/appointments");
-  redirect(routeMessage(path, "created", "Service saved and ready for booking."));
+  redirect(routeMessage(path, "created", "Service saved and ready for selection."));
 }
 
 export async function createServiceTemplate(formData: FormData) {
