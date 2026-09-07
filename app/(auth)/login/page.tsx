@@ -20,7 +20,7 @@ export default async function LoginPage() {
           </div>
           <div>
             <h1>Every vehicle.<br /><span>Every branch.</span><br />One clear view.</h1>
-            <p>Purpose-built operating software for VW ID electric vehicle service centers—from arrival and HV safety to parts, invoicing and handover.</p>
+            <p>Purpose-built operating software for VW ID electric vehicle service centers—from routine maintenance and inspections to parts, invoicing and handover.</p>
           </div>
           <ServiceLoopIllustration className="login-illustration" />
           <div className="brand-sub">Secure · Branch-aware · Audit-ready</div>

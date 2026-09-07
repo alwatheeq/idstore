@@ -51,7 +51,7 @@ export function InspectionCheckMatrix({ inspectionId, checks }: { inspectionId: 
       <div className="inspection-check-grid">
         {checks.map((check) => <article className={`inspection-check-card ${selected.has(check.id) ? "selected" : ""}`} key={check.id}>
           <label><input type="checkbox" name="checkDefinitionId" value={check.id} checked={selected.has(check.id)} onChange={(event) => setSelected((current) => { const next = new Set(current); if (event.target.checked) next.add(check.id); else next.delete(check.id); return next; })} /><span><b>{locale === "ar" ? check.labelAr : check.labelEn}</b><small>{pageText(categoryLabels[check.category] ?? check.category)} · {check.modelSpecific ? pageText("Model specific") : pageText("Standard")}</small></span></label>
-          <select name={`checkResult:${check.id}`} defaultValue="pass" aria-label={`${locale === "ar" ? check.labelAr : check.labelEn} ${pageText("result")}`}><option value="pass">Pass</option><option value="not_applicable">Not applicable</option></select>
+          <label className="form-field labeled-control"><span className="field-label">{pageText("Result")}</span><select name={`checkResult:${check.id}`} defaultValue="pass" aria-label={`${locale === "ar" ? check.labelAr : check.labelEn} ${pageText("result")}`}><option value="pass">Pass</option><option value="not_applicable">Not applicable</option></select></label>
           {check.required ? <em>Required</em> : <em className="optional">Optional</em>}
         </article>)}
       </div>

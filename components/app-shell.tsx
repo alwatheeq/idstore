@@ -7,7 +7,7 @@ import {
   ArrowLeftRight, Banknote, BarChart3, BookOpenCheck, Boxes, Building2, CalendarDays,
   CarFront, ChevronDown, CircleDollarSign, ClipboardCheck, ClipboardList, FileText,
   Gauge, Layers3, LogOut, Menu, Megaphone, PackageOpen, Paperclip, PlugZap, Plus, ScanLine,
-  KeyRound, Search, Settings2, ShieldCheck, ShoppingCart, Sparkles, UserRoundCog, Users, Wrench, X,
+  KeyRound, Search, Settings2, ShoppingCart, Sparkles, UserRoundCog, Users, Wrench, X,
   type LucideIcon,
 } from "lucide-react";
 import type { CurrentStaff } from "@/lib/auth/session";
@@ -21,7 +21,6 @@ const routeIcons: Record<string, LucideIcon> = {
   "/work-orders": ClipboardList,
   "/inspections": ClipboardCheck,
   "/estimates": FileText,
-  "/hv-safety": ShieldCheck,
   "/diagnostics": ScanLine,
   "/quality-campaigns": Megaphone,
   "/appointments": CalendarDays,
@@ -173,7 +172,6 @@ function AppShellContent({ children, staff, branches }: AppShellProps) {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="safety-note"><strong><ShieldCheck /> {t("HV safety enabled")}</strong><span>{t("Quarantine, permit and qualification controls are active.")}</span></div>
           <div className="sidebar-account">
             <div className="avatar" aria-hidden="true">{initials(staff.displayName)}</div>
             <div className="user-copy"><strong>{staff.displayName}</strong><span>{t(staff.role === "admin" ? "Administrator" : "Staff")}</span></div>

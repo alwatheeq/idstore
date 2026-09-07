@@ -24,7 +24,7 @@ export default async function StaffPage({ searchParams }: { searchParams: Promis
   const supabase = await createClient();
   const [{ data: branches }, { data: permissions }, { data: memberships, error }] = await Promise.all([
     supabase.from("branches").select("id, code, city").eq("organization_id", current.organizationId).eq("status", "active").order("city"),
-    supabase.from("permissions").select("code, description").order("code"),
+    supabase.from("permissions").select("code, description").neq("code", "hv_permit.authorize").order("code"),
     supabase.from("memberships").select("id, user_id, role, all_branches, status, created_at").eq("organization_id", current.organizationId).order("created_at"),
   ]);
 
@@ -33,19 +33,14 @@ export default async function StaffPage({ searchParams }: { searchParams: Promis
   const [{ data: profiles }, { data: branchAccess }, { data: permissionAccess }, { data: technicians }] = userIds.length ? await Promise.all([
     supabase.from("profiles").select("user_id, display_name, phone, status").in("user_id", userIds),
     membershipIds.length ? supabase.from("membership_branches").select("membership_id, branch:branches(code, city)").in("membership_id", membershipIds) : Promise.resolve({ data: [] }),
-    membershipIds.length ? supabase.from("membership_permissions").select("membership_id, permission_code, allowed").in("membership_id", membershipIds) : Promise.resolve({ data: [] }),
-    supabase.from("technician_profiles").select("id, user_id, employee_no, labor_grade, active, technician_qualifications(valid_to, qualification_type:qualification_types(code, name))").eq("organization_id", current.organizationId),
+    membershipIds.length ? supabase.from("membership_permissions").select("membership_id, permission_code, allowed").neq("permission_code", "hv_permit.authorize").in("membership_id", membershipIds) : Promise.resolve({ data: [] }),
+    supabase.from("technician_profiles").select("id, user_id, employee_no, labor_grade, active").eq("organization_id", current.organizationId),
   ]) : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
 
   const profileByUser = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));
   const technicianByUser = new Map((technicians ?? []).map((technician) => [technician.user_id, technician]));
-  const now = new Date();
-  const today = now.toISOString().slice(0, 10);
   const activeUsers = (memberships ?? []).filter((membership) => membership.status === "active").length;
   const admins = (memberships ?? []).filter((membership) => membership.role === "admin" && membership.status === "active").length;
-  const qualified = (technicians ?? []).filter((technician) => technician.active && technician.technician_qualifications.some((qualification) => !qualification.valid_to || qualification.valid_to >= today)).length;
-  const expiringCutoff = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const expiring = (technicians ?? []).flatMap((technician) => technician.technician_qualifications).filter((qualification) => qualification.valid_to && qualification.valid_to >= today && qualification.valid_to <= expiringCutoff).length;
   const showForm = (query.new === "1" || Boolean(query.error)) && Boolean(branches?.length);
 
   return <>
@@ -64,7 +59,7 @@ export default async function StaffPage({ searchParams }: { searchParams: Promis
 
         <fieldset className="access-fieldset form-span-2"><legend>Branch access</legend><p>Staff require at least one branch. Admin accounts automatically receive all branches.</p><div className="access-grid">{branches?.map((branch) => <label className="check-field" key={branch.id}><input name="branchId" type="checkbox" value={branch.id} /><span><strong>{branch.city}</strong><small>{branch.code}</small></span></label>)}</div></fieldset>
         <fieldset className="access-fieldset form-span-2"><legend>Capability grants</legend><p>Choose only what this Staff member needs. Admin accounts receive every capability automatically.</p><div className="permission-grid">{permissions?.map((permission) => <label className="check-field" key={permission.code}><input name="permissionCode" type="checkbox" value={permission.code} /><span><strong>{permission.code.replaceAll(".", " ")}</strong><small>{permission.description}</small></span></label>)}</div></fieldset>
-        <label className="check-field form-span-2"><input name="isTechnician" type="checkbox" /><span><strong>Create technician profile</strong><small>Enable job assignment and qualification tracking for this user.</small></span></label>
+        <label className="check-field form-span-2"><input name="isTechnician" type="checkbox" /><span><strong>Create technician profile</strong><small>Enable maintenance job assignment for this user.</small></span></label>
         <div className="form-field"><label htmlFor="staff-employee">Employee number</label><input id="staff-employee" name="employeeNo" /></div>
         <div className="form-field"><label htmlFor="staff-grade">Labor grade</label><input id="staff-grade" name="laborGrade" placeholder="Technician, Senior, Master" /></div>
         <div className="form-actions form-span-2"><Link className="button" href="/staff">Cancel</Link><button className="button primary" type="submit">Create account</button></div>
@@ -74,8 +69,8 @@ export default async function StaffPage({ searchParams }: { searchParams: Promis
     <MetricStrip metrics={[
       { label: "Active users", value: String(activeUsers), note: `${branches?.length ?? 0} active branches`, icon: UserRoundCog },
       { label: "Administrators", value: String(admins), note: "Organization-wide access", icon: ShieldCheck },
-      { label: "Qualified technicians", value: String(qualified), note: "Current qualification record", noteTone: qualified ? "good" : undefined, icon: ShieldCheck },
-      { label: "Expiring credentials", value: String(expiring), note: "Within 30 days", noteTone: expiring ? "warn" : "good", icon: ShieldCheck },
+      { label: "Active technicians", value: String((technicians ?? []).filter(technician => technician.active).length), note: "Available for maintenance jobs", icon: UserRoundCog },
+      { label: "Service branches", value: String(branches?.length ?? 0), note: "Available assignment scope", icon: UserRoundCog },
     ]} />
 
     {!memberships?.length ? <EmptyState icon={UserRoundCog} title="No staff memberships" description="Add the first staff account and assign its operating branches." action={branches?.length ? <Link className="button primary" href="/staff?new=1#new-staff">Add staff account</Link> : undefined} /> : <section className="panel">
@@ -85,9 +80,8 @@ export default async function StaffPage({ searchParams }: { searchParams: Promis
         const assignedBranches = (branchAccess ?? []).filter((item) => item.membership_id === membership.id).map((item) => item.branch ? `${item.branch.city} · ${item.branch.code}` : null).filter(Boolean);
         const grants = (permissionAccess ?? []).filter((item) => item.membership_id === membership.id && item.allowed);
         const technician = technicianByUser.get(membership.user_id);
-        const qualification = technician?.technician_qualifications.find((item) => !item.valid_to || item.valid_to >= today);
         const displayName = profile?.display_name ?? "Unlinked profile";
-        return <tr key={membership.id}><td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="avatar">{initials(displayName)}</div><div><div className="cell-main">{displayName}</div><div className="cell-sub mono">{profile?.phone ?? membership.user_id.slice(0, 8)}</div></div></div></td><td><StatusPill label={membership.role} tone={membership.role === "admin" ? "blue" : "gray"} /></td><td>{membership.all_branches ? "All branches" : assignedBranches.join(", ") || "No branch"}</td><td>{membership.role === "admin" ? "All capabilities" : `${grants.length} granted`}</td><td>{technician ? <><div className="cell-main">{technician.labor_grade ?? "Technician"}</div><div className="cell-sub">{qualification?.qualification_type?.name ?? "No active qualification"}</div></> : "—"}</td><td><StatusPill label={membership.status} tone={membership.status === "active" && profile?.status === "active" ? "green" : "amber"} /></td></tr>;
+        return <tr key={membership.id}><td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="avatar">{initials(displayName)}</div><div><div className="cell-main">{displayName}</div><div className="cell-sub mono">{profile?.phone ?? membership.user_id.slice(0, 8)}</div></div></div></td><td><StatusPill label={membership.role} tone={membership.role === "admin" ? "blue" : "gray"} /></td><td>{membership.all_branches ? "All branches" : assignedBranches.join(", ") || "No branch"}</td><td>{membership.role === "admin" ? "All capabilities" : `${grants.length} granted`}</td><td>{technician ? <><div className="cell-main">{technician.labor_grade ?? "Technician"}</div><div className="cell-sub">{technician.employee_no ?? "—"}</div></> : "—"}</td><td><StatusPill label={membership.status} tone={membership.status === "active" && profile?.status === "active" ? "green" : "amber"} /></td></tr>;
       })}</tbody></table></div>
     </section>}
   </>;

@@ -30,7 +30,6 @@ export const navigationGroups: NavigationGroup[] = [
       { href: "/inspections", label: "Inspections", permissionAny: ["inspection.perform"] },
       { href: "/estimates", label: "Estimates", permissionAny: ["estimate.manage"] },
       { href: "/diagnostics", label: "Diagnostics", permissionAny: ["job.perform"] },
-      { href: "/hv-safety", label: "HV safety", permissionAny: ["hv_permit.authorize", "job.perform"] },
       { href: "/quality-campaigns", label: "Quality & campaigns", permissionAny: ["inspection.perform", "report.operations.read"] },
     ],
   },

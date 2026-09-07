@@ -34,6 +34,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Audit control labels
+        run: npm run ui:check
+
+      - name: Audit Arabic translation coverage
+        run: npm run i18n:check
+
       - name: Build production application
         run: npm run build
 

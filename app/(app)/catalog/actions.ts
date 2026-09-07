@@ -5,8 +5,28 @@ import { redirect } from "next/navigation";
 import { formText, operationError, optionalNumber, optionalText, routeMessage } from "@/lib/actions/form";
 import { getCurrentStaff, resolveOperatingBranch } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { simpleServiceValues } from "@/lib/service-catalog";
 
 const path = "/catalog";
+
+export async function createSimpleService(_state: { error: string }, formData: FormData): Promise<{ error: string }> {
+  const staff = await getCurrentStaff();
+  if (staff.role !== "admin") return { error: "Only administrators can define services." };
+  const values = simpleServiceValues(formData);
+  if (!values) return { error: "Enter a service name, a valid JOD price and 1 to 1440 whole minutes." };
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("create_simple_service", {
+      p_organization_id: staff.organizationId, p_name: values.name, p_name_ar: values.nameAr,
+      p_customer_price: values.price, p_estimated_minutes: values.minutes,
+    });
+    if (error) return { error: operationError(error, "The service could not be saved. Please try again.") };
+  } catch (error) {
+    return { error: operationError(error, "The service could not be saved. Please try again.") };
+  }
+  revalidatePath(path); revalidatePath("/appointments");
+  redirect(routeMessage(path, "created", "Service saved and ready for booking."));
+}
 
 export async function createServiceTemplate(formData: FormData) {
   const staff = await getCurrentStaff();
@@ -41,23 +61,21 @@ export async function addServiceTask(formData: FormData) {
   const taskCode = formText(formData, "taskCode").toUpperCase();
   const descriptionEn = formText(formData, "descriptionEn");
   const minutes = optionalNumber(formData, "standardMinutes");
-  const safetyClass = formText(formData, "safetyClass") || "ev_aware";
+  const safetyClass = formText(formData, "safetyClass") || "normal";
   if (!versionId || !taskCode || !descriptionEn || minutes === undefined || !Number.isSafeInteger(minutes) || minutes < 0 || minutes > 1440) {
     redirect(routeMessage(path, "error", "Task code, description and whole standard minutes are required."));
   }
-  if (!["normal", "ev_aware", "hv_isolated", "hv_battery_open"].includes(safetyClass)) {
+  if (!["normal", "ev_aware"].includes(safetyClass)) {
     redirect(routeMessage(path, "error", "Select a valid task safety class."));
   }
-  if (["hv_isolated", "hv_battery_open"].includes(safetyClass) && !optionalText(formData, "qualificationCode")) {
-    redirect(routeMessage(path, "error", "High-voltage tasks require a qualification code."));
-  }
+  if (formText(formData, "requiredPermission") === "hv_permit.authorize") redirect(routeMessage(path, "error", "Outside maintenance scope"));
   try {
     const supabase = await createClient();
     const { error } = await supabase.rpc("add_service_template_task", {
       p_version_id: versionId, p_task_code: taskCode, p_description_en: descriptionEn,
       p_description_ar: optionalText(formData, "descriptionAr") ?? "", p_standard_minutes: minutes,
       p_required_permission: optionalText(formData, "requiredPermission") ?? "",
-      p_required_qualification_code: optionalText(formData, "qualificationCode") ?? "",
+      p_required_qualification_code: "",
       p_procedure_ref: optionalText(formData, "procedureRef") ?? "",
       p_result_schema: {
         capture: formText(formData, "capture") || "pass_warn_fail",
@@ -100,7 +118,7 @@ export async function createResource(formData: FormData) {
     const supabase = await createClient();
     const { error } = await supabase.rpc("create_resource", {
       p_branch_id: branchId, p_resource_type: resourceType, p_code: code, p_name: name,
-      p_capabilities: { hv_ready: formData.get("hvReady") === "on", note: optionalText(formData, "capabilityNote") ?? "" },
+      p_capabilities: { note: optionalText(formData, "capabilityNote") ?? "" },
     });
     if (error) throw error;
   } catch (error) {

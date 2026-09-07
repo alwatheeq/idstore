@@ -9,6 +9,9 @@ export function RecordFilters({ action, query, facet, label, options, placeholde
   return <form action={action} method="get" className="record-filters">
     <div className="form-field"><label htmlFor="record-search">Search</label><input id="record-search" type="search" name="q" defaultValue={query ?? ""} placeholder={placeholder} maxLength={120}/></div>
     <div className="form-field"><label htmlFor="record-facet">{label}</label><select id="record-facet" name="filter" defaultValue={facet ?? ""}><option value="">All</option>{options.map(option => <option value={option.value} key={option.value}>{option.label}</option>)}</select></div>
-    <button className="button primary" type="submit">Search</button><Link className="button" href={action}>Reset filters</Link>
+    <div className="record-filter-actions">
+      <button className="button primary" type="submit">Search</button>
+      <Link className="button" href={action}>Reset filters</Link>
+    </div>
   </form>;
 }

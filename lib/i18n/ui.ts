@@ -550,6 +550,15 @@ export function translatePageText(value: string, locale: UiLocale) {
   if (locale !== "ar") return concise;
   const workshopTerm = workshopTerms[value] ?? workshopTerms[concise];
   if (workshopTerm) return workshopTerm;
+  const dashboardCount = value.match(/^(\d+) (overdue promises?|open workshop jobs|scheduled today|visits)$/);
+  if (dashboardCount) {
+    const captions: Record<string, string> = { "overdue promise": "مواعيد تسليم متأخرة", "overdue promises": "مواعيد تسليم متأخرة", "open workshop jobs": "مهام ورشة مفتوحة", "scheduled today": "مواعيد مجدولة اليوم", "visits": "زيارات" };
+    return `${dashboardCount[1]} ${captions[dashboardCount[2]]}`;
+  }
+  const remaining = value.match(/^(\d+)([mhd]) (remaining|overdue)$/);
+  if (remaining) return `${remaining[3] === "remaining" ? "متبقي" : "متأخر بمقدار"} ${remaining[1]} ${{ m: "دقيقة", h: "ساعة", d: "يوم" }[remaining[2]]}`;
+  const collected = value.match(/^(.+) collected today$/);
+  if (collected) return `المحصّل اليوم: ${collected[1]}`;
   if (value.startsWith("Live workshop, customer and commercial signals · ")) {
     return `إشارات مباشرة للورشة والعملاء والعمليات التجارية · ${value.split(" · ")[1]}`;
   }

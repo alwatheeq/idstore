@@ -106,9 +106,9 @@ export async function createJob(formData: FormData) {
   await getCurrentStaff();
   const repairOrderId = formText(formData, "repairOrderId");
   const description = formText(formData, "description");
-  const safetyClass = formText(formData, "safetyClass");
+  const safetyClass = formText(formData, "safetyClass") || "normal";
   const plannedMinutes = optionalNumber(formData, "plannedMinutes");
-  if (!repairOrderId || !description || !["normal", "ev_aware", "hv_isolated", "hv_battery_open"].includes(safetyClass)
+  if (!repairOrderId || !description || !["normal", "ev_aware"].includes(safetyClass)
       || plannedMinutes === undefined || Number.isNaN(plannedMinutes) || plannedMinutes < 0) {
     redirect(routeMessage("/work-orders", "error", "Work order, description, safety class and planned minutes are required."));
   }
@@ -119,7 +119,7 @@ export async function createJob(formData: FormData) {
       p_description: description,
       p_operation_code: optionalText(formData, "operationCode") ?? "",
       p_safety_class: safetyClass,
-      p_required_qualification_code: optionalText(formData, "qualificationCode") ?? "",
+      p_required_qualification_code: "",
       p_planned_minutes: plannedMinutes,
     });
     if (error) throw error;

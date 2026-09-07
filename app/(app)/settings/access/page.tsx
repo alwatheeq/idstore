@@ -14,7 +14,7 @@ type Permission = { code: string; description: string };
 
 const permissionSections = [
   { key: "reception", title: "Reception & customer care", note: "Customer, vehicle, appointment and estimate workflows", codes: ["crm.manage", "appointments.manage", "repair_order.manage", "inspection.perform", "estimate.manage"] },
-  { key: "workshop", title: "Workshop & high voltage", note: "Dispatch, technician work, price exceptions and HV authorization", codes: ["workshop.dispatch", "job.perform", "estimate.override_price", "hv_permit.authorize"] },
+  { key: "workshop", title: "Workshop", note: "Dispatch, maintenance work and price exceptions", codes: ["workshop.dispatch", "job.perform", "estimate.override_price"] },
   { key: "supply", title: "Parts & supply", note: "Stock control, counts, suppliers and purchasing", codes: ["inventory.manage", "purchasing.manage"] },
   { key: "finance", title: "Finance & reporting", note: "Posting, collections, refunds and financial visibility", codes: ["invoice.post", "payment.receive", "payment.refund", "report.finance.read"] },
   { key: "governance", title: "Network governance", note: "Branch configuration, staff, reporting, integrations and audit", codes: ["branch.manage", "staff.manage", "report.operations.read", "integration.manage", "audit.read"] },
@@ -27,7 +27,6 @@ const permissionLabels: Record<string, string> = {
   "crm.manage": "Customer records",
   "estimate.manage": "Estimates",
   "estimate.override_price": "Price overrides",
-  "hv_permit.authorize": "HV permits",
   "inspection.perform": "Inspections",
   "integration.manage": "Integrations",
   "inventory.manage": "Inventory",
@@ -55,7 +54,7 @@ export default async function AccessSettingsPage({ searchParams }: { searchParam
   const supabase = await createClient();
   const [{ data: branches }, { data: permissions }, { data: memberships, error }] = await Promise.all([
     supabase.from("branches").select("id, code, city, display_name").eq("organization_id", current.organizationId).eq("status", "active").order("city"),
-    supabase.from("permissions").select("code, description").order("code"),
+    supabase.from("permissions").select("code, description").neq("code", "hv_permit.authorize").order("code"),
     supabase.from("memberships").select("id, user_id, role, all_branches, status, created_at").eq("organization_id", current.organizationId).order("created_at"),
   ]);
 
@@ -64,7 +63,7 @@ export default async function AccessSettingsPage({ searchParams }: { searchParam
   const [{ data: profiles }, { data: branchAccess }, { data: permissionAccess }] = await Promise.all([
     userIds.length ? supabase.from("profiles").select("user_id, display_name, phone, status").in("user_id", userIds) : Promise.resolve({ data: [] }),
     membershipIds.length ? supabase.from("membership_branches").select("membership_id, branch_id").in("membership_id", membershipIds) : Promise.resolve({ data: [] }),
-    membershipIds.length ? supabase.from("membership_permissions").select("membership_id, permission_code, allowed").in("membership_id", membershipIds) : Promise.resolve({ data: [] }),
+    membershipIds.length ? supabase.from("membership_permissions").select("membership_id, permission_code, allowed").neq("permission_code", "hv_permit.authorize").in("membership_id", membershipIds) : Promise.resolve({ data: [] }),
   ]);
 
   const profileByUser = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));

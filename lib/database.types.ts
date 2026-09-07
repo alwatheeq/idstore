@@ -7515,6 +7515,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_simple_service: {
+        Args: {
+          p_organization_id: string
+          p_name: string
+          p_name_ar: string
+          p_customer_price: number
+          p_estimated_minutes: number
+        }
+        Returns: string
+      }
       create_stock_count: {
         Args: { p_bin_id: string }
         Returns: {

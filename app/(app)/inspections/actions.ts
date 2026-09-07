@@ -18,9 +18,13 @@ export async function saveInspectionWorkflow(formData: FormData): Promise<{ erro
     if (key.startsWith("rule.")) { rules[key.slice(5)] = value || null; }
     else data[key] = value;
   }
-  if (action === "assign") for (const key of ["groups", "capabilities"]) data[key] = formData.getAll(key).map(String);
+  if (action === "assign") {
+    data.groups = formData.getAll("groups").map(String);
+    data.capabilities = formData.getAll("capabilities").map(String).filter(value => ["ac", "dc"].includes(value));
+  }
   if (action === "generate") data.ids = formData.getAll("ids").map(String);
   if (action === "configure") {
+    if (["hv", "soh"].includes(String(rules.capability ?? "")) || rules.qualification) return { error: "Outside maintenance scope" };
     rules.groups = formData.getAll("rule.groups").map(String);
     rules.baseline = formData.get("rule.baseline") === "on";
     rules.evidence_required = formData.get("rule.evidence_required") === "on";

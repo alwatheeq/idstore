@@ -1,6 +1,6 @@
 # IDstore
 
-IDstore is a bilingual, multi-branch Volkswagen ID electric-vehicle service-center platform. The repository contains the working Next.js operations interface, researched product specification, and a Supabase/Postgres backend for customers, vehicles, appointments, workshop execution, high-voltage safety, inventory, purchasing, invoicing, payments, integrations and auditing.
+IDstore is a bilingual, multi-branch Volkswagen ID electric-vehicle service-center platform. The repository contains the working Next.js operations interface, researched product specification, and a Supabase/Postgres backend for customers, vehicles, appointments, maintenance workshop execution, inventory, purchasing, invoicing, payments, integrations and auditing.
 
 ## Repository contents
 

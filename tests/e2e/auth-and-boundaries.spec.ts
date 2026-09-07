@@ -34,6 +34,7 @@ test("staff navigation follows assigned functional permissions", () => {
   expect(routes).not.toContain("/staff");
   expect(routes).not.toContain("/settings/access");
   expect(routes).not.toContain("/invoices");
+  expect(routes).not.toContain("/hv-safety");
 });
 
 test("admins retain the complete navigation surface", () => {
@@ -42,6 +43,7 @@ test("admins retain the complete navigation surface", () => {
   expect(routes).toContain("/branches");
   expect(routes).toContain("/finance-control");
   expect(routes).toContain("/settings/access");
+  expect(routes).not.toContain("/hv-safety");
 });
 
 test("missing Supabase configuration fails closed", async () => {

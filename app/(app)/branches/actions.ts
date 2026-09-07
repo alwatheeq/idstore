@@ -40,7 +40,7 @@ export async function createBranch(formData: FormData) {
       p_whatsapp: whatsapp,
       p_email: optionalText(formData, "email"),
       p_tax_registration: optionalText(formData, "taxRegistration"),
-      p_hv_capable: formData.get("hvCapable") === "on",
+      p_hv_capable: false,
     });
     if (error) throw error;
   } catch (error) {

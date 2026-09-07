@@ -27,7 +27,7 @@ export async function provisionStaff(formData: FormData) {
   const pin = formText(formData, "pin");
   const role = formText(formData, "role");
   const branchIds = formData.getAll("branchId").map(String).filter(Boolean);
-  const permissionCodes = formData.getAll("permissionCode").map(String).filter(Boolean);
+  const permissionCodes = formData.getAll("permissionCode").map(String).filter(code => code && code !== "hv_permit.authorize");
   if (!displayName || !/^\d{6}$/.test(pin) || !["admin", "staff"].includes(role)) {
     redirect(routeMessage("/staff", "error", "Name, role and a six-digit PIN are required."));
   }

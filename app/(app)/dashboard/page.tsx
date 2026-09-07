@@ -134,7 +134,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     <RecordFeedback error={queryError ? "Some dashboard signals could not be loaded. Refresh or check your branch access." : undefined} />
     <section className="dashboard-scope" aria-label="Dashboard branch scope">
       <div className="dashboard-scope-copy"><span className="live-dot" /><div><strong>Live operational scope</strong><small>RLS-limited to branches assigned to your account</small></div></div>
-      <form className="scope-form" action="/dashboard"><BranchField id="dashboard-branch" name="branch" label="Branch" branches={branches} selectedBranchId={staff.selectedBranchId} value={selectedBranchId} placeholder="All accessible branches" /><button className="button compact" type="submit">Apply scope</button></form>
+      <form className="scope-form" action="/dashboard"><BranchField id="dashboard-branch" name="branch" label="Branch" branches={branches} selectedBranchId={staff.selectedBranchId} value={selectedBranchId} placeholder="All accessible branches" /><button className="button" type="submit">Apply scope</button></form>
     </section>
     <MetricStrip metrics={[
       { label: "Active work orders", value: String(orders.length), note: `${overdueOrders.length} overdue promise${overdueOrders.length === 1 ? "" : "s"}`, noteTone: overdueOrders.length ? "warn" : "good", icon: Wrench },

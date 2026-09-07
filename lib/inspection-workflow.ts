@@ -22,6 +22,9 @@ export type InspectionWorkspace = {
   can_record: boolean; can_manage: boolean; can_review: boolean;
 };
 export type VehicleModelOption = { id: string; name: string; model_code: string; market: string | null };
+export function isMaintenanceCheck(check: Pick<CheckDefinition, "rules">) {
+  return !["hv", "soh"].includes(check.rules.capability ?? "") && !check.rules.qualification?.trim();
+}
 export const problemGroups = ["general", "no_start", "charging", "range", "damage", "cooling", "brakes", "tyres", "steering", "climate", "visibility", "final"] as const;
 export const checkCategories = ["identity", "hv_battery", "charging", "exterior", "tyres_brakes", "underbody", "cabin", "electronics", "road_test"] as const;
 export function latestResult(task: CheckTask) { return task.attempts.at(-1); }

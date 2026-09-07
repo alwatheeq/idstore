@@ -18,7 +18,7 @@ export async function updateMembershipAccess(formData: FormData) {
   const role = formText(formData, "role");
   const status = formText(formData, "status");
   const branchIds = formData.getAll("branchId").map(String).filter(Boolean);
-  const permissionCodes = formData.getAll("permissionCode").map(String).filter(Boolean);
+  const permissionCodes = formData.getAll("permissionCode").map(String).filter(code => code && code !== "hv_permit.authorize");
 
   if (!membershipId || !["admin", "staff"].includes(role) || !["active", "suspended"].includes(status)) {
     redirect(feedbackPath(membershipId, "error", "Choose a valid role and account status."));

@@ -5,7 +5,7 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import ts from "typescript";
 import { test, expect } from "@playwright/test";
-import { checklistProgress, recommendedIds, suggestedProblemGroups, type CheckDefinition, type CheckTask, type InspectionWorkspace } from "../../lib/inspection-workflow";
+import { checklistProgress, isMaintenanceCheck, recommendedIds, suggestedProblemGroups, type CheckDefinition, type CheckTask, type InspectionWorkspace } from "../../lib/inspection-workflow";
 import { inspectionCopy, inspectionText } from "../../lib/i18n/inspection";
 
 // Playwright's TSX transform creates component-test descriptors, not React
@@ -37,6 +37,34 @@ function workspace(stage: "assign" | "select" | "record"): InspectionWorkspace {
 test("selection excludes specialists and previously generated checks and deduplicates", () => {
   expect(recommendedIds([check, check, { ...check, id: "hv", eligible: false }, { ...check, id: "optional", recommended: false }])).toEqual([check.id]);
   expect(recommendedIds([check], [check.id])).toEqual([]);
+});
+test("maintenance scope excludes specialist definitions without changing saved evidence", () => {
+  expect(isMaintenanceCheck(check)).toBe(true);
+  for (const rules of [{ capability: "hv" }, { capability: "soh" }, { qualification: "HV_TECHNICIAN" }]) {
+    expect(isMaintenanceCheck({ rules })).toBe(false);
+  }
+  const saved = { ...check, rules: { capability: "hv" } };
+  const markup = renderToStaticMarkup(React.createElement(UiLocaleProvider, { initialLocale: "en" } as React.ComponentProps<typeof UiLocaleProvider>,
+    React.createElement(InspectionWorkflow, { saveAction: async () => ({ success: true }), data: {
+      ...workspace("record"), tasks: [{ id: "legacy", definition_id: saved.id, snapshot: saved, sequence: 1, attempts: [] }],
+    } })));
+  expect(markup).toContain("Outside maintenance scope");
+  expect(markup).toContain(saved.label_en);
+  expect(markup).not.toContain('aria-expanded="false"');
+});
+
+test("specialist checks are absent from selection and admin catalog", () => {
+  const specialist = { ...check, id: "specialist", code: "SPECIALIST_ONLY", label_en: "Specialist-only operation", rules: { capability: "hv" }, eligible: true };
+  for (const content of [
+    React.createElement(InspectionCatalog, { saveAction: async () => ({ success: true }), checks: [check, specialist], models: [] }),
+    React.createElement(InspectionWorkflow, { saveAction: async () => ({ success: true }), data: { ...workspace("select"), catalog: [check, specialist] } }),
+  ]) {
+    const markup = renderToStaticMarkup(React.createElement(UiLocaleProvider, { initialLocale: "en" } as React.ComponentProps<typeof UiLocaleProvider>, content));
+    expect(markup).toContain(check.label_en);
+    expect(markup).not.toContain(specialist.label_en);
+    expect(markup).not.toContain('value="hv"');
+    expect(markup).not.toContain('name="rule.qualification"');
+  }
 });
 test("pending and inconclusive checks remain outstanding; retests preserve originals", () => {
   const tasks = ["pending", "pass", "fail", "inconclusive", "not_applicable", "exception"].map((result, i) => ({ id: String(i), definition_id: check.id, sequence: i + 1, snapshot: check, attempts: result === "pending" ? [] : [{ id: String(i), inspection_item_id: null, attempt: 1, result, details: {}, recorded_at: "2026-09-06T10:00:00Z", actor_name: "Test" }] })) as CheckTask[];
