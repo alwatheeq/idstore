@@ -9,6 +9,20 @@ import { simpleServiceValues } from "@/lib/service-catalog";
 
 const path = "/catalog";
 
+export async function retireService(form: FormData) {
+  const staff = await getCurrentStaff();
+  const id = formText(form, "versionId");
+  try {
+    if (staff.role !== "admin") throw { code: "42501" };
+    if (form.get("confirmed") !== "on") throw { code: "22023", message: "Confirm this record action before continuing." };
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("retire_catalog_service", { p_organization_id: staff.organizationId, p_version_id: id, p_reason: formText(form, "reason") });
+    if (error) throw error;
+  } catch (error) { redirect(`/catalog?retire=${encodeURIComponent(id)}&error=${encodeURIComponent(operationError(error, "The record could not be updated."))}`); }
+  revalidatePath("/", "layout");
+  redirect("/catalog?created=Service%20retired.%20Existing%20orders%20are%20unchanged.");
+}
+
 export async function createSimpleService(_state: { error: string }, formData: FormData): Promise<{ error: string }> {
   const staff = await getCurrentStaff();
   if (staff.role !== "admin") return { error: "Only administrators can define services." };

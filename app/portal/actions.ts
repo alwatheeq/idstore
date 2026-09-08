@@ -1,11 +1,40 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { formText, operationError, routeMessage } from "@/lib/actions/form";
+import { formText, operationError, routeMessage, zonedLocalToIso } from "@/lib/actions/form";
 import { createClient } from "@/lib/supabase/server";
 export async function decideEstimate(formData:FormData){const estimateId=formText(formData,"estimateId"),decision=formText(formData,"decision");if(!estimateId||!["approved","declined"].includes(decision))redirect(routeMessage("/portal","error","Choose a valid estimate decision."));try{const supabase=await createClient();const {error}=await supabase.rpc("portal_record_estimate_decision",{p_estimate_id:estimateId,p_decision:decision,p_evidence_note:formText(formData,"note")});if(error)throw error;}catch(error){redirect(routeMessage("/portal","error",operationError(error,"Your decision could not be recorded.")));}revalidatePath("/portal");redirect(routeMessage("/portal","created",`Estimate ${decision}.`));}
 
-export async function requestAppointment(formData:FormData){const branchId=formText(formData,"branchId"),vehicleId=formText(formData,"vehicleId"),from=formText(formData,"preferredFrom"),to=formText(formData,"preferredTo"),duration=Number(formText(formData,"durationMinutes")),serviceMode=formText(formData,"serviceMode"),transportMode=formText(formData,"transportMode");if(!branchId||!vehicleId||!from||!to||!Number.isSafeInteger(duration))redirect(routeMessage("/portal","error","Complete the requested service window."));try{const supabase=await createClient();const{error}=await supabase.rpc("portal_request_appointment",{p_branch_id:branchId,p_vehicle_id:vehicleId,p_preferred_from:new Date(from).toISOString(),p_preferred_to:new Date(to).toISOString(),p_duration_minutes:duration,p_service_mode:serviceMode,p_transport_mode:transportMode,p_notes:formText(formData,"notes")});if(error)throw error;}catch(error){redirect(routeMessage("/portal","error",operationError(error,"Your appointment request could not be submitted.")));}revalidatePath("/portal");redirect(routeMessage("/portal","created","Appointment request sent to the selected branch."));}
+export async function requestAppointment(formData: FormData) {
+  const branchId = formText(formData, "branchId"), vehicleId = formText(formData, "vehicleId");
+  const from = formText(formData, "preferredFrom"), to = formText(formData, "preferredTo");
+  const duration = Number(formText(formData, "durationMinutes"));
+  if (!branchId || !vehicleId || !from || !to || !Number.isSafeInteger(duration)) {
+    redirect(routeMessage("/portal", "error", "Complete the requested service window."));
+  }
+  try {
+    const supabase = await createClient();
+    // Resolve the zone from this customer's authorized options, not a hidden
+    // client field or the deployment server's local time zone.
+    const options = await supabase.rpc("portal_service_options");
+    if (options.error) throw options.error;
+    const branches = (options.data as { branches?: Array<{ id: string; timezone: string }> } | null)?.branches;
+    const branch = branches?.find(item => item.id === branchId);
+    if (!branch?.timezone) throw { code: "42501" };
+    const { error } = await supabase.rpc("portal_request_appointment", {
+      p_branch_id: branchId, p_vehicle_id: vehicleId,
+      p_preferred_from: zonedLocalToIso(from, branch.timezone),
+      p_preferred_to: zonedLocalToIso(to, branch.timezone),
+      p_duration_minutes: duration, p_service_mode: formText(formData, "serviceMode"),
+      p_transport_mode: formText(formData, "transportMode"), p_notes: formText(formData, "notes"),
+    });
+    if (error) throw error;
+  } catch (error) {
+    redirect(routeMessage("/portal", "error", operationError(error, "Your appointment request could not be submitted.")));
+  }
+  revalidatePath("/portal");
+  redirect(routeMessage("/portal", "created", "Appointment request sent to the selected branch."));
+}
 
 export async function updateConsent(formData:FormData){const purpose=formText(formData,"purpose"),channel=formText(formData,"channel"),state=formText(formData,"state");if(!purpose||!["email","sms","whatsapp","push","phone"].includes(channel)||!["granted","withdrawn"].includes(state))redirect(routeMessage("/portal","error","Choose a valid communication preference."));try{const supabase=await createClient();const{error}=await supabase.rpc("portal_update_consent",{p_purpose:purpose,p_channel:channel,p_state:state});if(error)throw error;}catch(error){redirect(routeMessage("/portal","error",operationError(error,"Your communication preference could not be saved.")));}revalidatePath("/portal");redirect(routeMessage("/portal","created","Communication preference updated."));}
 

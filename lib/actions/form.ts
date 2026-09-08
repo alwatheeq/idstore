@@ -16,11 +16,15 @@ export function optionalNumber(formData: FormData, key: string) {
 }
 
 export function zonedLocalToIso(value: string, timeZone: string) {
+  const invalid = () => Object.assign(new Error("Choose a valid, unambiguous date and time for this branch."), { code: "22023" });
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
-  if (!match) throw new Error("Choose a valid date and time.");
+  if (!match) throw invalid();
   const [, year, month, day, hour, minute] = match.map(Number);
   const utcGuess = Date.UTC(year, month - 1, day, hour, minute);
-  const parts = new Intl.DateTimeFormat("en-CA", {
+  const date = new Date(utcGuess);
+  if (year < 100 || date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day || hour > 23 || minute > 59) throw invalid();
+  let formatter: Intl.DateTimeFormat;
+  try { formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone,
     year: "numeric",
     month: "2-digit",
@@ -28,10 +32,20 @@ export function zonedLocalToIso(value: string, timeZone: string) {
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
-  }).formatToParts(new Date(utcGuess));
-  const part = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((item) => item.type === type)?.value);
-  const representedAsUtc = Date.UTC(part("year"), part("month") - 1, part("day"), part("hour"), part("minute"));
-  return new Date(utcGuess - (representedAsUtc - utcGuess)).toISOString();
+  }); } catch { throw invalid(); }
+  const wallTime = (timestamp: number) => {
+    const parts = formatter.formatToParts(new Date(timestamp));
+    const part = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find(item => item.type === type)?.value);
+    return Date.UTC(part("year"), part("month") - 1, part("day"), part("hour"), part("minute"));
+  };
+  // Sample offsets on both sides of a possible daylight-saving transition.
+  // A local time in a gap has no match; a repeated time has two matches.
+  const candidates = new Set([-36, 0, 36].map(hours => {
+    const probe = utcGuess + hours * 3600000;
+    return utcGuess - (wallTime(probe) - probe);
+  }).filter(candidate => wallTime(candidate) === utcGuess));
+  if (candidates.size !== 1) throw invalid();
+  return new Date([...candidates][0]).toISOString();
 }
 
 export function operationError(error: unknown, fallback: string) {

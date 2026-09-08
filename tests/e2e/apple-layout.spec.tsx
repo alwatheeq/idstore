@@ -19,6 +19,7 @@ function load(filename: string): unknown {
     if (specifier === "@/app/(app)/work-orders/item-actions") return { addOrderItem: async () => ({ error: "" }) };
     if (specifier === "@/app/(app)/catalog/actions") return { createSimpleService: async () => ({ error: "" }) };
     if (specifier === "@/app/(app)/inspections/actions") return { selectInspectionServices: async () => ({ error: "", success: true }) };
+    if (specifier === "@/app/(app)/staff/actions") return { manageStaff: async () => ({ error: "" }) };
     if (specifier === "next/navigation") return { usePathname: () => "/vehicles", useRouter: () => ({ refresh() {} }) };
     if (!specifier.startsWith("@/") && !specifier.startsWith(".")) return runtimeRequire(specifier);
     const base = specifier.startsWith("@/") ? path.resolve(specifier.slice(2)) : path.resolve(path.dirname(filename),specifier);
@@ -39,8 +40,131 @@ const { translatePageText } = load(path.resolve("lib/i18n/ui.ts")) as typeof imp
 const { SimpleServiceForm } = load(path.resolve("components/simple-service-form.tsx")) as typeof import("../../components/simple-service-form");
 const { ServiceList } = load(path.resolve("components/service-list.tsx")) as typeof import("../../components/service-list");
 const { UiLocaleProvider } = load(path.resolve("components/ui-locale.tsx")) as typeof import("../../components/ui-locale");
+const { LocalizedContent } = load(path.resolve("components/localized-content.tsx")) as typeof import("../../components/localized-content");
+for (const locale of ["en", "ar"] as const) {
+  test(`localized server-rendered metrics preserve text children in ${locale}`, () => {
+    // Next resolves the server component before passing its tree to the client
+    // wrapper. Rendering <MetricStrip /> inside the wrapper misses this path.
+    const metrics = [{ label: "Arrivals today", value: "0", note: "Awaiting confirmation", icon: Users }];
+    const tree = MetricStrip({ metrics });
+    const expected = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: tree }));
+    const actual = renderToStaticMarkup(h(UiLocaleProvider, {
+      initialLocale: locale, children: h(LocalizedContent, { children: tree }),
+    }));
+    // The wrapper additionally isolates numeric text for RTL display.
+    expect(actual.replace(/[\u2066-\u2069]/g, "")).toBe(`<div class="localized-content">${expected}</div>`);
+  });
+}
+const { PageRecovery } = load(path.resolve("components/page-recovery.tsx")) as typeof import("../../components/page-recovery");
 const h = React.createElement;
+
+test("page localization is present in server HTML without mutating form data", () => {
+  const tree = h("section", {}, h("a", {href:"/work-orders?new=1"}, "Open work order"),
+    h("label", {htmlFor:"city"}, "City"), h("input", {id:"city",name:"city",defaultValue:"City",placeholder:"Search"}),
+    h("bdi", {dir:"ltr"}, "+962790000000"), h("code", {}, "Open work order"));
+  const render = (locale: "en"|"ar") => renderToStaticMarkup(h(UiLocaleProvider, {initialLocale:locale,children:h(LocalizedContent,{children:tree})}));
+  const english = render("en"), arabic = render("ar");
+  expect(english).toContain('>New work order</a>');
+  expect(arabic).toContain('>المدينة</label>');
+  expect(arabic).toContain('placeholder="بحث"');
+  expect(arabic).toContain('value="City"');
+  expect(arabic).toContain('<bdi dir="ltr">+962790000000</bdi>');
+  expect(arabic).toContain('<code>Open work order</code>');
+  expect(render("en")).toBe(english);
+  expect(fs.readFileSync("components/localized-content.tsx","utf8")).not.toMatch(/MutationObserver|useLayoutEffect|textContent\s*=/);
+  for (const file of fs.readdirSync("app/(app)",{recursive:true,encoding:"utf8"}).filter(file=>file.endsWith("page.tsx"))) {
+    expect(fs.readFileSync(`app/(app)/${file}`,"utf8"),file).toContain("<LocalizedContent>");
+  }
+});
+
+test("recovery screen keeps bilingual actions touch-sized on mobile", async ({page}) => {
+  await page.setViewportSize({width:360,height:800});
+  const css = fs.readFileSync("app/globals.css","utf8")+fs.readFileSync("app/apple.css","utf8");
+  await page.setContent(`<html><head><style>${css}</style></head><body>${renderToStaticMarkup(h(PageRecovery,{retry:()=>{}}))}</body></html>`);
+  await expect(page.getByRole("alert")).toContainText("تعذر تحميل الصفحة");
+  const bounds = await page.getByRole("button").boundingBox();
+  expect(bounds!.height).toBeGreaterThanOrEqual(44);
+  await expect(page.getByRole("link")).toHaveAttribute("href","/login");
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+});
+const { CustomerDirectoryIdentity, CustomerDirectoryStatus } = load(path.resolve("components/customer-directory-identity.tsx")) as typeof import("../../components/customer-directory-identity");
+for (const locale of ["en", "ar"] as const) {
+  for (const width of [390, 1280]) {
+    test(`customer directory identity and status ${locale} at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      const css = ["app/globals.css", "app/apple.css", "app/record-actions.css"].map(file => fs.readFileSync(file, "utf8")).join("\n");
+      const contacts = [{ kind: "email", value: "customer@example.com", normalized_value: "customer@example.com", is_primary: true }, { kind: "mobile", value: "+962 79 000 0000", normalized_value: "+962790000000", is_primary: true }];
+      const html = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: h("main", { style: { margin: 16 } },
+        h(CustomerDirectoryIdentity, { id: "customer", name: locale === "ar" ? "محمد أحمد" : "Customer Name", type: "individual", status: "active", contacts }),
+        h(CustomerDirectoryStatus, { active: false, href: "/customers?portal=customer#portal-access" }),
+        h("section", { id: "archived" }, h(CustomerDirectoryIdentity, { id: "archived", name: "Archived customer", type: "company", status: "archived", contacts: contacts.slice(0, 1) })),
+        h("section", { id: "invalid-phone" }, h(CustomerDirectoryIdentity, { id: "invalid", name: "Invalid phone", type: "individual", status: "restricted", contacts: [{ kind: "phone", value: "not a number", normalized_value: null, is_primary: true }] }))) }));
+      await page.setContent(`<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style></head><body>${html}</body></html>`);
+      const phone = page.getByRole("link", { name: `${locale === "ar" ? "اتصال" : "Call"}: +962 79 000 0000`, exact: true });
+      await expect(phone).toHaveAttribute("href", "tel:+962790000000");
+      await expect(phone.locator("bdi")).toHaveCSS("direction", "ltr");
+      const nameBox = await page.locator(".customer-directory-name").first().boundingBox();
+      const phoneBox = await phone.boundingBox();
+      expect(phoneBox!.y).toBeGreaterThanOrEqual(nameBox!.y + nameBox!.height);
+      await expect(page.getByRole("img", { name: locale === "ar" ? "نشط" : "Active", exact: true })).toHaveCSS("color", "rgb(35, 112, 69)");
+      const disabled = page.getByRole("link", { name: locale === "ar" ? "معطّل · تفعيل دخول بوابة العميل" : "Disabled · Enable portal", exact: true });
+      await expect(disabled).toHaveCSS("color", "rgb(177, 52, 50)");
+      await expect(disabled).toHaveAttribute("href", "/customers?portal=customer#portal-access");
+      await expect(page.locator('#archived a[href^="tel:"], #invalid-phone a[href^="tel:"]')).toHaveCount(0);
+      await phone.focus();
+      await expect(phone).toBeFocused();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+  }
+}
+const { StaffEditor, DeleteStaffForm } = load(path.resolve("components/staff-editor.tsx")) as typeof import("../../components/staff-editor");
+for (const locale of ["en", "ar"] as const) {
+  for (const width of [390, 1280]) {
+    test(`staff management ${locale} at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 1000 });
+      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8");
+      const record = { membershipId: "staff", displayName: "Technician", phone: "+962790000000", role: "staff" as const, status: "active", branchIds: ["branch"], permissionCodes: [], isTechnician: true, employeeNo: "T-01", laborGrade: "", isSelf: false };
+      const html = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: h("section", { className: "panel", style: { margin: 16 } }, h(StaffEditor, { staff: record, branches: [{ id: "branch", city: "Amman", code: "AMM-01" }], permissions: [] }), h(DeleteStaffForm, { membershipId: "staff", displayName: "Technician" })) }));
+      await page.setContent(`<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"><head><style>${css}</style></head><body>${html}</body></html>`);
+      await expect(page.locator("#edit-staff-phone")).toHaveAttribute("readonly", "");
+      await expect(page.locator("#edit-staff-phone")).toHaveCSS("direction", "ltr");
+      await expect(page.locator('input[name="branchId"]')).toBeChecked();
+      await expect(page.getByRole("button", { name: locale === "ar" ? "حذف" : "Delete", exact: true })).toBeDisabled();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      for (const input of await page.locator('input:not([type="hidden"]),select').all()) await expect(input).toHaveAccessibleName(/.+/);
+    });
+  }
+}
 const { InspectionServicesForm } = load(path.resolve("components/inspection-services-form.tsx")) as typeof import("../../components/inspection-services-form");
+const { MasterRecordActions } = load(path.resolve("components/master-record-actions.tsx")) as typeof import("../../components/master-record-actions");
+const { RecordRemovalForm } = load(path.resolve("components/record-removal-form.tsx")) as typeof import("../../components/record-removal-form");
+for (const locale of ["en", "ar"] as const) {
+  for (const width of [390, 1280]) {
+    test(`compact record actions and confirmation ${locale} at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 1000 });
+      const css = ["app/globals.css", "app/apple.css", "app/record-actions.css"].map(file => fs.readFileSync(file, "utf8")).join("\n");
+      const html = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: h("main", { style: { margin: 16 } },
+        h(MasterRecordActions, { kind: "supplier", id: "supplier" }),
+        h(MasterRecordActions, { kind: "supplier", id: "archived", archived: true }),
+        h(RecordRemovalForm, { action: async () => {}, fields: { id: "supplier" }, title: "Archive", name: "Supplier", description: "Archive removes this record from active use. Linked orders, invoices and history are retained.", back: "/purchasing" })) }));
+      await page.setContent(`<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style></head><body>${html}</body></html>`);
+      await expect(page.getByRole("link", { name: locale === "ar" ? "تعديل" : "Edit", exact: true })).toHaveAttribute("href", /kind=supplier.*action=edit/);
+      await expect(page.getByRole("link", { name: locale === "ar" ? "استعادة" : "Restore", exact: true })).toHaveAttribute("href", /id=archived.*action=restore/);
+      await expect(page.locator('input[name="confirmed"]')).not.toBeChecked();
+      expect(await page.locator("form").evaluate(form => (form as HTMLFormElement).checkValidity())).toBe(false);
+      await page.locator('textarea[name="reason"]').fill(locale === "ar" ? "سجل مكرر" : "Duplicate record");
+      await page.locator('input[name="confirmed"]').check();
+      expect(await page.locator("form").evaluate(form => (form as HTMLFormElement).checkValidity())).toBe(true);
+      for (const icon of await page.locator(".record-action").all()) {
+        await expect(icon).toHaveAccessibleName(/.+/);
+        await expect(icon).toHaveAttribute("title", /.+/);
+        const box = await icon.boundingBox(); expect(box!.width).toBeGreaterThanOrEqual(width === 390 ? 44 : 36);
+        expect(box!.height).toEqual(box!.width);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+  }
+}
 for (const locale of ["en", "ar"] as const) {
   for (const width of [390, 1280]) {
     test(`inspection service selection ${locale} at ${width}px`, async ({ page }) => {
@@ -108,7 +232,7 @@ for (const locale of ["en", "ar"] as const) {
       await expect(page.locator(".simple-service-row").first()).toContainText("25.500");
       await expect(page.locator(".simple-service-row").last()).toContainText(translatePageText("Not set", locale));
       await expect(page.locator(".simple-service-row").last()).toContainText(locale === "ar" ? "مسودة" : "Draft");
-      await expect(page.locator(".simple-service-row a").first()).toHaveText(locale === "ar" ? "التفاصيل" : "Details");
+      await expect(page.locator(".simple-service-row a").first()).toHaveAccessibleName(locale === "ar" ? "التفاصيل" : "Details");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       const overflowing = await page.locator("input").evaluateAll(inputs => inputs.some(input => { const r = input.getBoundingClientRect(), p = input.closest(".panel")!.getBoundingClientRect(); return r.left < p.left || r.right > p.right; }));
       expect(overflowing).toBe(false);

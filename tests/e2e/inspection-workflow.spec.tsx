@@ -5,6 +5,7 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import ts from "typescript";
 import { test, expect } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 import { checklistProgress, isMaintenanceCheck, recommendedIds, suggestedProblemGroups, type CheckDefinition, type CheckTask, type InspectionWorkspace } from "../../lib/inspection-workflow";
 import { inspectionCopy, inspectionText } from "../../lib/i18n/inspection";
 
@@ -28,6 +29,43 @@ function loadReactSource(filename: string): unknown {
 }
 const { UiLocaleProvider } = loadReactSource(path.resolve("components/ui-locale.tsx")) as typeof import("../../components/ui-locale");
 const { InspectionCatalog, InspectionWorkflow } = loadReactSource(path.resolve("components/inspection-workflow.tsx")) as typeof import("../../components/inspection-workflow");
+const { InspectionResultPicker } = loadReactSource(path.resolve("components/inspection-result-picker.tsx")) as typeof import("../../components/inspection-result-picker");
+
+for (const locale of ["en", "ar"] as const) {
+  for (const width of [320, 900]) {
+    test(`inspection result icons are touch-friendly and accessible in ${locale} at ${width}px`, async ({ page, isMobile }) => {
+      await page.setViewportSize({ width, height: 900 });
+      const markup = renderToStaticMarkup(React.createElement(UiLocaleProvider, { initialLocale: locale } as React.ComponentProps<typeof UiLocaleProvider>,
+        React.createElement(InspectionResultPicker, { value: "", onChange: () => {} })));
+      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8");
+      await page.setContent(`<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"><head><title>Inspection test</title><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style></head><body><main style="padding:16px"><form><fieldset class="iw-fields">${markup}</fieldset></form></main></body></html>`);
+      const radios = page.getByRole("radio");
+      await expect(radios).toHaveCount(4);
+      await expect(page.locator('input:checked')).toHaveCount(0);
+      expect(await page.locator("form").evaluate(form => (form as HTMLFormElement).checkValidity())).toBe(false);
+      const sizes = await page.locator(".iw-result-choice").evaluateAll(labels => labels.map(label => {
+        const r = label.getBoundingClientRect(); return { width: r.width, height: r.height, right: r.right };
+      }));
+      expect(sizes.every(size => size.width >= 100 && size.height >= 64 && size.right <= width)).toBe(true);
+      expect(new Set(sizes.map(size => Math.round(size.height))).size).toBe(1);
+      const pass = page.getByRole("radio", { name: inspectionText("pass", locale), exact: true });
+      const fail = page.getByRole("radio", { name: inspectionText("fail", locale), exact: true });
+      if (isMobile) await pass.tap(); else await pass.click();
+      await expect(pass).toBeChecked();
+      expect(await page.locator("form").evaluate(form => new FormData(form as HTMLFormElement).get("result"))).toBe("pass");
+      await fail.focus(); await page.keyboard.press("Space");
+      await expect(fail).toBeChecked(); await expect(pass).not.toBeChecked();
+      expect(await page.locator(".iw-choice-pass .iw-choice-icon").evaluate(el => getComputedStyle(el).color)).toBe("rgb(22, 115, 68)");
+      expect(await page.locator(".iw-choice-fail .iw-choice-icon").evaluate(el => getComputedStyle(el).color)).toBe("rgb(180, 35, 44)");
+      await page.keyboard.press("ArrowDown");
+      await expect(page.getByRole("radio", { name: inspectionText("inconclusive", locale), exact: true })).toBeChecked();
+      const audit = await new AxeBuilder({ page }).analyze();
+      expect(audit.violations.filter(v => ["serious", "critical"].includes(v.impact ?? ""))).toEqual([]);
+      await page.locator(".iw-fields").evaluate(el => (el as HTMLFieldSetElement).disabled = true);
+      for (const radio of await radios.all()) await expect(radio).toBeDisabled();
+    });
+  }
+}
 
 const check: CheckDefinition = { id: "check-1", code: "EV_PORT", organization_id: null, vehicle_model_id: null, category: "charging", label_en: "Charge-port condition", label_ar: "حالة منفذ الشحن", is_required: false, rules: { groups: ["charging"] }, recommended: true, eligible: true, reason: "complaint" };
 function workspace(stage: "assign" | "select" | "record"): InspectionWorkspace {
@@ -37,6 +75,51 @@ function workspace(stage: "assign" | "select" | "record"): InspectionWorkspace {
 test("selection excludes specialists and previously generated checks and deduplicates", () => {
   expect(recommendedIds([check, check, { ...check, id: "hv", eligible: false }, { ...check, id: "optional", recommended: false }])).toEqual([check.id]);
   expect(recommendedIds([check], [check.id])).toEqual([]);
+});
+
+test("admin on-behalf controls and attribution are bilingual; unrelated staff remain read-only", () => {
+  for (const locale of ["en", "ar"] as const) {
+    const render = (data: InspectionWorkspace) => renderToStaticMarkup(React.createElement(UiLocaleProvider, { initialLocale: locale } as React.ComponentProps<typeof UiLocaleProvider>,
+      React.createElement(InspectionWorkflow, { saveAction: async () => ({ success: true }), data })));
+    const admin = { ...workspace("record"), can_reassign: true, recording_on_behalf: true };
+    expect(render(admin)).toContain(inspectionText("onBehalfNotice", locale));
+    expect(render(admin)).toContain("Test technician");
+    expect(render(admin)).toContain('aria-expanded="false"');
+    const staff = render({ ...admin, can_record: false, can_review: false, can_reassign: false, recording_on_behalf: false });
+    expect(staff).toContain(inspectionText("onlyTech", locale));
+    expect(staff).not.toContain('aria-expanded="false"');
+  }
+});
+
+test("software version check is bilingual, selectable and never pre-passed", () => {
+  const software: CheckDefinition = { ...check, id: "software-check", code: "EV_SOFTWARE_UPDATE", category: "electronics", label_en: "Software version & update availability", label_ar: "فحص إصدار البرمجيات والتحديثات المتاحة", rules: { groups: ["general"], baseline: true }, reason: "baseline" };
+  expect(isMaintenanceCheck(software)).toBe(true);
+  expect(recommendedIds([software])).toEqual([software.id]);
+  expect(recommendedIds([software], [software.id])).toEqual([]);
+  const task = { id: "software-task", definition_id: software.id, sequence: 1, snapshot: software, attempts: [] };
+  expect(checklistProgress([task]).completed).toBe(0);
+  for (const locale of ["en", "ar"] as const) {
+    const markup = renderToStaticMarkup(React.createElement(UiLocaleProvider, { initialLocale: locale } as React.ComponentProps<typeof UiLocaleProvider>,
+      React.createElement(InspectionWorkflow, { saveAction: async () => ({ success: true }), data: { ...workspace("select"), catalog: [software] } })));
+    expect(markup).toContain(locale === "ar" ? software.label_ar : "Software version &amp; update availability");
+    expect(markup).toContain('type="checkbox"');
+    expect(markup).not.toContain('checked=""');
+  }
+});
+
+test("retired inspection fields are absent from forms, catalog and result history", () => {
+  const source = fs.readFileSync("components/inspection-workflow.tsx", "utf8");
+  for (const field of ["measurement", "unit", "criteria", "evidence", "rule.criteria", "rule.unit", "rule.evidence_required"]) {
+    expect(source).not.toContain(`name="${field}"`);
+  }
+  for (const locale of ["en", "ar"] as const) {
+    const data = workspace("record");
+    data.tasks[0].attempts = [{ id: "attempt-1", attempt: 1, result: "pass", inspection_item_id: null, recorded_at: "2026-09-08T00:00:00Z", actor_name: "Test admin", details: { finding: "Retained finding", measurement: "HIDDEN_MEASUREMENT", unit: "HIDDEN_UNIT", criteria: "HIDDEN_CRITERIA", evidence: "HIDDEN_REFERENCE" } }];
+    const markup = renderToStaticMarkup(React.createElement(UiLocaleProvider, { initialLocale: locale } as React.ComponentProps<typeof UiLocaleProvider>,
+      React.createElement(InspectionWorkflow, { saveAction: async () => ({ success: true }), data })));
+    expect(markup).toContain("Retained finding");
+    expect(markup).not.toContain("HIDDEN_");
+  }
 });
 test("maintenance scope excludes specialist definitions without changing saved evidence", () => {
   expect(isMaintenanceCheck(check)).toBe(true);

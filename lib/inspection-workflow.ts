@@ -1,6 +1,6 @@
 export type CheckRules = {
   groups?: string[]; baseline?: boolean; capability?: string; qualification?: string;
-  procedure_ref?: string; unit?: string; criteria?: string; evidence_required?: boolean;
+  procedure_ref?: string;
   year_from?: number; year_to?: number; market?: string; interval_km?: number;
   interval_months?: number; manufacturer_ref?: string;
 };
@@ -20,6 +20,7 @@ export type InspectionWorkspace = {
   vehicle: { id: string; vin: string; model_year: number | null; registration_no: string | null; odometer_km: number | null; complaint: string; model: { name: string; market: string | null } | null } | null;
   technicians: { id: string; name: string }[]; catalog: CheckDefinition[]; tasks: CheckTask[];
   can_record: boolean; can_manage: boolean; can_review: boolean;
+  can_reassign?: boolean; recording_on_behalf?: boolean;
 };
 export type VehicleModelOption = { id: string; name: string; model_code: string; market: string | null };
 export function isMaintenanceCheck(check: Pick<CheckDefinition, "rules">) {

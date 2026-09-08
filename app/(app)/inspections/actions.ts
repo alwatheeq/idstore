@@ -7,6 +7,20 @@ import { getCurrentStaff } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/database.types";
 
+export async function cancelInspection(form: FormData) {
+  const staff = await getCurrentStaff();
+  const id = formText(form, "inspectionId");
+  try {
+    if (staff.role !== "admin") throw { code: "42501" };
+    if (form.get("confirmed") !== "on") throw { code: "22023", message: "Confirm this record action before continuing." };
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("cancel_inspection_record", { p_organization_id: staff.organizationId, p_inspection_id: id, p_updated_at: formText(form, "updatedAt"), p_reason: formText(form, "reason") });
+    if (error) throw error;
+  } catch (error) { redirect(`/inspections?cancel=${encodeURIComponent(id)}&error=${encodeURIComponent(operationError(error, "The record could not be updated."))}`); }
+  revalidatePath("/", "layout");
+  redirect("/inspections?created=Inspection%20cancelled.%20Evidence%20is%20retained.");
+}
+
 export async function selectInspectionServices(_state: { error: string; success: boolean }, form: FormData) {
   const staff = await getCurrentStaff();
   const ids = [...new Set(form.getAll("serviceIds").map(String))];
@@ -29,7 +43,7 @@ export async function saveInspectionWorkflow(formData: FormData): Promise<{ erro
   const data: Record<string, Json> = {};
   const rules: Record<string, Json> = {};
   for (const [key, value] of formData.entries()) {
-    if (typeof value !== "string" || key.startsWith("$") || ["workflowAction", "inspectionId"].includes(key)) continue;
+    if (typeof value !== "string" || key.startsWith("$") || ["workflowAction", "inspectionId", "measurement", "unit", "criteria", "evidence", "rule.measurement", "rule.unit", "rule.criteria", "rule.evidence", "rule.evidence_required"].includes(key)) continue;
     if (key.startsWith("rule.")) { rules[key.slice(5)] = value || null; }
     else data[key] = value;
   }
@@ -42,7 +56,6 @@ export async function saveInspectionWorkflow(formData: FormData): Promise<{ erro
     if (["hv", "soh"].includes(String(rules.capability ?? "")) || rules.qualification) return { error: "Outside maintenance scope" };
     rules.groups = formData.getAll("rule.groups").map(String);
     rules.baseline = formData.get("rule.baseline") === "on";
-    rules.evidence_required = formData.get("rule.evidence_required") === "on";
     data.rules = rules;
     data.is_required = formData.get("is_required") === "on";
   }
@@ -53,7 +66,7 @@ export async function saveInspectionWorkflow(formData: FormData): Promise<{ erro
       : await supabase.rpc("inspection_workflow", { p_inspection_id: formText(formData, "inspectionId"), p_action: action, p_data: data });
     if (error) return { error: operationError(error, "The inspection could not be saved.") };
   } catch (error) { return { error: operationError(error, "The inspection could not be saved.") }; }
-  revalidatePath("/inspections"); revalidatePath("/work-orders"); revalidatePath("/vehicles");
+  revalidatePath("/inspections"); revalidatePath("/work-orders"); revalidatePath("/vehicles"); revalidatePath("/customers");
   return { success: true };
 }
 
@@ -95,7 +108,7 @@ export async function addInspectionItem(formData: FormData) {
       p_inspection_id: inspectionId, p_check_label: checkLabel, p_result: result,
       p_finding_text: optionalText(formData, "findingText") ?? "",
       p_customer_text: optionalText(formData, "customerText") ?? "",
-      p_severity: severity, p_measurement: optionalText(formData, "measurement") ?? "",
+      p_severity: severity, p_measurement: "",
     });
     if (error) throw error;
   } catch (error) {

@@ -1,4 +1,6 @@
-import Link from "next/link";
+import { LocalizedContent } from "@/components/localized-content";
+import { RecordAction } from "@/components/record-action";
+import { MasterRecordActions } from "@/components/master-record-actions"; import Link from "next/link";
 import { Building2, MapPin, MessageCircle, Pencil, Phone, Plus } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
@@ -38,7 +40,7 @@ export default async function BranchesPage({ searchParams }: { searchParams: Pro
   const showForm = staff.role === "admin" && (query.new === "1" || (Boolean(query.error) && !query.edit));
   const selectedBranch = staff.role === "admin" ? branches?.find((branch) => branch.id === query.edit) : undefined;
 
-  return <>
+  return <LocalizedContent>{<>
     <PageHeader eyebrow="Network administration" title="Branches" description="Configure cities, warehouses, service capabilities, invoice sequences, hours and branch access.">
       {staff.role === "admin" ? <Link className="button primary" href="/branches?new=1#new-branch"><Plus /> Add branch</Link> : null}
     </PageHeader>
@@ -61,7 +63,7 @@ export default async function BranchesPage({ searchParams }: { searchParams: Pro
     </section> : null}
 
     {selectedBranch ? <section className="panel operation-form" id="branch-contacts">
-      <div className="panel-header"><div><div className="panel-title">Branch contacts · {selectedBranch.display_name}</div><div className="panel-subtitle">Keep the public address, voice line and WhatsApp channel specific to this branch.</div></div><Link className="panel-link" href="/branches">Close</Link></div>
+      <div className="panel-header"><div><div className="panel-title">Branch contacts · {selectedBranch.display_name}</div><div className="panel-subtitle">Keep the public address, voice line and WhatsApp channel specific to this branch.</div></div><RecordAction kind="close" label="Close" href="/branches" /></div>
       <form action={updateBranchContacts} className="form-grid panel-body">
         <input name="branchId" type="hidden" value={selectedBranch.id} />
         <div className="form-field form-span-2"><label htmlFor="contact-address">Street address</label><input id="contact-address" name="addressLine1" autoComplete="street-address" defaultValue={branchAddress(selectedBranch.address_json)} required /></div>
@@ -74,11 +76,11 @@ export default async function BranchesPage({ searchParams }: { searchParams: Pro
 
     {!branches?.length ? <EmptyState icon={Building2} title="No branches yet" description="Create the first service center before adding customers, vehicles or work orders." action={staff.role === "admin" ? <Link className="button primary" href="/branches?new=1#new-branch">Create first branch</Link> : undefined} /> : <>
       <div className="cards-grid">{branches.map((branch, index) => {
-        return <article className={`branch-card ${index === 0 ? "selected" : ""}`} key={branch.id}><div className="branch-card-head"><div><div className="branch-code">{branch.code}</div><h3>{branch.display_name}</h3><p>{branch.city}, Jordan</p></div><StatusPill label="General service" tone="gray" /></div><div className="branch-contact-list"><span><MapPin /> {branchAddress(branch.address_json) || "Address required"}</span><span><Phone /> {branch.phone || "Phone required"}</span><span><MessageCircle /> {branch.whatsapp || "WhatsApp required"}</span></div><div className="branch-stats"><div><span>Active jobs</span><strong className="mono">{orderCounts.get(branch.id) ?? 0}</strong></div><div><span>Status</span><strong style={{ fontSize: 14 }}>{branch.status}</strong></div></div>{staff.role === "admin" ? <Link className="branch-edit-link" href={`/branches?edit=${branch.id}#branch-contacts`}><Pencil /> Contacts</Link> : null}</article>;
+        return <article className={`branch-card ${index === 0 ? "selected" : ""}`} key={branch.id}><div className="branch-card-head"><div><div className="branch-code">{branch.code}</div><h3>{branch.display_name}</h3><p>{branch.city}, Jordan</p></div><StatusPill label="General service" tone="gray" /></div><div className="branch-contact-list"><span><MapPin /> {branchAddress(branch.address_json) || "Address required"}</span><span><Phone /> {branch.phone || "Phone required"}</span><span><MessageCircle /> {branch.whatsapp || "WhatsApp required"}</span></div><div className="branch-stats"><div><span>Active jobs</span><strong className="mono">{orderCounts.get(branch.id) ?? 0}</strong></div><div><span>Status</span><strong style={{ fontSize: 14 }}>{branch.status}</strong></div></div>{staff.role === "admin" ? <div className="record-actions"><MasterRecordActions kind="branch" id={branch.id} archived={branch.status === "archived"} /><Link className="branch-edit-link" href={`/branches?edit=${branch.id}#branch-contacts`}><Pencil /> Contacts</Link></div> : null}</article>;
       })}</div>
       <section className="panel" style={{ marginTop: 20 }}><div className="panel-header"><div><div className="panel-title">Network configuration</div><div className="panel-subtitle">Live branch contacts and warehouse readiness</div></div></div><div className="data-scroll"><table className="data-table branch-directory"><thead><tr><th>Branch</th><th>Address</th><th>Warehouse</th><th>Phone</th><th>WhatsApp</th><th>Status</th></tr></thead><tbody>{branches.map((branch) => {
         return <tr key={branch.id}><td><div className="cell-main">{branch.display_name}</div><div className="cell-sub">{branch.code} · {branch.legal_name}</div></td><td>{branchAddress(branch.address_json) || "Required"}</td><td>{branch.warehouses[0]?.name ?? "Not configured"}</td><td className="mono">{branch.phone ?? "Required"}</td><td className="mono">{branch.whatsapp ?? "Required"}</td><td><StatusPill label={branch.status} tone={branch.status === "active" ? "green" : "gray"} /></td></tr>;
       })}</tbody></table></div></section>
     </>}
-  </>;
+  </>}</LocalizedContent>;
 }

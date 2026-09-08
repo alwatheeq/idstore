@@ -79,6 +79,16 @@ test("branch creation cannot enable retired HV capability through an old form", 
   expect(calls[0].args.p_hv_capable).toBe(false);
 });
 
+test("inspection actions discard retired result fields and catalog requirements", async () => {
+  const { module, calls } = actions("app/(app)/inspections/actions.ts");
+  await module.saveInspectionWorkflow(form({ workflowAction: "record", inspectionId: "inspection", result: "pass", measurement: "10", unit: "mm", criteria: "old", evidence: "old" }));
+  expect(calls[0].args.p_data).toEqual({ result: "pass" });
+  await module.saveInspectionWorkflow(form({ workflowAction: "configure", code: "TEST", "rule.criteria": "old", "rule.unit": "mm", "rule.evidence_required": "on" }));
+  expect(calls[1].args.p_data).toMatchObject({ rules: { groups: [], baseline: false } });
+  const data = calls[1].args.p_data as { rules: Record<string, unknown> };
+  for (const key of ["criteria", "unit", "evidence_required"]) expect(data.rules).not.toHaveProperty(key);
+});
+
 test("inspection assignment drops retired capabilities and refuses specialist configuration", async () => {
   const { module, calls } = actions("app/(app)/inspections/actions.ts");
   const assignment = form({ workflowAction: "assign", inspectionId: "inspection" });

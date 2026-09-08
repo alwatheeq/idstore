@@ -1,0 +1,73 @@
+-- Integration regression: run against the configured development Supabase project.
+-- Always rolls back. IDs identify the existing test organization/admin, not deletion targets.
+begin;
+select set_config('request.jwt.claim.sub','e66ea087-3ee9-4e68-a029-dfacfaaacb1f',true);
+do $test$
+declare
+  org uuid:='ad7aed21-b3a4-4e4b-840e-cc09483ebc5f'; branch uuid:='979a5445-b828-48ea-9ad6-ebd45c240327';
+  cid uuid; vid uuid; pid uuid; sid uuid; bid uuid; rid uuid; did uuid; tid uuid; version_id uuid;
+  oid uuid; iid uuid; eid uuid; inspection_id uuid; stamp timestamptz; initial_stamp timestamptz; rec record; result_status text;
+begin
+  insert into public.customers(organization_id,display_name,preferred_branch_id,updated_at) values(org,'ROLLBACK directory test',branch,now()-interval '1 hour') returning id into cid;
+  insert into public.vehicles(organization_id,registration_no) values(org,'ROLLBACK') returning id into vid;
+  insert into public.parts(organization_id,part_number,description_en) values(org,'TEST-'||gen_random_uuid(),'Test part') returning id into pid;
+  insert into public.suppliers(organization_id,name) values(org,'Rollback supplier') returning id into sid;
+  insert into public.branches(organization_id,code,display_name,legal_name,city) values(org,'TEST-'||left(gen_random_uuid()::text,8),'Rollback branch','Rollback branch','Amman') returning id into bid;
+  insert into public.resources(organization_id,branch_id,resource_type,code,name) values(org,branch,'bay','TEST-'||left(gen_random_uuid()::text,8),'Rollback bay') returning id into rid;
+  insert into public.inspection_check_definitions(organization_id,code,category,label_en,label_ar) values(org,'TEST_'||upper(replace(gen_random_uuid()::text,'-','')),'identity','Rollback check','فحص تجريبي') returning id into did;
+  select updated_at into initial_stamp from public.customers where id=cid;
+  perform public.manage_directory_record(org,'customer',cid,'edit',initial_stamp,'{"display_name":"Edited customer","customer_type":"individual","legal_name":null,"tax_number":null,"notes":"Test"}','');
+  if not exists(select 1 from public.customers where id=cid and display_name='Edited customer') then raise exception 'Customer update failed'; end if;
+  begin perform public.manage_directory_record(org,'customer',cid,'edit',initial_stamp,'{"display_name":"Stale","customer_type":"individual","legal_name":null,"tax_number":null,"notes":null}',''); raise exception 'Stale update accepted'; exception when sqlstate '40001' then null; end;
+  select updated_at into stamp from public.parts where id=pid;
+  perform public.manage_directory_record(org,'part',pid,'edit',stamp,'{"description_en":"New description","description_ar":"وصف جديد","sale_price":14.25}','');
+  if not exists(select 1 from public.parts where id=pid and sale_price=14.25) then raise exception 'Part update failed'; end if;
+  select updated_at into stamp from public.suppliers where id=sid;
+  perform public.manage_directory_record(org,'supplier',sid,'edit',stamp,'{"name":"Edited supplier","tax_number":null,"phone":"+962790000000","email":"test@example.com"}','');
+  select updated_at into stamp from public.branches where id=bid;
+  perform public.manage_directory_record(org,'branch',bid,'edit',stamp,'{"display_name":"Edited branch","legal_name":"Test legal","city":"Amman"}','');
+  select updated_at into stamp from public.resources where id=rid;
+  perform public.manage_directory_record(org,'resource',rid,'edit',stamp,'{"name":"Edited bay"}','');
+  select updated_at into stamp from public.inspection_check_definitions where id=did;
+  perform public.manage_directory_record(org,'check',did,'edit',stamp,'{"label_en":"Edited check","label_ar":"فحص معدل"}','');
+  for rec in select * from (values ('customer','customers',cid),('vehicle','vehicles',vid),('part','parts',pid),('supplier','suppliers',sid),('branch','branches',bid),('resource','resources',rid),('check','inspection_check_definitions',did)) x(kind,tbl,id) loop
+    execute format('select updated_at from public.%I where id=$1',rec.tbl) into stamp using rec.id;
+    perform public.manage_directory_record(org,rec.kind,rec.id,'archive',stamp,'{}','Rollback test archive');
+    execute format('select updated_at from public.%I where id=$1',rec.tbl) into stamp using rec.id;
+    perform public.manage_directory_record(org,rec.kind,rec.id,'restore',stamp,'{}','Rollback test restore');
+    execute format('select %s from public.%I where id=$1',case when rec.kind='check' then 'active::text' else 'status' end,rec.tbl) into result_status using rec.id;
+    if result_status<>(case when rec.kind='check' then 'true' else 'active' end) then raise exception 'Restore failed'; end if;
+  end loop;
+  select updated_at into stamp from public.customers where id=cid;
+  begin perform public.manage_directory_record(org,'customer',cid,'edit',stamp,'{"display_name":"Tampered","organization_id":"11111111-1111-1111-1111-111111111111"}',''); raise exception 'Unexpected fields accepted'; exception when sqlstate '22023' then null; end;
+  begin perform public.manage_directory_record(org,'invoice',cid,'archive',stamp,'{}','test'); raise exception 'Unsupported entity accepted'; exception when sqlstate '22023' then null; end;
+  begin perform public.manage_directory_record(org,'customer',gen_random_uuid(),'archive',stamp,'{}','test'); raise exception 'Missing record accepted'; exception when sqlstate 'P0002' then null; end;
+  perform set_config('request.jwt.claim.sub','4731f239-9fbd-4efe-9867-ed8df6022094',true);
+  begin perform public.manage_directory_record(org,'customer',cid,'archive',stamp,'{}','test'); raise exception 'Staff archive accepted'; exception when sqlstate '42501' then null; end;
+  perform set_config('request.jwt.claim.sub','e66ea087-3ee9-4e68-a029-dfacfaaacb1f',true);
+  begin perform public.manage_directory_record(gen_random_uuid(),'customer',cid,'archive',stamp,'{}','test'); raise exception 'Cross tenant accepted'; exception when sqlstate '42501' then null; end;
+  insert into public.service_templates(organization_id,code,name_en,work_order_type) values(org,'TEST-'||gen_random_uuid(),'Rollback service','maintenance') returning id into tid;
+  insert into public.service_template_versions(organization_id,template_id,version_no,effective_from,status) values(org,tid,1,current_date,'published') returning id into version_id;
+  perform public.retire_catalog_service(org,version_id,'Rollback test retirement');
+  if not exists(select 1 from public.service_template_versions where id=version_id and status='retired') then raise exception 'Retirement failed'; end if;
+  insert into public.repair_orders(organization_id,branch_id,ro_number,customer_id,vehicle_id) values(org,branch,'TEST-'||gen_random_uuid(),cid,vid) returning id into oid;
+  select updated_at into stamp from public.customers where id=cid;
+  begin perform public.manage_directory_record(org,'customer',cid,'archive',stamp,'{}','test'); raise exception 'Active order guard failed'; exception when sqlstate '22023' then null; end;
+  insert into public.inspections(organization_id,branch_id,repair_order_id,status) values(org,branch,oid,'in_progress') returning id,updated_at into inspection_id,stamp;
+  perform public.cancel_inspection_record(org,inspection_id,stamp,'Rollback cancellation');
+  if not exists(select 1 from public.inspections where id=inspection_id and status='cancelled') then raise exception 'Inspection cancel failed'; end if;
+  update public.inspections set status='completed',completed_at=now() where id=inspection_id returning updated_at into stamp;
+  begin perform public.cancel_inspection_record(org,inspection_id,stamp,'test'); raise exception 'Completed inspection cancelled'; exception when sqlstate '22023' then null; end;
+  insert into public.estimate_versions(organization_id,branch_id,repair_order_id,version_no,currency) values(org,branch,oid,1,'JOD') returning id,updated_at into eid,stamp;
+  perform public.discard_draft_document(org,'estimate',eid,stamp,'Rollback estimate discard');
+  if not exists(select 1 from public.estimate_versions where id=eid and status='superseded') then raise exception 'Estimate discard failed'; end if;
+  insert into public.invoices(organization_id,branch_id,repair_order_id,customer_id,currency) values(org,branch,oid,cid,'JOD') returning id,updated_at into iid,stamp;
+  insert into public.invoice_lines(organization_id,branch_id,invoice_id,line_no,line_type,description_snapshot,quantity,unit_price,line_total) values(org,branch,iid,1,'part','Test',1,10,10);
+  perform public.discard_draft_document(org,'invoice',iid,stamp,'Rollback invoice discard');
+  if exists(select 1 from public.invoices where id=iid) or exists(select 1 from public.invoice_lines where invoice_id=iid) then raise exception 'Draft invoice not discarded'; end if;
+  insert into public.invoices(organization_id,branch_id,customer_id,currency,status,posted_at) values(org,branch,cid,'JOD','posted',now()) returning id,updated_at into iid,stamp;
+  begin perform public.discard_draft_document(org,'invoice',iid,stamp,'test'); raise exception 'Posted invoice discarded'; exception when sqlstate '22023' then null; end;
+end;
+$test$;
+select 'Directory CRUD, tenant/role/stale guards, service retirement, inspection cancellation and draft protections passed' as result;
+rollback;

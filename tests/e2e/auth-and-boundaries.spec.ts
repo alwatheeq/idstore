@@ -29,7 +29,7 @@ test("staff navigation follows assigned functional permissions", () => {
   expect(routes).toContain("/dashboard");
   expect(routes).toContain("/customers");
   expect(routes).toContain("/vehicles");
-  expect(routes).toContain("/diagnostics");
+  expect(routes).not.toContain("/diagnostics");
   expect(routes).toContain("/records");
   expect(routes).not.toContain("/staff");
   expect(routes).not.toContain("/settings/access");
@@ -39,6 +39,7 @@ test("staff navigation follows assigned functional permissions", () => {
 
 test("admins retain the complete navigation surface", () => {
   const routes = visibleNavigationGroups("admin", []).flatMap((group) => group.items.map((item) => item.href));
+  expect(routes).not.toContain("/diagnostics");
   expect(routes).toContain("/staff");
   expect(routes).toContain("/branches");
   expect(routes).toContain("/finance-control");

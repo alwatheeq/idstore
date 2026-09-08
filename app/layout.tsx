@@ -11,6 +11,7 @@ import "@fontsource/ibm-plex-sans-arabic/600.css";
 import "@fontsource/ibm-plex-sans-arabic/700.css";
 import "./globals.css";
 import "./apple.css";
+import "./record-actions.css";
 
 export const metadata: Metadata = {
   title: "IDstore Service Operations",

@@ -18,7 +18,7 @@ IDstore is a bilingual, multi-branch Volkswagen ID electric-vehicle service-cent
 
 ## Security model
 
-The only internal application roles are `admin` and `staff`. Admin has organization-wide application capabilities. Staff access is limited by assigned branches and explicit capability permissions. Customer portal accounts are separate from internal memberships. High-voltage qualifications and permits are safety controls, not roles.
+The only internal application roles are `admin` and `staff`. Admin has organization-wide application capabilities. Staff access is limited by assigned branches and explicit capability permissions. Customer portal accounts are separate from internal memberships. Historical high-voltage qualification records are not application roles; the standalone HV workflow is retired.
 
 All exposed application tables have Row Level Security enabled. Commercial ledgers and integration state are server/RPC-only by default. Supabase secret/service-role keys must never be exposed to browser or mobile code.
 
@@ -67,6 +67,6 @@ The local `.env.local` contains only the public project URL and publishable key 
 
 ## Current status
 
-The development Supabase project is live and all 26 versioned migrations are applied. The connected application now covers mobile/PIN authentication; Admin/Staff branch access; CRM contacts/consents, vehicle ownership and a separately scoped customer portal; appointments and capacity resources; service-template versioning; inspections, estimates and portal decisions; repair orders, jobs and time; HV permits and safety checks; diagnostics, DTCs and battery health; private checksummed evidence; parts, purchasing, receipts, transfers and blind counts; deferred work; invoices, payments, credits, refunds and cash reconciliation; signed quality release; advisory/verified service campaigns; customer-message outbox; organization search; permission-aware multi-branch reports; and redacted integration/audit governance.
+The application supports maintenance/bodyshop order intake, assigned inspections, admin-configured services, spare-part pricing, customers/vehicles, branch/staff access, appointments, inventory/purchasing, estimates, billing, records and manual customer follow-ups. Standalone HV-safety and Diagnostics/battery-health pages have been retired while historical records are retained.
 
-The `provision-staff` and `provision-customer` Auth functions are deployed with JWT verification. New database workflows have been transaction-tested against the connected project, and the production build plus desktop/mobile Chromium boundary and accessibility suite pass. See `docs/release-status.md` for external certification, credential and operational gates that cannot be completed in source code alone. GitHub synchronization still requires valid GitHub CLI authentication and a configured repository remote.
+The 8 September 2026 audit found and fixed authentication/deep-link failures, invalid scheduling dates, replay-key handling and localization hydration errors, and reduced duplicate branch queries. See [the audit report](docs/application-audit-2026-09-08.md) and [release status](docs/release-status.md) for measured results and limitations. Automated messaging, provider/fiscal integration delivery, large-directory pagination and automated approved-work-to-invoice conversion are not claimed complete. User-approved database hardening was subsequently applied as `20260908144433_audit_access_hardening`, with unchanged non-anonymous grants and passing post-migration database tests.

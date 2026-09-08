@@ -13,8 +13,6 @@ const TARGETS = {
   vehicle: { bucket: "vehicle-media" },
   repair_order: { bucket: "vehicle-media" },
   inspection: { bucket: "vehicle-media" },
-  diagnostic_session: { bucket: "diagnostics" },
-  battery_health_report: { bucket: "diagnostics" },
   invoice: { bucket: "documents" },
 } as const;
 
@@ -55,10 +53,6 @@ export async function uploadEvidence(formData: FormData) {
     const result = await supabase.from("repair_orders").select("organization_id, branch_id").eq("id", linkedId).maybeSingle(); record = result.data; recordError = result.error;
   } else if (linkedType === "inspection") {
     const result = await supabase.from("inspections").select("organization_id, branch_id").eq("id", linkedId).maybeSingle(); record = result.data; recordError = result.error;
-  } else if (linkedType === "diagnostic_session") {
-    const result = await supabase.from("diagnostic_sessions").select("organization_id, branch_id").eq("id", linkedId).maybeSingle(); record = result.data; recordError = result.error;
-  } else if (linkedType === "battery_health_report") {
-    const result = await supabase.from("battery_health_reports").select("organization_id, branch_id").eq("id", linkedId).maybeSingle(); record = result.data; recordError = result.error;
   } else {
     const result = await supabase.from("invoices").select("organization_id, branch_id").eq("id", linkedId).maybeSingle(); record = result.data; recordError = result.error;
   }
@@ -96,7 +90,6 @@ export async function uploadEvidence(formData: FormData) {
     redirect(evidenceRoute(linkedType, linkedId, "error", operationError(error, "The evidence file could not be secured.")));
   }
   revalidatePath("/records");
-  revalidatePath("/diagnostics");
   revalidatePath("/vehicles");
   revalidatePath("/customers");
   redirect(evidenceRoute(linkedType, linkedId, "created", "Evidence uploaded, checksummed and registered."));

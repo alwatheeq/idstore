@@ -1,9 +1,12 @@
-import Link from "next/link";
+import { LocalizedContent } from "@/components/localized-content";
+import { CustomerDirectoryIdentity, CustomerDirectoryStatus } from "@/components/customer-directory-identity";
+import { RecordAction } from "@/components/record-action";
+import { MasterRecordActions } from "@/components/master-record-actions"; import Link from "next/link";
 import { CustomerServiceHistory } from "@/components/customer-service-history";
+import { RecordFollowups } from "@/components/record-followups";
 import { AlertTriangle, CarFront, KeyRound, MapPin, Plus, ShieldCheck, Users } from "lucide-react";
 import { BranchField } from "@/components/branch-field";
 import { EmptyState } from "@/components/empty-state";
-import { MetricStrip } from "@/components/metric-strip";
 import { PageHeader } from "@/components/page-header";
 import { RecordFeedback } from "@/components/record-feedback";
 import { RecordFilters } from "@/components/record-filters";
@@ -12,6 +15,7 @@ import { CustomerVehicles } from "@/components/customer-vehicles";
 import { RecordDocuments } from "@/components/record-documents";
 import { StatusPill } from "@/components/status-pill";
 import { getCurrentStaff } from "@/lib/auth/session";
+import { getActiveBranches } from "@/lib/auth/branches";
 import { callingCodes } from "@/lib/auth/mobile";
 import { createClient } from "@/lib/supabase/server";
 import { addCustomerAddress, addCustomerContact, createCustomer, provisionCustomerPortal, recordCustomerConsent, transitionCustomerStatus } from "./actions";
@@ -25,8 +29,8 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const query = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
-  const [{ data: branches }, { data: customers, error }] = await Promise.all([
-    supabase.from("branches").select("id, code, city, display_name").eq("organization_id", staff.organizationId).eq("status", "active").order("city"),
+  const [branches, { data: customers, error }] = await Promise.all([
+    getActiveBranches(staff.organizationId),
     supabase
       .from("customers")
       .select("id, display_name, customer_type, tax_number, status, created_at, preferred_branch:branches(display_name, city), customer_contacts(kind, value, normalized_value, is_primary), customer_addresses(id, address_type, country_code, admin_area, city, address_line1, address_line2, postal_code, is_primary), consents(purpose, channel, state, policy_version, source, recorded_at), vehicle_ownerships(id, relationship, valid_from, valid_to, verified_at, vehicle:vehicles(id, registration_no, vin, model:vehicle_models(name))), invoices(grand_total, created_at), customer_accounts(status)")
@@ -40,10 +44,6 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       ...customer.customer_contacts.flatMap(c => [c.value, c.normalized_value]),
       ...customer.customer_addresses.map(a => a.city),
     ]));
-  const activeCustomers = (customers ?? []).filter((customer) => customer.status === "active");
-  const fleets = activeCustomers.filter((customer) => customer.customer_type === "company");
-  const vehicleCount = activeCustomers.reduce((total, customer) => total + customer.vehicle_ownerships.length, 0);
-  const contactComplete = activeCustomers.filter((customer) => customer.customer_contacts.some((contact) => contact.kind === "mobile" || contact.kind === "phone")).length;
   const duplicateKeys = new Map<string, string[]>();
   for (const customer of customers ?? []) {
     for (const contact of customer.customer_contacts) {
@@ -59,7 +59,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const showForm = query.new === "1" || Boolean(query.error && !query.manage && !query.duplicate);
   const duplicateIds = new Set(query.duplicate?.split(",") ?? []);
 
-  return <>
+  return <LocalizedContent>{<>
     <PageHeader eyebrow="Customer management" title="Customers" description="A single customer record across branches, vehicles, consent history, visits, estimates and invoices.">
       {branches?.length ? <Link className="button primary" href="/customers?new=1#new-customer"><Plus /> Add customer</Link> : <Link className="button primary" href="/branches?new=1#new-branch"><Plus /> Create a branch first</Link>}
     </PageHeader>
@@ -88,6 +88,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
 
     {query.portal ? <section className="panel operation-form" id="portal-access"><div className="panel-header"><div><div className="panel-title">Create customer portal access</div><div className="panel-subtitle">Customer identity remains separate from Admin and Staff access.</div></div><Link className="panel-link" href="/customers">Cancel</Link></div><form action={provisionCustomerPortal} className="form-grid panel-body"><input type="hidden" name="customerId" value={query.portal} /><div className="form-field form-span-2"><label htmlFor="portal-customer">Customer</label><input id="portal-customer" value={customers?.find((item) => item.id === query.portal)?.display_name ?? "Selected customer"} readOnly /></div><div className="form-field"><label htmlFor="portal-mobile">Mobile login</label><div className="phone-control"><select name="dialCode" defaultValue="+962" aria-label="Country and calling code">{callingCodes.map((country) => <option key={country.iso} value={country.dialCode}>{country.iso} {country.dialCode}</option>)}</select><input id="portal-mobile" name="mobile" type="tel" inputMode="tel" required /></div></div><div className="form-field"><label htmlFor="portal-pin">Six-digit PIN</label><input className="mono" id="portal-pin" name="pin" type="password" inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} autoComplete="new-password" required /></div><div className="form-actions form-span-2"><button className="button primary" type="submit"><KeyRound /> Create portal login</button></div></form></section> : null}
 
+    {!query.manage ? <RecordFollowups organizationId={staff.organizationId} canEdit={staff.role === "admin" || staff.permissionCodes.some(code => ["inspection.perform", "repair_order.manage"].includes(code))} /> : null}
     {query.manage ? (() => {
       const customer = customers?.find((item) => item.id === query.manage);
       if (!customer) return null;
@@ -98,9 +99,10 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       return <section className="panel operation-form customer-workspace" id="customer-controls">
         <div className="customer-workspace-header">
           <div className="customer-identity"><div className="customer-avatar" aria-hidden="true">{customer.display_name.slice(0, 2).toUpperCase()}</div><div><div className="eyebrow">Customer record</div><div className="customer-workspace-title">{customer.display_name}</div><div className="customer-workspace-meta"><span>{customer.customer_type === "company" ? "Fleet account" : "Individual"}</span><span aria-hidden="true"> · </span><span>{customer.status}</span></div></div></div>
-          <div className="customer-workspace-actions"><StatusPill label={customer.status} tone={customer.status === "active" ? "green" : "amber"} /><Link className="panel-link" href="/customers">Close</Link></div>
+          <div className="customer-workspace-actions"><StatusPill label={customer.status} tone={customer.status === "active" ? "green" : "amber"} /><RecordAction kind="close" label="Close" href="/customers" /></div>
         </div>
         <div className="journey-actions panel-body"><Link className="button" href={`/vehicles?new=1&customer=${customer.id}#new-vehicle`}>Add vehicle</Link><Link className="button primary" href={`/work-orders?new=1&customer=${customer.id}#new-work-order`}>New visit</Link></div>
+        <div className="panel-body"><RecordFollowups organizationId={staff.organizationId} customerId={customer.id} canEdit={staff.role === "admin" || staff.permissionCodes.some(code => ["inspection.perform", "repair_order.manage"].includes(code))} /></div>
         <nav className="customer-tabs" aria-label="Customer sections">
           <Link className={`customer-tab ${customerTab === "overview" ? "active" : ""}`} aria-current={customerTab === "overview" ? "page" : undefined} href={`/customers?manage=${customer.id}&tab=overview#customer-controls`}>Overview</Link>
           <Link className={`customer-tab ${customerTab === "service" ? "active" : ""}`} aria-current={customerTab === "service" ? "page" : undefined} href={`/customers?manage=${customer.id}&tab=service#customer-controls`}>Service history</Link>
@@ -153,18 +155,10 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
 
     {duplicateGroups.length ? <section className="panel"><div className="panel-header"><div><div className="panel-title"><AlertTriangle size={17}/> Duplicate identity review</div><div className="panel-subtitle">Shared contact or tax identifiers need staff review before another customer is created.</div></div><span className="status-pill amber">{duplicateGroups.length} match{duplicateGroups.length === 1 ? "" : "es"}</span></div><div className="consent-ledger">{duplicateGroups.map(([key, names])=><article key={key}><div><strong>{key.startsWith("tax:") ? "Tax number" : "Contact"} match</strong><span>{[...new Set(names)].join(" · ")}</span></div><span>Review</span></article>)}</div></section> : null}
 
-    <MetricStrip metrics={[
-      { label: "Active customers", value: String(activeCustomers.length), note: "Live customer records", icon: Users },
-      { label: "Fleet accounts", value: String(fleets.length), note: "Company customers", icon: Users },
-      { label: "Registered vehicles", value: String(vehicleCount), note: "Current ownership links", icon: Users },
-      { label: "Mobile complete", value: activeCustomers.length ? `${Math.round(contactComplete / activeCustomers.length * 100)}%` : "—", note: "Primary service contact", noteTone: contactComplete === activeCustomers.length && activeCustomers.length ? "good" : "warn", icon: Users },
-    ]} />
-
-    {!customers?.length ? <EmptyState icon={Users} title="No customers yet" description={branches?.length ? "Add the first customer to start a vehicle and service history." : "Create a branch first, then add customers for that location."} action={branches?.length ? <Link className="button primary" href="/customers?new=1#new-customer">Add first customer</Link> : <Link className="button" href="/branches?new=1#new-branch">Set up branches</Link>} /> : <section className="panel"><div className="panel-body"><RecordFilters action="/customers" query={query.q} facet={query.filter} label="Customer type" placeholder="Search name, mobile or account…" options={[{ value: "individual", label: "Individual" }, { value: "company", label: "Company / fleet" }]}/>{customers.length >= 1000 ? <p className="field-help">Search covers the first 1,000 loaded records.</p> : null}{!visibleCustomers.length ? <p role="status">No matching records.</p> : null}</div><div className="data-scroll"><table className="data-table"><thead><tr><th>Customer</th><th>Contact</th><th>City</th><th>Vehicles</th><th>Portal</th><th>Since</th><th className="align-right">Lifetime value</th></tr></thead><tbody>{visibleCustomers.map((customer) => {
-      const contact = customer.customer_contacts.find((item) => item.is_primary && (item.kind === "mobile" || item.kind === "phone")) ?? customer.customer_contacts[0];
+    {!customers?.length ? <EmptyState icon={Users} title="No customers yet" description={branches?.length ? "Add the first customer to start a vehicle and service history." : "Create a branch first, then add customers for that location."} action={branches?.length ? <Link className="button primary" href="/customers?new=1#new-customer">Add first customer</Link> : <Link className="button" href="/branches?new=1#new-branch">Set up branches</Link>} /> : <section className="panel"><div className="panel-body"><RecordFilters action="/customers" query={query.q} facet={query.filter} label="Customer type" placeholder="Search name, mobile or account…" options={[{ value: "individual", label: "Individual" }, { value: "company", label: "Company / fleet" }]}/>{customers.length >= 1000 ? <p className="field-help">Search covers the first 1,000 loaded records.</p> : null}{!visibleCustomers.length ? <p role="status">No matching records.</p> : null}</div><div className="data-scroll"><table className="data-table customer-directory-table"><thead><tr><th>Customer</th><th>City</th><th>Vehicles</th><th>Portal</th><th className="align-right">Lifetime value</th>{staff.role === "admin" ? <th>Actions</th> : null}</tr></thead><tbody>{visibleCustomers.map((customer) => {
       const city = customer.customer_addresses.find((address) => address.is_primary)?.city ?? customer.preferred_branch?.city;
       const lifetimeValue = customer.invoices.reduce((total, invoice) => total + Number(invoice.grand_total), 0);
-      return <tr key={customer.id}><td><div className="cell-main"><Link href={`/customers?manage=${customer.id}#customer-controls`}>{customer.display_name}</Link></div><div className="cell-sub">{customer.customer_type === "company" ? "Fleet account" : "Individual"} · {customer.status}</div></td><td className="mono">{contact?.value ?? "—"}</td><td>{city ?? "—"}</td><td>{customer.vehicle_ownerships.length ? customer.vehicle_ownerships.map((ownership) => <div className="cell-sub" key={ownership.id}>{ownership.vehicle?.model?.name ?? "VW ID"} · {ownership.vehicle?.registration_no ?? ownership.vehicle?.vin ?? "No plate / VIN"}</div>) : "—"}</td><td>{customer.customer_accounts.some((account) => account.status === "active") ? "Active" : <Link className="button compact" href={`/customers?portal=${customer.id}#portal-access`}>Enable</Link>}</td><td>{date.format(new Date(customer.created_at))}</td><td className="align-right cell-main mono">{money.format(lifetimeValue)}</td></tr>;
+      return <tr key={customer.id}><td><CustomerDirectoryIdentity id={customer.id} name={customer.display_name} type={customer.customer_type} status={customer.status} contacts={customer.customer_contacts} /></td><td>{city ?? "—"}</td><td>{customer.vehicle_ownerships.length ? customer.vehicle_ownerships.map((ownership) => <div className="cell-sub" key={ownership.id}>{ownership.vehicle?.model?.name ?? "VW ID"} · {ownership.vehicle?.registration_no ?? ownership.vehicle?.vin ?? "No plate / VIN"}</div>) : "—"}</td><td className="customer-directory-portal"><CustomerDirectoryStatus active={customer.status === "active" && customer.customer_accounts.some(account => account.status === "active")} href={customer.status === "active" && !customer.customer_accounts.some(account => account.status === "active") ? `/customers?portal=${customer.id}#portal-access` : undefined} /></td><td className="align-right cell-main mono">{money.format(lifetimeValue)}</td>{staff.role === "admin" && customer.status !== "anonymized" ? <td className="record-action-cell"><MasterRecordActions kind="customer" id={customer.id} archived={customer.status === "archived"} /></td> : staff.role === "admin" ? <td>—</td> : null}</tr>;
     })}</tbody></table></div></section>}
-  </>;
+  </>}</LocalizedContent>;
 }

@@ -8,19 +8,26 @@ export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   const pathname = request.nextUrl.pathname;
   const isPublicRoute =
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/auth") ||
+    pathname === "/login" ||
+    pathname === "/auth/signout" ||
     pathname === "/api/health" ||
     pathname === "/api/readiness";
 
-  // A missing deployment configuration must never expose protected application routes.
-  if (!url || !publishableKey) {
-    if (isPublicRoute) return response;
+  // Login must stay reachable for revoked/portal sessions. Public liveness and
+  // readiness probes must not depend on Auth availability or refresh cookies.
+  if (isPublicRoute) return response;
 
+  const loginDestination = () => {
     const destination = request.nextUrl.clone();
     destination.pathname = "/login";
-    destination.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(destination);
+    destination.search = "";
+    destination.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
+    return destination;
+  };
+
+  // A missing deployment configuration must never expose protected application routes.
+  if (!url || !publishableKey) {
+    return NextResponse.redirect(loginDestination());
   }
 
   const supabase = createServerClient<Database>(url, publishableKey, {
@@ -34,18 +41,16 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const { data } = await supabase.auth.getClaims();
-  const signedIn = Boolean(data?.claims?.sub);
+  let signedIn = false;
+  try {
+    const { data, error } = await supabase.auth.getClaims();
+    signedIn = !error && Boolean(data?.claims?.sub);
+  } catch { /* Network failure must fail closed, not crash navigation. */ }
 
-  if (!signedIn && !isPublicRoute) {
-    const destination = request.nextUrl.clone();
-    destination.pathname = "/login";
-    destination.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(destination);
-  }
-
-  if (signedIn && pathname === "/login") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  if (!signedIn) {
+    const redirectResponse = NextResponse.redirect(loginDestination());
+    response.cookies.getAll().forEach(cookie => redirectResponse.cookies.set(cookie));
+    return redirectResponse;
   }
 
   return response;

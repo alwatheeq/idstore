@@ -18,7 +18,7 @@ function add(file, value) {
 function literalsInside(node, file) {
   // This component uses typed keys from lib/i18n/inspection.ts. Its bilingual
   // dictionary is checked by inspection-workflow.spec.ts, not as raw captions.
-  if (file === "components/inspection-workflow.tsx" && ts.isCallExpression(node) && node.expression.getText() === "t") return;
+  if (["components/inspection-workflow.tsx", "components/followup-list.tsx"].includes(file) && ts.isCallExpression(node) && node.expression.getText() === "t") return;
   if (ts.isStringLiteralLike(node)) add(file, node.text);
   ts.forEachChild(node, (child) => literalsInside(child, file));
 }

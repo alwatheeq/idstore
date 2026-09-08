@@ -7,6 +7,8 @@ import ts from "typescript";
 import { test, expect } from "@playwright/test";
 import { translatePageText, translateStatus } from "../../lib/i18n/ui";
 import { matchesRecordSearch, normalizeRecordSearch } from "../../lib/record-search";
+import { followupDueState, sortFollowups, workshopToday } from "../../lib/followups";
+import { followupCopy } from "../../lib/i18n/followups";
 
 const runtimeRequire = createRequire(path.resolve("package.json"));
 let locale: "en" | "ar" = "en";
@@ -21,13 +23,17 @@ function load(filename: string): unknown {
   const loaded = { exports: {} }; cache.set(filename, loaded);
   const output = ts.transpileModule(fs.readFileSync(filename, "utf8"), { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
   const requireSource = (specifier: string): unknown => {
+    if (specifier === "@/app/(app)/vehicles/followup-actions") return { rescheduleFollowup: async () => ({ success: true }) };
     if (specifier === "@/components/ui-locale") return { useUiLocale: () => ({ locale, pageText: (text: string) => translatePageText(text, locale), statusText: (text: string) => translateStatus(text, locale) }) };
     if (specifier === "@/lib/supabase/server") return { createClient: async () => ({ from: (table: string) => {
       const query = { table, filters: [] as [string, unknown][] }; queries.push(query);
       const result = () => tableResults?.[table] ?? queryResult;
       const builder = { select: () => builder, eq: (key: string, value: string) => { filters.push([key, value]); query.filters.push([key,value]); return builder; },
         in: (key: string, value: string[]) => { query.filters.push([key,value]); return builder; }, neq: () => builder,
-        order: async () => result(), then: (resolve: (value: unknown) => void) => Promise.resolve(result()).then(resolve) }; return builder;
+        order: () => builder, range: () => builder,
+        lte: (key: string, value: string) => { query.filters.push([key,value]); return builder; },
+        or: (value: string) => { query.filters.push(["or",value]); return builder; },
+        then: (resolve: (value: unknown) => void) => Promise.resolve(result()).then(resolve) }; return builder;
     }, storage: { from: () => ({ createSignedUrl: async (objectPath: string) => { signedPaths.push(objectPath); return { data: { signedUrl: `https://example.test/${objectPath}` } }; } }) } }) };
     if (!specifier.startsWith("@/") && !specifier.startsWith(".")) return runtimeRequire(specifier);
     const base = specifier.startsWith("@/") ? path.resolve(specifier.slice(2)) : path.resolve(path.dirname(filename), specifier);
@@ -43,6 +49,53 @@ const { CustomerServiceHistory } = load(path.resolve("components/customer-servic
 const { RecordDocuments } = load(path.resolve("components/record-documents.tsx")) as typeof import("../../components/record-documents");
 const { CustomerVehicles } = load(path.resolve("components/customer-vehicles.tsx")) as typeof import("../../components/customer-vehicles");
 const { RecordFilters } = load(path.resolve("components/record-filters.tsx")) as typeof import("../../components/record-filters");
+const { RecordFollowups } = load(path.resolve("components/record-followups.tsx")) as typeof import("../../components/record-followups");
+const { FollowupList } = load(path.resolve("components/followup-list.tsx")) as typeof import("../../components/followup-list");
+
+test("follow-up dates use the workshop timezone and retain overdue items", () => {
+  for (const [english, arabic] of Object.values(followupCopy)) {
+    expect(english.length).toBeGreaterThan(0);
+    expect(arabic).toMatch(/[\u0600-\u06ff]/);
+  }
+  expect(workshopToday(new Date("2026-09-08T22:00:00Z"))).toBe("2026-09-09");
+  expect(followupDueState("2026-09-08", "2026-09-09")).toBe("overdue");
+  expect(followupDueState("2026-09-09", "2026-09-09")).toBe("today");
+  expect(followupDueState("2026-09-10", "2026-09-09")).toBe("upcoming");
+  expect(followupDueState(null, "2026-09-09")).toBe("undated");
+  expect(sortFollowups([{id:"none",due_date:null},{id:"later",due_date:"2026-09-10"},{id:"late",due_date:"2026-09-08"}]).map(r=>r.id)).toEqual(["late","later","none"]);
+});
+
+test("follow-up queries scope by tenant and current customer vehicles; errors stay visible", async () => {
+  tableResults = { vehicle_ownerships: {data:[{vehicle_id:"vehicle-1"}],error:null}, vehicle_recommendations: {data:[],error:null} };
+  await RecordFollowups({organizationId:"org-1",customerId:"customer-1"});
+  expect(queries[0].filters).toContainEqual(["customer_id","customer-1"]);
+  expect(queries[0].filters).toContainEqual(["valid_from",workshopToday()]);
+  expect(queries[1].filters).toContainEqual(["organization_id","org-1"]);
+  expect(queries[1].filters).toContainEqual(["vehicle_id",["vehicle-1"]]);
+  expect(queries[1].filters).toContainEqual(["status",["open","scheduled"]]);
+  queries=[];
+  await RecordFollowups({organizationId:"org-1",vehicleId:"vehicle-2"});
+  expect(queries[0].filters).toContainEqual(["vehicle_id","vehicle-2"]);
+  tableResults.vehicle_recommendations={data:null,error:{message:"blocked"}};
+  expect(renderToStaticMarkup(await RecordFollowups({organizationId:"org-1",vehicleId:"vehicle-2"}))).toContain('role="alert"');
+});
+
+for (const language of ["en","ar"] as const) {
+  test(`follow-ups show contact links and editable dates without mobile overflow in ${language}`, async ({page}) => {
+    locale=language;
+    const items = [{id:"f-1",vehicle_id:"vehicle-1",description:"Brake pad replacement",severity:"red",due_date:"2026-09-10",updated_at:"2026-09-08T00:00:00Z",vehicleLabel:"ID.4 · TEST-1",contacts:[{id:"customer-1",name:"Test customer",phone:"+962790000000"}]}];
+    const markup=renderToStaticMarkup(React.createElement(FollowupList,{items,today:"2026-09-10",canEdit:true}));
+    await page.setViewportSize({width:360,height:850});
+    await page.setContent(`<html lang="${locale}" dir="${locale==="ar"?"rtl":"ltr"}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${fs.readFileSync("app/globals.css","utf8")}${fs.readFileSync("app/apple.css","utf8")}</style></head><body><main style="padding:12px">${markup}</main></body></html>`);
+    await expect(page.locator('.followup-due')).toHaveText(locale==="ar"?"مستحق اليوم":"Due today");
+    await expect(page.locator('a[href="tel:+962790000000"]')).toBeVisible();
+    await expect(page.locator('a[href="/customers?manage=customer-1#customer-controls"]')).toBeVisible();
+    await page.locator('summary').click();
+    await expect(page.locator('[name="dueDate"]')).toHaveValue("2026-09-10");
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    expect(renderToStaticMarkup(React.createElement(FollowupList,{items,today:"2026-09-08",canEdit:false}))).not.toContain('name="dueDate"');
+  });
+}
 test.beforeEach(() => { tableResults = undefined; queries = []; signedPaths = []; });
 const vehicles = [
   { id: "vehicle-1", vin: null, registration_no: "TEST-1", model: { name: "ID.4" }, customerIds: ["customer-1"] },

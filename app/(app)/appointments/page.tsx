@@ -1,3 +1,4 @@
+import { LocalizedContent } from "@/components/localized-content";
 import Link from "next/link";
 import { LabeledControl } from "@/components/labeled-control";
 import { CalendarDays, Clock3, ListPlus, Plus } from "lucide-react";
@@ -84,7 +85,7 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
   const showWaitlistForm = query.new === "waitlist" && setupReady;
   const checkinAppointment = appointments.find((appointment) => appointment.id === query.checkin && appointment.status === "confirmed");
 
-  return <>
+  return <LocalizedContent>{<>
     <PageHeader eyebrow="Reception planning" title="Appointments" description="Schedule arrivals by branch and move each booking through confirmation, check-in and completion.">
       <Link className="button" href="/appointments">Today</Link>
       {setupReady ? <Link className="button" href="/appointments?new=waitlist#new-waitlist"><ListPlus /> Add to waitlist</Link> : null}
@@ -136,5 +137,5 @@ export default async function AppointmentsPage({ searchParams }: { searchParams:
         return <tr key={appointment.id}><td className="nowrap"><div className="cell-main">{appointmentDate.format(new Date(appointment.start_at))}</div><div className="cell-sub mono">{appointmentTime.format(new Date(appointment.start_at))}–{appointmentTime.format(new Date(appointment.end_at))}{appointment.recurrence_group_id ? ` · Series ${appointment.recurrence_sequence}` : ""}</div></td><td><div className="cell-main">{appointment.vehicle?.model?.name ?? "Volkswagen ID"} · {appointment.vehicle?.registration_no ?? appointment.vehicle?.vin}</div><div className="cell-sub">{appointment.customer?.display_name ?? "Unknown customer"}{checkin ? ` · ${checkin.odometer_km.toLocaleString()} km · signed ${checkin.signer_name}` : ""}</div></td><td>{appointment.branch?.city ?? appointment.branch?.display_name ?? "—"}</td><td><StatusPill label={appointment.status} tone={statusTone(appointment.status)} /></td><td><div className="cell-main">{appointment.appointment_service_items.length ? appointment.appointment_service_items.map((service) => service.template_name_en).join(", ") : "Legacy service request"}</div><span className="cell-sub">{appointment.appointment_service_items.length ? `${appointment.appointment_service_items.reduce((sum, service) => sum + service.planned_minutes, 0)} planned min · ` : ""}{appointment.service_mode} · {appointment.transport_mode.replaceAll("_", " ")}{appointment.notes ? ` · ${appointment.notes}` : ""}</span></td><td><div className="inline-actions">{appointment.status === "confirmed" ? <Link className="button compact primary" href={`/appointments?checkin=${appointment.id}#vehicle-checkin`}>Guided check-in</Link> : null}{appointment.status === "checked_in" && !linkedOrder ? <form action={openWorkOrderFromCheckin}><input type="hidden" name="appointmentId" value={appointment.id}/><button className="button compact primary" type="submit">Open work order</button></form> : null}{linkedOrder ? <Link className="button compact" href="/work-orders">{linkedOrder.ro_number}</Link> : null}{actions.map((action) => <form action={transitionAppointment} key={action.value}><input type="hidden" name="appointmentId" value={appointment.id} /><input type="hidden" name="version" value={appointment.version} /><input type="hidden" name="toStatus" value={action.value} /><button className={`button compact ${action.value === "confirmed" || action.value === "completed" ? "primary" : ""}`} type="submit">{action.label}</button></form>)}</div></td></tr>;
       })}</tbody></table></div>
     </section>}
-  </>;
+  </>}</LocalizedContent>;
 }

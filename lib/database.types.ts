@@ -6251,6 +6251,7 @@ export type Database = {
           description: string
           due_date: string | null
           due_odometer_km: number | null
+          source_task_id: string | null
           finding_id: string | null
           id: string
           organization_id: string
@@ -6265,6 +6266,7 @@ export type Database = {
           description: string
           due_date?: string | null
           due_odometer_km?: number | null
+          source_task_id?: string | null
           finding_id?: string | null
           id?: string
           organization_id: string
@@ -6279,6 +6281,7 @@ export type Database = {
           description?: string
           due_date?: string | null
           due_odometer_km?: number | null
+          source_task_id?: string | null
           finding_id?: string | null
           id?: string
           organization_id?: string
@@ -6468,6 +6471,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      discard_draft_document: { Args: { p_organization_id: string; p_kind: string; p_id: string; p_updated_at: string; p_reason: string }; Returns: undefined };
+      retire_catalog_service: { Args: { p_organization_id: string; p_version_id: string; p_reason: string }; Returns: undefined };
+      cancel_inspection_record: { Args: { p_organization_id: string; p_inspection_id: string; p_updated_at: string; p_reason: string }; Returns: undefined };
+      manage_directory_record: {
+        Args: { p_organization_id: string; p_kind: string; p_id: string; p_mode: string; p_updated_at: string; p_changes: Json; p_reason: string };
+        Returns: undefined;
+      };
+      manage_staff: {
+        Args: { p_organization_id: string; p_membership_id: string; p_action: string; p_details?: Json }
+        Returns: undefined
+      }
       create_workshop_order: {
         Args: {
           p_branch_id: string
@@ -9489,6 +9503,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      reschedule_vehicle_followup: {
+        Args: { p_id: string; p_due_date: string | null; p_updated_at: string }
+        Returns: Json
       }
       transition_vehicle_recommendation: {
         Args: { p_recommendation_id: string; p_to_status: string }

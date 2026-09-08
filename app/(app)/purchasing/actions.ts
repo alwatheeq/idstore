@@ -1,6 +1,6 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
+import { submissionKey } from "@/lib/actions/submission-key";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formText, operationError, optionalNumber, optionalText, routeMessage } from "@/lib/actions/form";
@@ -141,7 +141,7 @@ export async function receivePurchaseOrderLine(formData: FormData) {
       p_supplier_lot: optionalText(formData, "supplierLot") ?? "",
       p_serial_no: optionalText(formData, "serialNo") ?? "",
       p_expiry_date: optionalText(formData, "expiryDate") ?? null,
-      p_idempotency_key: randomUUID(),
+      p_idempotency_key: submissionKey(formData),
     });
     if (error) throw error;
   } catch (error) {

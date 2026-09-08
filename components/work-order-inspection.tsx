@@ -10,7 +10,7 @@ export async function WorkOrderInspection({ orderId, organizationId }: { orderId
     supabase.from("work_order_service_choices").select("id, inspection_id, service_code, description_en, description_ar, note").eq("organization_id", organizationId).eq("repair_order_id", orderId).order("created_at"),
   ]);
   if (inspections.error || choices.error) return <section className="panel panel-body" role="alert">The order inspection could not be loaded.</section>;
-  const latest = inspections.data?.[0];
+  const latest = inspections.data?.find(inspection => inspection.status !== "cancelled");
   return <section className="panel">
     <div className="panel-header"><div><div className="panel-title">Inspection & required services</div><div className="panel-subtitle">Validate the reported issues, then select the required services.</div></div>
       <Link className="button primary" href={latest ? `/inspections?inspection=${latest.id}#inspection-workspace` : `/inspections?order=${orderId}#new-inspection`}>{latest?.status === "completed" ? "Select services" : latest ? "Continue inspection" : "Assign inspection"}</Link>

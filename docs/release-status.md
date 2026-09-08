@@ -1,31 +1,24 @@
 # IDstore release status
 
-## Implemented and verified
+## Current evidence — 8 September 2026
 
-The connected development project has 26 synchronized migrations and JWT-protected staff/customer provisioning functions. Every in-scope local module has a live Supabase-backed screen and permission-checked database command: organization/branches, Admin/Staff access, CRM contacts/consents, vehicles, portal, appointments/resources, templates, reception, inspections, estimates, workshop execution, HV safety, diagnostics/evidence, inventory/purchasing/transfers/counts, deferred work, billing/payments/credits/refunds/cash, QC/campaigns, communications, global search, reports and redacted integration/audit governance.
+See [the application audit](application-audit-2026-09-08.md) for findings, fixes, workflow triggers, measurements and verification limits. The connected development database has 70 applied migrations after the approved hardening follow-up. Standalone HV-safety and Diagnostics/battery-health modules are retired from the application; retained historical schema is not an active feature claim.
 
-Verification completed on 5 September 2026:
+- ESLint, TypeScript, Arabic coverage (1,631 strings), UI-control checks and the production/standalone build pass.
+- Chromium desktop/mobile suite: **301 passed, 1 intentionally skipped**. It combines production-server public-boundary checks, source-loaded action regressions and rendered component fixtures; it is not an exhaustive authenticated business acceptance test.
+- Read-only authenticated navigation and mobile Arabic checks exposed and verified the fix for page-wide hydration failures.
+- Rollback-only synthetic database tests pass for inspection/admin permissions, follow-up dates, timer/cashier attribution, invoice versions and payment replay/balances.
+- Dependency audit reported no known vulnerabilities at audit time.
+- No production deployment, real payment, message delivery or real stock transaction was performed in this audit.
 
-- TypeScript, ESLint and the optimized Next.js build pass.
-- Playwright passes 13 desktop/mobile Chromium tests with one intentional desktop skip for the mobile-only overflow assertion.
-- GitHub Actions now runs type-checking, linting, a production Next.js build and credential-free production-server Playwright tests, retaining failure artifacts.
-- Missing Supabase public configuration now fails closed: protected requests redirect to login instead of exposing application routes.
-- A non-root, read-only-capable standalone container definition, liveness/readiness endpoints and deployment/rollback runbook are checked in for production packaging.
-- Axe reports no serious or critical WCAG A/AA violations on mobile/PIN login.
-- The checked-in, repeatable rolled-back database suite covers authenticated CRM commands, consent history, evidence/message idempotency, tenant rejection, QC release and campaign verification. Additional live rolled-back transactions cover service-template immutability, resource conflicts, stock transfer/short receipt, blind counts, deferred work, credit/refund limits, cash reconciliation and portal data/decision scope.
-- Supabase performance advisor has no warning-level database finding after removal of the duplicate resource index. Informational unused-index results are expected on an empty development dataset; foreign-key index candidates should be selected from measured production query plans, not added indiscriminately.
-- Supabase's security-definer advisor flags the intentional authenticated command RPC boundary. Every callable command uses a fixed empty search path, revoked `PUBLIC`/`anon` execution and an in-function identity/permission check. Leaked-password protection remains a project Auth setting to enable before production.
+## Pending changes and release gates
 
-## External go-live gates
+1. Database privilege hardening is **applied and verified** following explicit user approval and integration review. Migration `20260908144433_audit_access_hardening` removed all 160 anonymous table ACL entries (140 previously visible in information_schema plus 20 MAINTAIN entries), removed postgres's automatic anonymous table/sequence grants, and optimized the portal policy. Non-anonymous grants are unchanged; three rollback-only database suites pass. The rollback snapshot is retained in `tests/fixtures/audit-access-rollback.sql`.
+2. Customer due dates are visible and support manual contact; automated reminders need a provider, consent/template policy, scheduler and delivery/retry configuration.
+3. Approved service choices, jobs, stock issue and invoice lines are still separate steps. Decide the approved-group/revision rules before automating their conversion.
+4. Broad list queries need server-side pagination/search and independent by-ID retrieval before claiming completeness beyond the 1,000-row API cap.
+5. Enable/review production Auth protections, monitoring, rate limiting, backup/PITR and a tested restore process. Leaked-password protection remains disabled; no production security certification is claimed.
+6. Fiscal integration, payment-provider callbacks, messaging delivery, malware scanning and licensed vehicle-service data require configured integrations and end-to-end staging evidence. Queued outbox records alone are not successful delivery.
+7. Legacy database tests include retired HV scenarios and environment-derived identities. Modernize those fixtures before using them as current release acceptance gates.
 
-These are deliberately not marked complete because they require contracts, credentials, certification or business sign-off:
-
-1. JoFotara sandbox/production credentials, current UBL 2.1 package and accountant-approved tax/rounding examples.
-2. A contracted SMS/WhatsApp/email provider and approved templates; the application currently writes a durable idempotent outbox event.
-3. Payment-provider credentials/webhook signing keys and PCI-reviewed operational procedures; manual/card references work without storing card data.
-4. Volkswagen/importer authorization for ODIS, erWin, Digital Service Schedule or campaign VIN data. The product records provenance and evidence but does not bypass licensed access.
-5. Local HV procedure/qualification approval, staff training and named accountable signatories.
-6. Production domain/hosting, MFA and leaked-password protection, rate limiting/bot protection, malware scanning provider, monitoring destinations, paid-plan PITR and an independently tested object backup/restore.
-7. GitHub remote creation/push; this machine currently has neither a configured remote nor an authenticated GitHub CLI session.
-
-No source-code implementation can truthfully close these gates without the corresponding external authority and secrets.
+The previous 5 September status, 26-migration count and 13-test claim were historical and are superseded. Hosting, repository authentication and provisioning deployment status should be checked at release time rather than inferred from stale documentation.

@@ -1,3 +1,4 @@
+import { LocalizedContent } from "@/components/localized-content";
 import { BarChart3, Boxes, CalendarDays, CircleDollarSign, Clock3, ShieldAlert, Wrench } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { MetricStrip } from "@/components/metric-strip";
@@ -21,7 +22,7 @@ export default async function ReportsPage() {
       canFinance = Boolean(permissions?.some((item) => item.permission_code === "report.finance.read" && item.allowed));
     }
   }
-  if (!canOperations && !canFinance) return <><PageHeader eyebrow="Permission controlled" title="Branch reports" description="Operational and financial reporting permissions are assigned independently." /><EmptyState icon={ShieldAlert} title="Reporting access is not assigned" description="Ask an administrator for operational or financial report access." /></>;
+  if (!canOperations && !canFinance) return <LocalizedContent>{<><PageHeader eyebrow="Permission controlled" title="Branch reports" description="Operational and financial reporting permissions are assigned independently." /><EmptyState icon={ShieldAlert} title="Reporting access is not assigned" description="Ask an administrator for operational or financial report access." /></>}</LocalizedContent>;
 
   const [{ data: branches }, { data: orders }, { data: appointments }, { data: balances }, { data: recommendations }, { data: invoices }, { data: payments }, { data: refunds }, { data: jobs }, { data: laborEntries }, { data: estimates }] = await Promise.all([
     supabase.from("branches").select("id, code, city, display_name, status").eq("organization_id", staff.organizationId).order("city"),
@@ -74,7 +75,7 @@ export default async function ReportsPage() {
   const networkApproval = decidedEstimates.length ? decidedEstimates.filter(item=>item.status==="approved").length/decidedEstimates.length*100 : 0;
   const totalNoShows = (appointments??[]).filter(item=>item.status==="no_show").length;
 
-  return <><PageHeader eyebrow="Live multi-branch intelligence" title="Operations & finance reports" description="Compare service load, inventory exposure and commercial position across cities using current ledger data." />
+  return <LocalizedContent>{<><PageHeader eyebrow="Live multi-branch intelligence" title="Operations & finance reports" description="Compare service load, inventory exposure and commercial position across cities using current ledger data." />
     <MetricStrip metrics={[
       { label: "Open work orders", value: canOperations ? String(totalOpen) : "Restricted", note: "Across accessible branches", icon: Wrench },
       { label: "Inventory value", value: canOperations ? `${money.format(totalInventory)} JOD` : "Restricted", note: "Moving-average valuation", icon: Boxes },
@@ -88,5 +89,5 @@ export default async function ReportsPage() {
       { label: "Safety-stop deferred", value: String(branchRows.reduce((sum,item)=>sum+item.safetyDeferred,0)), note: "Open critical recommendations", noteTone: branchRows.some(item=>item.safetyDeferred)?"warn":"good", icon: ShieldAlert },
     ]} /> : null}
     {!branchRows.length ? <EmptyState icon={BarChart3} title="No branches to report" description="Create the first operating branch to begin multi-city comparison." /> : <section className="panel branch-scoreboard"><div className="panel-header"><div><div className="panel-title">Branch scoreboard</div><div className="panel-subtitle">Permission-aware operational and commercial measures.</div></div></div><div className="data-scroll"><table className="data-table"><thead><tr><th>Branch</th>{canOperations ? <><th>Open / overdue</th><th>Appointments / no-show</th><th>Cycle</th><th>Labor attainment</th><th>Approval</th><th>Available stock</th><th>Safety deferred</th></> : null}{canFinance ? <><th>Billed</th><th>Collected</th><th>Outstanding</th></> : null}<th>Status</th></tr></thead><tbody>{branchRows.map((branch) => <tr key={branch.id}><td><div className="cell-main">{branch.city} · {branch.display_name}</div><div className="cell-sub mono">{branch.code}</div></td>{canOperations ? <><td><strong>{branch.openOrders}</strong> / <span className={branch.overdue ? "text-danger" : ""}>{branch.overdue}</span></td><td>{branch.appointments} / {branch.noShows}</td><td>{branch.averageCycleHours.toFixed(1)}h</td><td>{branch.laborAttainment.toFixed(1)}%</td><td>{branch.approvalRate.toFixed(1)}%</td><td>{branch.availableUnits.toFixed(2)}</td><td>{branch.safetyDeferred}</td></> : null}{canFinance ? <><td>{money.format(branch.billed)}</td><td>{money.format(branch.collected)}</td><td>{money.format(branch.outstanding)}</td></> : null}<td><StatusPill label={branch.status} tone={branch.status === "active" ? "green" : "gray"} /></td></tr>)}</tbody></table></div></section>}
-  </>;
+  </>}</LocalizedContent>;
 }

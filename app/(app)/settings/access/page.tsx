@@ -1,3 +1,4 @@
+import { LocalizedContent } from "@/components/localized-content";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Building2, Check, KeyRound, LockKeyhole, ShieldCheck, UserCog, UsersRound } from "lucide-react";
@@ -78,7 +79,7 @@ export default async function AccessSettingsPage({ searchParams }: { searchParam
   const staffCount = (memberships ?? []).filter((membership) => membership.role === "staff" && membership.status === "active").length;
   const grantCount = (permissionAccess ?? []).filter((permission) => permission.allowed).length;
 
-  return <>
+  return <LocalizedContent>{<>
     <PageHeader eyebrow="Settings · Identity & access" title="Roles & permissions" description="Control who can work in each city and which service, stock, finance or governance actions they can perform.">
       <Link className="button" href="/staff">Staff accounts</Link>
     </PageHeader>
@@ -152,5 +153,5 @@ export default async function AccessSettingsPage({ searchParams }: { searchParam
         <div className="access-savebar"><div><LockKeyhole /><span><strong>Audited change</strong><small>Role, status, branch scope and grants are saved together.</small></span></div><button className="button primary" type="submit">Save</button></div>
       </form> : <section className="panel access-console-empty"><UsersRound /><h2>No staff accounts</h2><p>Create a staff account before assigning roles and permissions.</p><Link className="button primary" href="/staff?new=1#new-staff">Add staff</Link></section>}
     </div>
-  </>;
+  </>}</LocalizedContent>;
 }

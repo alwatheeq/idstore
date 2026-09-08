@@ -1,3 +1,4 @@
+import { LocalizedContent } from "@/components/localized-content";
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, Banknote, Boxes, Building2, CalendarClock, CircleDollarSign, ClipboardCheck, Clock3, Gauge, Plus, TimerReset, Wrench } from "lucide-react";
 import { BranchField } from "@/components/branch-field";
@@ -120,13 +121,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     return { ...branch, orders: branchOrders.length, activeJobs, bays, saturation, receivables: branchReceivables, today: todayAppointments.filter((appointment) => appointment.branch_id === branch.id).length };
   });
 
-  if (!branches?.length) return <>
+  if (!branches?.length) return <LocalizedContent>{<>
     <PageHeader eyebrow={pageDate.format(now)} title="Service control room" description="Live workshop flow, branch capacity and commercial exceptions across the network.">{staff.role === "admin" ? <Link className="button primary" href="/branches?new=1#new-branch"><Plus /> Create first branch</Link> : null}</PageHeader>
     <RecordFeedback error={branchError ? "The branch network could not be loaded." : undefined} />
     <EmptyState icon={Building2} title="Your control room starts with a branch" description={staff.role === "admin" ? "Create the first city service center. Its stockroom, document sequences and operating access become the foundation for every dashboard signal." : "An administrator must create a service branch and assign you access before operational data can appear."} action={staff.role === "admin" ? <Link className="button primary" href="/branches?new=1#new-branch">Set up first branch</Link> : undefined} />
-  </>;
+  </>}</LocalizedContent>;
 
-  return <>
+  return <LocalizedContent>{<>
     <PageHeader eyebrow={pageDate.format(now)} title="Service control room" description={`Live workshop, customer and commercial signals · ${scopeLabel}`}>
       <Link className="button" href="/appointments?new=1#new-appointment"><CalendarClock /> Book visit</Link>
       <Link className="button primary" href="/work-orders?new=1#new-work-order"><Plus /> Open work order</Link>
@@ -172,5 +173,5 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       <section className="panel"><div className="panel-header"><div><div className="panel-title">Next arrivals</div><div className="panel-subtitle">Upcoming seven-day reception queue</div></div><Link className="panel-link" href="/appointments">Full schedule →</Link></div>{appointments.length ? <div className="arrival-list">{appointments.slice(0, 6).map((appointment) => <article className="arrival-row" key={appointment.id}><div className="arrival-time"><strong>{clockTime.format(new Date(appointment.start_at))}</strong><span>{appointmentDate.format(new Date(appointment.start_at))}</span></div><div className="arrival-identity"><strong>{appointment.vehicle?.model?.name ?? "Volkswagen ID"} · {appointment.vehicle?.registration_no ?? appointment.vehicle?.vin}</strong><span>{appointment.customer?.display_name ?? "Unknown customer"} · {appointment.branch?.city}</span></div><StatusPill label={appointment.status} tone={statusTone(appointment.status)} /></article>)}</div> : <div className="panel-empty compact-empty"><CalendarClock /><strong>No arrivals in the next seven days</strong><Link className="panel-link" href="/appointments?new=1#new-appointment">Book a visit →</Link></div>}</section>
       <section className="panel"><div className="panel-header"><div><div className="panel-title">Parts availability</div><div className="panel-subtitle">Catalog items with no free stock in scope</div></div><Link className="panel-link" href="/inventory">Open inventory →</Link></div>{unavailableParts.length ? <div className="parts-exception-list">{unavailableParts.slice(0, 6).map((part) => <article key={part.id}><div><strong className="mono">{part.part_number}</strong><span>{part.description_en}</span></div><StatusPill label="unavailable" tone="amber" /></article>)}</div> : <div className="panel-empty compact-empty"><Boxes /><strong>{parts.length ? "All catalog parts have free stock" : "No parts catalog yet"}</strong><Link className="panel-link" href="/inventory?new=part#new-part">{parts.length ? "Review balances" : "Add first part"} →</Link></div>}</section>
     </div>
-  </>;
+  </>}</LocalizedContent>;
 }

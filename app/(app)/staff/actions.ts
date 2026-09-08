@@ -2,10 +2,33 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { formText, optionalText, routeMessage } from "@/lib/actions/form";
+import { formText, optionalText, routeMessage, operationError } from "@/lib/actions/form";
 import { normalizeMobile } from "@/lib/auth/mobile";
 import { getCurrentStaff } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+
+export async function manageStaff(_state: { error: string }, form: FormData) {
+  const staff = await getCurrentStaff();
+  if (staff.role !== "admin") return { error: "Only administrators can manage staff." };
+  const action = formText(form, "staffAction");
+  const membershipId = formText(form, "membershipId");
+  if (!membershipId || !["edit", "delete"].includes(action)) return { error: "Invalid staff action." };
+  if (action === "delete" && form.get("confirmDelete") !== "on") return { error: "Confirm staff deletion first." };
+  const details = {
+    displayName: formText(form, "displayName"), role: formText(form, "role"), status: formText(form, "status"),
+    branchIds: form.getAll("branchId").map(String), permissionCodes: form.getAll("permissionCode").map(String).filter(code => code !== "hv_permit.authorize"),
+    isTechnician: form.get("isTechnician") === "on", employeeNo: formText(form, "employeeNo"), laborGrade: formText(form, "laborGrade"),
+  };
+  if (action === "edit" && (!details.displayName || details.displayName.length > 160 || details.employeeNo.length > 80 || details.laborGrade.length > 80 || !["admin", "staff"].includes(details.role) || !["active", "suspended"].includes(details.status))) return { error: "Enter valid staff details." };
+  if (action === "edit" && details.role === "staff" && !details.branchIds.length) return { error: "Assign Staff to at least one branch." };
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("manage_staff", { p_organization_id: staff.organizationId, p_membership_id: membershipId, p_action: action, p_details: action === "edit" ? details : {} });
+    if (error) return { error: operationError(error, "Staff changes could not be saved.") };
+  } catch (error) { return { error: operationError(error, "Staff changes could not be saved.") }; }
+  revalidatePath("/staff"); revalidatePath("/settings/access"); revalidatePath("/", "layout");
+  redirect(routeMessage("/staff", "created", action === "delete" ? "Staff access deleted. Historical records are retained." : "Staff updated."));
+}
 
 async function functionMessage(error: unknown) {
   if (!error || typeof error !== "object" || !("context" in error)) return null;

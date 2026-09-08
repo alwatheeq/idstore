@@ -1,10 +1,11 @@
 "use client";
-import { LabeledControl } from "@/components/labeled-control";
+import { RecordAction } from "@/components/record-action"; import { recordManagementHref } from "@/lib/record-management"; import { LabeledControl } from "@/components/labeled-control";
 
 import { createContext, useActionState, useContext, useId, useState, type ReactNode } from "react";
 import { useUiLocale } from "@/components/ui-locale";
 import { checkCategories, checklistProgress, isMaintenanceCheck, latestResult, problemGroups, recommendedIds, suggestedProblemGroups, type CheckDefinition, type CheckTask, type InspectionWorkspace, type VehicleModelOption } from "@/lib/inspection-workflow";
 import { inspectionText, type InspectionCopyKey as Key } from "@/lib/i18n/inspection";
+import { InspectionResultPicker } from "@/components/inspection-result-picker";
 
 type SaveInspectionAction = (form: FormData) => Promise<{ error?: string; success?: boolean }>;
 const InspectionSaveContext = createContext<SaveInspectionAction | null>(null);
@@ -39,9 +40,9 @@ function Assignment({ data, onSaved }: { data: InspectionWorkspace; onSaved: () 
   const value = (key: string, fallback = "") => typeof a[key] === "string" ? a[key] as string : fallback;
   return <section className="iw-section">
     <div className="iw-vehicle-summary"><div><small>{t("model")}</small><strong>{v.model?.name ?? "—"}</strong></div><div><small>{t("year")}</small><strong dir="ltr">{v.model_year ?? "—"}</strong></div><div><small>VIN</small><strong dir="ltr">{v.vin}</strong></div></div>
-    {i.checklist_generated_at ? <p className="iw-notice">{t("lockedAssignment")}</p> : null}
+    {i.checklist_generated_at ? <p className="iw-notice">{t(data.can_reassign ? "adminAssignment" : "lockedAssignment")}</p> : null}
     {!data.technicians.length ? <p className="iw-notice">{t("noTech")}</p> : null}
-    <WorkflowForm action="assign" inspectionId={i.id} button="assign" disabled={!data.can_manage || !!i.checklist_generated_at || !data.technicians.length} onSaved={onSaved}>
+    <WorkflowForm action="assign" inspectionId={i.id} button="assign" disabled={!data.can_manage || (!!i.checklist_generated_at && !data.can_reassign) || i.status !== "in_progress" || !data.technicians.length} onSaved={onSaved}>
       <Field label="technician" name="technician_id" required value={i.technician_id}><option value="">{t("choose")}</option>{data.technicians.map(tech => <option key={tech.id} value={tech.id}>{tech.name}</option>)}</Field>
       <Field label="mileage" name="odometer_km" type="number" min={0} max={2147483647} required value={value("odometer_km", v.odometer_km?.toString())} />
       <Field label="complaint" name="complaint" type="textarea" wide required value={value("complaint", v.complaint)} />
@@ -74,18 +75,16 @@ function Selection({ data, onSaved }: { data: InspectionWorkspace; onSaved: () =
   </section>;
 }
 function ResultForm({ task, data }: { task: CheckTask; data: InspectionWorkspace }) {
-  const { t } = useText(); const latest = latestResult(task); const [result, setResult] = useState(""); const id = useId(); const rules = task.snapshot.rules;
+  const { t } = useText(); const latest = latestResult(task); const [result, setResult] = useState("");
   return <WorkflowForm action="record" inspectionId={data.inspection!.id} button={latest ? "retest" : "save"} disabled={!data.can_record}>
     <input type="hidden" name="task_id" value={task.id} /><input type="hidden" name="expected_attempt" value={latest?.attempt ?? 0} />
-    <div className="form-field form-span-2"><label htmlFor={id}>{t("result")}</label><select id={id} name="result" value={result} required onChange={e => setResult(e.target.value)}><option value="">{t("choose")}</option>{(["pass", "fail", "inconclusive", "not_applicable"] as const).map(key => <option key={key} value={key}>{t(key)}</option>)}</select></div>
+    <InspectionResultPicker value={result} onChange={setResult} />
     {result === "inconclusive" || result === "not_applicable" ? <Field name="reason" label="reason" type="textarea" wide required /> : null}
     <Field name="finding" label="finding" type="textarea" wide required={result === "fail"} />
-    <Field name="measurement" label="measurement" required={!!rules.evidence_required && ["pass", "fail"].includes(result)} />
-    <Field name="unit" label="unit" value={rules.unit} required={!!rules.evidence_required && ["pass", "fail"].includes(result)} />
-    <Field name="criteria" label="criteria" value={rules.criteria} required={["pass", "fail"].includes(result)} wide />
-    <Field name="evidence" label="evidence" wide />
     <Field name="recommendation" label="recommendation" required={result === "fail"}><option value="">{t("choose")}</option>{(["none", "monitor", "service", "repair", "replace", "diagnose"] as const).filter(key => result !== "fail" || key !== "none").map(key => <option key={key} value={key}>{t(key)}</option>)}</Field>
-    <Field name="urgency" label="urgency" required={result === "fail"}><option value="">{t("choose")}</option>{(["immediate", "soon", "routine"] as const).map(key => <option key={key} value={key}>{t(key)}</option>)}</Field>
+    <Field name="urgency" label="urgency" required={result === "fail"}><option value="">{t("choose")}</option>{(["soon", "routine"] as const).map(key => <option key={key} value={key}>{t(key)}</option>)}</Field>
+    <Field name="due_date" label="dueDate" type="date" wide />
+    <p className="field-help form-span-2">{t("dueHelp")}</p>
     {latest ? <Field name="retest_note" label="retestNote" type="textarea" wide required /> : null}
   </WorkflowForm>;
 }
@@ -97,7 +96,7 @@ function TaskCard({ task, data, review }: { task: CheckTask; data: InspectionWor
     {latest ? <div className="iw-task-summary">{latest.details.finding ? <p>{latest.details.finding}</p> : null}{latest.details.reason ? <p>{latest.details.reason}</p> : null}{latest.details.recommendation ? <span>{t("recommendation")}: {t(latest.details.recommendation as Key)}</span> : null}{latest.details.urgency ? <span>{t("urgency")}: {t(latest.details.urgency as Key)}</span> : null}</div> : null}
     {!isMaintenanceCheck(task.snapshot) ? <p className="iw-notice">{t("outsideScope")}</p> : null}
     {task.snapshot.rules.procedure_ref ? <p className="iw-help">{t("procedure")}: {task.snapshot.rules.procedure_ref}</p> : null}
-    {task.attempts.length ? <details className="iw-history"><summary>{t("history")} <span dir="ltr">({task.attempts.length})</span></summary><p>{t("immutable")}</p>{task.attempts.map(attempt => <div className="iw-attempt" key={attempt.id}><strong>{t("attempt")} <bdi>{attempt.attempt}</bdi> · {t(attempt.result)}</strong><small>{attempt.actor_name} · <time dir="ltr">{new Intl.DateTimeFormat(locale === "ar" ? "ar-JO-u-nu-latn" : "en-JO", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Amman" }).format(new Date(attempt.recorded_at))}</time></small><dl>{(["finding", "measurement", "unit", "criteria", "evidence", "reason", "retest_note"] as const).filter(key => attempt.details[key]).map(key => <div key={key}><dt>{t(key === "retest_note" ? "retestNote" : key)}</dt><dd dir={key === "measurement" || key === "unit" ? "ltr" : undefined}>{attempt.details[key]}</dd></div>)}</dl></div>)}</details> : null}
+    {task.attempts.length ? <details className="iw-history"><summary>{t("history")} <span dir="ltr">({task.attempts.length})</span></summary><p>{t("immutable")}</p>{task.attempts.map(attempt => <div className="iw-attempt" key={attempt.id}><strong>{t("attempt")} <bdi>{attempt.attempt}</bdi> · {t(attempt.result)}</strong>{attempt.details.recorded_on_behalf === "true" ? <small>{t("onBehalfHistory")}</small> : null}<small>{attempt.actor_name} · <time dir="ltr">{new Intl.DateTimeFormat(locale === "ar" ? "ar-JO-u-nu-latn" : "en-JO", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Amman" }).format(new Date(attempt.recorded_at))}</time></small><dl>{(["finding", "reason", "retest_note"] as const).filter(key => attempt.details[key]).map(key => <div key={key}><dt>{t(key === "retest_note" ? "retestNote" : key)}</dt><dd>{attempt.details[key]}</dd></div>)}</dl></div>)}</details> : null}
     {!review && isMaintenanceCheck(task.snapshot) && data.can_record && ["in_progress", "completed"].includes(data.inspection!.status) ? <><button className="button" onClick={() => setEditing(value => !value)} aria-expanded={editing}>{t(latest ? "retest" : "record")}</button>{editing ? <ResultForm key={latest?.id ?? "initial"} task={task} data={data} /> : null}</> : null}
     {review && data.can_review && (!latest || latest.result === "inconclusive") ? <details className="iw-history"><summary>{t("exception")}</summary><p>{t("exceptionHelp")}</p><WorkflowForm action="exception" inspectionId={data.inspection!.id} button="approve"><input type="hidden" name="task_id" value={task.id} /><input type="hidden" name="expected_attempt" value={latest?.attempt ?? 0} /><Field name="reason" label="reason" type="textarea" wide required /></WorkflowForm></details> : null}
   </article>;
@@ -112,7 +111,7 @@ function Workflow({ data }: { data: InspectionWorkspace }) {
     {step === "assign" ? <Assignment key={i.checklist_generated_at ?? "draft"} data={data} onSaved={() => setStep("select")} /> : null}
     {step === "select" ? <Selection data={data} onSaved={() => setStep("record")} /> : null}
     {(step === "record" || step === "review") && !data.tasks.length ? <p className="iw-notice">{t("noTasks")}</p> : null}
-    {step === "record" ? <section className="iw-section">{!data.can_record ? <p className="iw-notice">{t("onlyTech")}</p> : null}{data.tasks.map(task => <TaskCard key={task.id} task={task} data={data} />)}</section> : null}
+    {step === "record" ? <section className="iw-section">{data.can_record && data.recording_on_behalf ? <p className="iw-notice">{t("onBehalfNotice")} <strong>{data.technicians.find(tech => tech.id === data.inspection?.technician_id)?.name}</strong></p> : null}{!data.can_record ? <p className="iw-notice">{t("onlyTech")}</p> : null}{data.tasks.map(task => <TaskCard key={task.id} task={task} data={data} />)}</section> : null}
     {step === "review" && data.tasks.length ? <section className="iw-section"><p className="iw-help">{t("reviewHelp")}</p>{unreviewed ? <p className="iw-notice">{t("retestReview")}</p> : null}{data.tasks.filter(task => latestResult(task)?.result !== "pass").map(task => <TaskCard key={task.id} task={task} data={data} review />)}{!data.can_review ? <p className="iw-notice">{t("onlyAdmin")}</p> : <WorkflowForm action="review" inspectionId={i.id} button="complete" disabled={progress.outstanding.length > 0 || (i.status === "completed" && !unreviewed)}><Field name="review_note" label="reviewNote" value={i.review_note} type="textarea" wide required /></WorkflowForm>}</section> : null}
   </div>;
 }
@@ -120,7 +119,7 @@ function Catalog({ checks, models }: { checks: CheckDefinition[]; models: Vehicl
   const { locale, t } = useText(); const [selected, setSelected] = useState<CheckDefinition | null>(null); const [search, setSearch] = useState(""); const [version, setVersion] = useState(0); const rule = selected?.rules;
   return <section className="panel operation-form" id="check-catalog"><div className="panel-header"><div><div className="panel-title">{t("catalog")}</div><div className="panel-subtitle">{t("catalogHelp")}</div></div><button className="button" onClick={() => { setSelected(null); setVersion(v => v + 1); }}>{t("newCheck")}</button></div><div className="iw-catalog-layout">
     <aside className="iw-catalog-items"><LabeledControl label={t("search")}><input aria-label={t("search")} placeholder={t("search")} value={search} onChange={e => setSearch(e.target.value)} /></LabeledControl>{checks.filter(isMaintenanceCheck).filter(c => `${c.code} ${c.label_en} ${c.label_ar}`.toLowerCase().includes(search.toLowerCase())).map(check => <button className={selected?.id === check.id ? "selected" : ""} key={check.id} onClick={() => { setSelected(check); setVersion(v => v + 1); }}><strong>{locale === "ar" ? check.label_ar : check.label_en}</strong><small dir="ltr">{check.code}</small><small>{models.find(m => m.id === check.vehicle_model_id)?.name ?? t("allModels")}</small></button>)}</aside>
-    <div className="iw-section"><h3>{t(selected ? "edit" : "newCheck")}</h3><p className="iw-help">{t("specialistHelp")}</p><WorkflowForm key={version} action="configure">
+    <div className="iw-section"><div className="record-actions"><h3>{t(selected ? "edit" : "newCheck")}</h3>{selected?.organization_id ? <RecordAction kind="archive" href={recordManagementHref("check", selected.id, "archive")} /> : null}<RecordAction kind="archive" label="Archived records" href="/records/manage?kind=check" /></div><p className="iw-help">{t("specialistHelp")}</p><WorkflowForm key={version} action="configure">
       <input type="hidden" name="id" value={selected?.id ?? ""} />
       <Field name="code" label="code" value={selected?.code} required /><Field name="category" label="category" value={selected?.category ?? "identity"}>{checkCategories.map(c => <option key={c} value={c}>{t(c)}</option>)}</Field>
       <Field name="label_en" label="english" value={selected?.label_en} required /><Field name="label_ar" label="arabic" value={selected?.label_ar} required />
@@ -130,7 +129,6 @@ function Catalog({ checks, models }: { checks: CheckDefinition[]; models: Vehicl
       <label className="check-field"><input name="rule.baseline" type="checkbox" defaultChecked={rule?.baseline} />{t("baselineCheck")}</label><label className="check-field"><input name="is_required" type="checkbox" defaultChecked={selected?.is_required} />{t("requiredCheck")}</label>
       <Field name="rule.capability" label="capability" value={rule?.capability}><option value="">{t("noCapability")}</option>{(["ac", "dc"] as const).map(c => <option key={c} value={c}>{t(c)}</option>)}</Field>
       <Field name="rule.procedure_ref" label="procedure" value={rule?.procedure_ref} wide />
-      <Field name="rule.criteria" label="criteria" value={rule?.criteria} wide /><Field name="rule.unit" label="unit" value={rule?.unit} /><label className="check-field"><input name="rule.evidence_required" type="checkbox" defaultChecked={rule?.evidence_required} />{t("measured")}</label>
       <Field name="rule.interval_km" label="intervalKm" type="number" min={1} value={rule?.interval_km} /><Field name="rule.interval_months" label="intervalMonths" type="number" min={1} value={rule?.interval_months} /><Field name="rule.manufacturer_ref" label="source" value={rule?.manufacturer_ref} wide />
     </WorkflowForm></div>
   </div></section>;

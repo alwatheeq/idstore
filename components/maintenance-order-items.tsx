@@ -1,3 +1,4 @@
+import { RecordAction } from "@/components/record-action";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { servicePrice } from "@/lib/service-catalog";
@@ -27,9 +28,9 @@ export async function MaintenanceOrderItems({ orderId, organizationId, status, b
   const recommendations = editable ? await supabase.from("work_order_service_choices").select("service_version_id, description_en, description_ar").eq("organization_id", organizationId).eq("repair_order_id", orderId) : { data: [], error: null };
   const selectedServiceIds = new Set(recommendations.data?.map(choice => choice.service_version_id) ?? []);
   const [{ data: services, error: serviceError }, { data: parts, error: partError }] = editable ? await Promise.all([
-    supabase.from("service_template_versions").select("id, applicability_json, template:service_templates!inner(name_en, name_ar, work_order_type), service_template_tasks(result_schema)")
+    selectedServiceIds.size ? supabase.from("service_template_versions").select("id, applicability_json, template:service_templates!inner(name_en, name_ar, work_order_type), service_template_tasks(result_schema)")
       .eq("template.work_order_type", orderType)
-      .eq("organization_id", organizationId).in("status", ["published", "retired"]),
+      .eq("organization_id", organizationId).in("status", ["published", "retired"]).in("id", [...selectedServiceIds]) : Promise.resolve({ data: [], error: null }),
     supabase.from("parts").select("id, part_number, description_en, description_ar, sale_price").eq("organization_id", organizationId).eq("status", "active").order("part_number"),
   ]) : [{ data: null, error: null }, { data: null, error: null }];
   const lines = [...(estimate?.estimate_lines ?? [])].sort((a, b) => a.line_no - b.line_no);
@@ -51,7 +52,7 @@ export async function MaintenanceOrderItems({ orderId, organizationId, status, b
               <div><span className="field-label">Quantity</span><span dir="ltr">{line.quantity}</span></div>
               <div><span className="field-label">Unit price</span><span dir="ltr">{money(line.unit_price)}</span></div>
               <div><span className="field-label">Total</span><strong dir="ltr">{money(line.line_total)}</strong></div>
-              {editable ? <form action={removeOrderItem}><input type="hidden" name="repairOrderId" value={orderId} /><input type="hidden" name="lineId" value={line.id} />{invoice ? <><input type="hidden" name="ledger" value="invoice" /><input type="hidden" name="version" value={invoice.version} /></> : null}<button className="button compact" type="submit" aria-label={`Remove ${line.description_snapshot}`}>Remove</button></form> : null}
+              {editable ? <form action={removeOrderItem}><input type="hidden" name="repairOrderId" value={orderId} /><input type="hidden" name="lineId" value={line.id} />{invoice ? <><input type="hidden" name="ledger" value="invoice" /><input type="hidden" name="version" value={invoice.version} /></> : null}<RecordAction kind="delete" label="Remove" type="submit" aria-label={`Remove ${line.description_snapshot}`} confirmation="Remove this record? Linked history will be preserved where required." /></form> : null}
             </article>)}</div> : <p className="field-help">{type === "labor" ? "No services added." : "No spare parts added."}</p>}
             {editable && type === "labor" && !selectedServiceIds.size ? <p className="field-help">Complete the inspection and select the required services first.</p> : null}
             {editable && type !== "other" && !(type === "labor" ? serviceError || recommendations.error || !selectedServiceIds.size : partError) ? <details className="order-add-item"><summary>{type === "labor" ? "Add service" : "Add part"}</summary>

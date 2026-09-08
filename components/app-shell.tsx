@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   ArrowLeftRight, Banknote, BarChart3, BookOpenCheck, Boxes, Building2, CalendarDays,
   CarFront, ChevronDown, CircleDollarSign, ClipboardCheck, ClipboardList, FileText,
-  Gauge, Layers3, LogOut, Menu, Megaphone, PackageOpen, Paperclip, PlugZap, Plus, ScanLine,
+  Gauge, Layers3, LogOut, Menu, Megaphone, PackageOpen, Paperclip, PlugZap, Plus,
   KeyRound, Search, Settings2, ShoppingCart, Sparkles, UserRoundCog, Users, Wrench, X,
   type LucideIcon,
 } from "lucide-react";
@@ -14,14 +14,12 @@ import type { CurrentStaff } from "@/lib/auth/session";
 import { navigationGroups, visibleNavigationGroups } from "@/lib/navigation";
 import type { UiLocale } from "@/lib/i18n/ui";
 import { UiLocaleProvider, useUiLocale } from "@/components/ui-locale";
-import { LocalizedContent } from "@/components/localized-content";
 
 const routeIcons: Record<string, LucideIcon> = {
   "/dashboard": Gauge,
   "/work-orders": ClipboardList,
   "/inspections": ClipboardCheck,
   "/estimates": FileText,
-  "/diagnostics": ScanLine,
   "/quality-campaigns": Megaphone,
   "/appointments": CalendarDays,
   "/customers": Users,
@@ -191,7 +189,7 @@ function AppShellContent({ children, staff, branches }: AppShellProps) {
           <form className="topbar-signout-form" action="/auth/signout" method="post"><button className="icon-button signout-button" type="submit" title={t("Sign out")} aria-label={t("Sign out")}><LogOut /></button></form>
         </header>
         {branchError ? <div className="branch-error" role="alert">{t("Could not change branch. Please try again.")}</div> : null}
-        <div className="page-content" data-module={pageModule}><LocalizedContent>{children}</LocalizedContent></div>
+        <div className="page-content" data-module={pageModule}>{children}</div>
         <nav className="touch-dock" aria-label={t("Quick navigation")}>
           <Link className={`touch-dock-item ${pathname.startsWith("/dashboard") ? "active" : ""}`} aria-current={pathname.startsWith("/dashboard") ? "page" : undefined} href="/dashboard"><Gauge aria-hidden="true" /><span>{t("Home")}</span></Link>
           {visibleRoutes.has("/appointments") ? <Link className={`touch-dock-item ${pathname.startsWith("/appointments") ? "active" : ""}`} aria-current={pathname.startsWith("/appointments") ? "page" : undefined} href="/appointments"><CalendarDays aria-hidden="true" /><span>{t("Visits")}</span></Link> : null}

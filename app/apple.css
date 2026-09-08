@@ -459,7 +459,52 @@ tr[id^="order-"]:target, tr[id^="invoice-"]:target { background: var(--accent-so
 .order-price-summary > div { display: flex; justify-content: space-between; gap: 24px; padding-block: 10px; }
 .order-price-summary dd { margin: 0; font-variant-numeric: tabular-nums; }
 .order-grand-total { border-top: 1px solid #d9dce2; font-size: 20px; font-weight: 700; }
+.followup-panel { margin-block: 20px; }
+.followup-panel .panel-title { display: flex; align-items: center; gap: 10px; }
+.followup-panel .panel-title bdi { margin-inline-start: auto; font-size: 14px; }
+.followup-items { display: grid; }
+.followup-item { display: grid; grid-template-columns: minmax(0, 1fr) minmax(170px, 220px); gap: 20px; padding: 20px var(--card-padding); border-top: 1px solid var(--line); }
+.followup-content, .followup-date { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0; overflow-wrap: anywhere; }
+.followup-tags { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 13px; }
+.followup-due { display: inline-flex; padding: 4px 9px; border-radius: 8px; background: #e8edf4; color: #16385f; font-weight: 600; }
+.followup-due.overdue { background: #fff0f1; color: #b4232c; }
+.followup-due.today { background: #fff3dc; color: #815600; }
+.followup-date > span, .followup-contacts small { color: var(--muted); font-size: 13px; }
+.followup-contacts, .followup-contacts > div { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.followup-contacts a { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; }
+.followup-editor { width: 100%; }
+.followup-editor summary { min-height: 44px; padding-block: 10px; cursor: pointer; }
+.followup-editor form { display: grid; gap: 10px; }
+.followup-editor input { width: 100%; min-width: 0; }
+@media (max-width: 650px) { .followup-item { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 16px; } .followup-date { width: 100%; } }
+
+/* Native radio choices: large touch targets, no automatic result or submission. */
+.iw-result-picker { container-type: inline-size; min-width: 0; margin: 0; padding: 0; border: 0; }
+.iw-result-picker > legend { float: none; width: 100%; padding: 0; margin-bottom: 10px; color: var(--ink); font-size: 14px; font-weight: 600; }
+.iw-result-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.iw-result-choice { --choice-color: #475569; --choice-bg: #eef1f5; position: relative; display: block; min-width: 0; margin: 0; cursor: pointer; touch-action: manipulation; }
+.iw-choice-pass { --choice-color: #167344; --choice-bg: #eaf6ef; }
+.iw-choice-fail { --choice-color: #b4232c; --choice-bg: #fff0f1; }
+.iw-result-choice > input[type="radio"] { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; margin: 0; padding: 0; opacity: 0; z-index: 1; cursor: pointer; }
+.iw-result-choice-face { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; height: 100%; min-height: 92px; padding: 16px 12px; border: 2px solid #c5ccd5; border-radius: 14px; background: #fff; color: var(--choice-color); text-align: center; font-size: 15px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; box-sizing: border-box; }
+.iw-choice-icon { flex-shrink: 0; }
+.iw-choice-indicator { position: absolute; inset-block-start: 10px; inset-inline-end: 10px; width: 8px; height: 8px; border-radius: 50%; background: currentColor; visibility: hidden; }
+.iw-result-choice > input:checked + .iw-result-choice-face { border-color: var(--choice-color); background: var(--choice-bg); box-shadow: inset 0 0 0 1px var(--choice-color); }
+.iw-result-choice > input:checked + .iw-result-choice-face .iw-choice-indicator { visibility: visible; }
+.iw-result-choice > input:focus-visible + .iw-result-choice-face { outline: 3px solid #16385f; outline-offset: 3px; }
+.iw-result-choice > input:disabled { cursor: not-allowed; }
+.iw-result-choice:has(input:disabled) { cursor: not-allowed; opacity: .6; }
+@media (hover: hover) { .iw-result-choice:hover:not(:has(input:disabled)) .iw-result-choice-face { border-color: var(--choice-color); } }
+@container (max-width: 560px) { .iw-result-options { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (forced-colors: active) {
+  .iw-result-choice > input:checked + .iw-result-choice-face { border-color: Highlight; outline: 2px solid Highlight; }
+  .iw-choice-indicator { forced-color-adjust: none; background: Highlight; }
+}
 @media (max-width: 1100px) {
   .order-item-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .order-item-description { grid-column: 1 / -1; }
 }
+.recovery-state { width: min(100%, 680px); margin: 48px auto; padding: 16px; }
+.recovery-state h1 { font-size: 24px; }
+.recovery-state .inline-actions { flex-wrap: wrap; margin-top: 20px; }
+.recovery-state .button { min-height: 44px; }

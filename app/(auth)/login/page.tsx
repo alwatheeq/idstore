@@ -3,8 +3,10 @@ import { PublicLocalizedPage, PublicLocaleToggle } from "@/components/public-loc
 import { uiLocaleCookie, type UiLocale } from "@/lib/i18n/ui";
 import { LoginForm } from "./login-form";
 import { ServiceLoopIllustration } from "@/components/service-loop-illustration";
+import { safeReturnPath } from "@/lib/auth/return-path";
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const query = await searchParams;
   const cookieStore = await cookies();
   const locale: UiLocale = cookieStore.get(uiLocaleCookie)?.value === "ar" ? "ar" : "en";
   return (
@@ -30,7 +32,7 @@ export default async function LoginPage() {
           <div className="login-eyebrow">Authorized access</div>
           <h2>Welcome back</h2>
           <p>Sign in with the mobile number and PIN assigned to your Admin or Staff account.</p>
-          <LoginForm />
+          <LoginForm next={safeReturnPath(query.next)} />
           <div className="login-security-note">Your mobile number is normalized securely and your PIN is never stored in this browser.</div>
         </section>
       </main>

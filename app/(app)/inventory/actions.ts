@@ -1,6 +1,6 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
+import { submissionKey } from "@/lib/actions/submission-key";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formText, operationError, optionalNumber, routeMessage } from "@/lib/actions/form";
@@ -80,7 +80,7 @@ export async function postInventoryMovement(formData: FormData) {
       throw new Error("A non-negative unit cost is required.");
     }
 
-    const idempotencyKey = randomUUID();
+    const idempotencyKey = submissionKey(formData);
     const { error } = await supabase.rpc("post_stock_movement", {
       p_organization_id: staff.organizationId,
       p_branch_id: bin.branch_id,
@@ -149,7 +149,7 @@ export async function recordInventoryDisposition(formData: FormData) {
       p_disposition_type: dispositionType,
       p_reason: reason,
       p_supplier_reference: formText(formData, "supplierReference"),
-      p_idempotency_key: randomUUID(),
+      p_idempotency_key: submissionKey(formData),
     });
     if (error) throw error;
   } catch (error) {

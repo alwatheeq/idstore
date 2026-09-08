@@ -1,6 +1,6 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
+import { submissionKey } from "@/lib/actions/submission-key";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formText, operationError, optionalNumber, optionalText, routeMessage } from "@/lib/actions/form";
@@ -42,7 +42,7 @@ export async function transitionStockTransfer(formData: FormData) {
 export async function receiveStockTransferLine(formData: FormData) {
   await getCurrentStaff(); const lineId = formText(formData, "lineId"); const quantity = optionalNumber(formData, "quantity");
   if (!lineId || quantity === undefined || !Number.isFinite(quantity) || quantity < 0) redirect(routeMessage(path, "error", "Enter a valid received quantity."));
-  try { const supabase = await createClient(); const { error } = await supabase.rpc("receive_stock_transfer_line", { p_line_id: lineId, p_quantity: quantity, p_close_line: formData.get("closeLine") === "on", p_discrepancy_reason: optionalText(formData, "discrepancyReason") ?? "", p_idempotency_key: randomUUID() }); if (error) throw error; }
+  try { const supabase = await createClient(); const { error } = await supabase.rpc("receive_stock_transfer_line", { p_line_id: lineId, p_quantity: quantity, p_close_line: formData.get("closeLine") === "on", p_discrepancy_reason: optionalText(formData, "discrepancyReason") ?? "", p_idempotency_key: submissionKey(formData) }); if (error) throw error; }
   catch (error) { fail(error, "The transfer receipt could not be posted."); }
   done("Transfer receipt posted.");
 }

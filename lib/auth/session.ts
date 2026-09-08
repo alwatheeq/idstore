@@ -4,6 +4,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveBranches } from "@/lib/auth/branches";
 
 export const operatingBranchCookie = "idstore_operating_branch";
 
@@ -28,7 +29,7 @@ export const getCurrentStaff = cache(async (): Promise<CurrentStaff> => {
 
   if (userError || !user) redirect("/login");
 
-  const [{ data: profile }, { data: membership }] = await Promise.all([
+  const [{ data: profile, error: profileError }, { data: membership, error: membershipError }] = await Promise.all([
     supabase
       .from("profiles")
       .select("display_name")
@@ -44,20 +45,18 @@ export const getCurrentStaff = cache(async (): Promise<CurrentStaff> => {
       .maybeSingle(),
   ]);
 
+  if (profileError || membershipError) throw new Error("Account access could not be loaded.");
   if (!profile || !membership) redirect("/login");
 
-  const [{ data: branches }, { data: permissionRows }, cookieStore] = await Promise.all([
-    supabase
-      .from("branches")
-      .select("id")
-      .eq("organization_id", membership.organization_id)
-      .eq("status", "active"),
+  const [branches, { data: permissionRows, error: permissionError }, cookieStore] = await Promise.all([
+    getActiveBranches(membership.organization_id),
     membership.role === "staff"
       ? supabase.from("membership_permissions").select("permission_code, allowed").eq("membership_id", membership.id).eq("allowed", true)
-      : Promise.resolve({ data: [] as { permission_code: string; allowed: boolean }[] }),
+      : Promise.resolve({ data: [] as { permission_code: string; allowed: boolean }[], error: null }),
     cookies(),
   ]);
-  const branchIds = (branches ?? []).map((branch) => branch.id);
+  if (permissionError) throw new Error("Account permissions could not be loaded.");
+  const branchIds = branches.map((branch) => branch.id);
   const requestedBranchId = cookieStore.get(operatingBranchCookie)?.value ?? null;
 
   return {

@@ -136,7 +136,7 @@ export async function addCustomerContact(formData: FormData) {
       });
       if (duplicateError) throw duplicateError;
       if ((duplicates ?? []).some((entry: { customer_id: string }) => entry.customer_id !== customerId)) {
-        redirect(routeMessage("/customers", "error", "This mobile number is already used by another customer."));
+        throw { code: "23514", message: "This mobile number is already used by another customer." };
       }
     } catch (error) {
       redirect(routeMessage("/customers", "error", operationError(error, "Customer identity could not be checked.")));
