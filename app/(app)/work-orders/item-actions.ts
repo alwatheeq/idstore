@@ -42,12 +42,12 @@ export async function addOrderItem(_state: { error: string }, form: FormData) {
       .eq("organization_id", staff.organizationId).eq("repair_order_id", formText(form, "repairOrderId"))
       .eq("id", invoiceId || formText(form, "estimateId")).single();
     if (estimateError || !estimate || estimate.status !== "draft") return { error: "Only a draft order price list can be changed." };
-    let description: string;
+
     if (values.type === "part") {
       const { data, error } = await supabase.from("parts").select("part_number, description_en, description_ar")
         .eq("organization_id", staff.organizationId).eq("id", values.catalogId).eq("status", "active").single();
       if (error || !data) return { error: "This catalog item is no longer available." };
-      description = `${data.part_number} · ${data.description_en}${data.description_ar ? ` / ${data.description_ar}` : ""}`;
+
     } else {
       const recommendation = await supabase.from("work_order_service_choices").select("id, description_en, description_ar")
         .eq("organization_id", staff.organizationId).eq("repair_order_id", order.id).eq("service_version_id", values.catalogId).limit(1);
@@ -58,18 +58,12 @@ export async function addOrderItem(_state: { error: string }, form: FormData) {
       // A catalog edit retires its old version; previously selected services retain their snapshot.
       if (error || !data?.template || (data.template.work_order_type ?? "maintenance") !== (order.order_type ?? "maintenance")
           || data.service_template_tasks.some(task => !isMaintenanceTask(task.result_schema))) return { error: "This catalog item is no longer available." };
-      const snapshot = recommendation.data[0];
-      const name = snapshot.description_en ?? data.template.name_en;
-      const nameAr = snapshot.description_ar ?? data.template.name_ar;
-      description = `${name}${nameAr ? ` / ${nameAr}` : ""}`;
+
     }
-    const { error } = invoiceId ? await supabase.rpc("add_invoice_line", {
-      p_invoice_id: estimate.id, p_expected_version: version, p_line_type: values.type, p_description: description,
-      p_quantity: values.quantity, p_unit_price: values.price, p_tax_rate: values.tax, p_discount_amount: 0,
-    }) : await supabase.rpc("add_estimate_line", {
-      p_estimate_id: estimate.id, p_line_type: values.type, p_description: description,
-      p_quantity: values.quantity, p_unit_price: values.price, p_tax_rate: values.tax,
-      p_discount_amount: 0, p_approval_group: "General", p_finding_id: null,
+    const { error } = await supabase.rpc("add_order_catalog_item", {
+      p_order_id: order.id, p_ledger_id: estimate.id, p_invoice_version: invoiceId ? version : null,
+      p_item_type: values.type, p_catalog_id: values.catalogId,
+      p_quantity: values.quantity, p_price: values.price, p_tax: values.tax,
     });
     if (error) throw error;
     revalidatePath("/work-orders");
@@ -106,4 +100,19 @@ export async function removeOrderItem(form: FormData) {
   revalidatePath("/estimates");
   revalidatePath("/invoices");
   redirect(`/work-orders?order=${encodeURIComponent(orderId)}${errorMessage ? `&error=${encodeURIComponent(errorMessage)}` : ""}#order-items`);
+}
+
+export async function materializeApprovedEstimate(form: FormData) {
+  await getCurrentStaff();
+  const orderId = formText(form, "repairOrderId");
+  const target = formText(form, "target");
+  let result: string | null = null;
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("materialize_approved_estimate", { p_estimate_id: formText(form, "estimateId"), p_target: target });
+    if (error) throw error;
+    result = data;
+  } catch (error) { redirect(`/work-orders?order=${encodeURIComponent(orderId)}&error=${encodeURIComponent(operationError(error, "Approved work could not be prepared."))}`); }
+  revalidatePath("/work-orders"); revalidatePath("/invoices");
+  redirect(target === "invoice" ? `/invoices?line=${encodeURIComponent(result!)}#add-line` : `/work-orders?order=${encodeURIComponent(result!)}&view=advanced`);
 }

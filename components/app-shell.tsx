@@ -3,49 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeftRight, Banknote, BarChart3, BookOpenCheck, Boxes, Building2, CalendarDays,
-  CarFront, ChevronDown, CircleDollarSign, ClipboardCheck, ClipboardList, FileText,
-  Gauge, Layers3, LogOut, Menu, Megaphone, PackageOpen, Paperclip, PlugZap, Plus,
-  KeyRound, Search, Settings2, ShoppingCart, Sparkles, UserRoundCog, Users, Wrench, X,
-  type LucideIcon,
-} from "lucide-react";
+import { CalendarDays, ClipboardList, Gauge, LogOut, Menu, Plus, Search, X } from "lucide-react";
+import { FolderNavigation } from "@/components/folder-navigation";
 import type { CurrentStaff } from "@/lib/auth/session";
-import { navigationGroups, visibleNavigationGroups } from "@/lib/navigation";
+import { visibleNavigationGroups } from "@/lib/navigation";
 import type { UiLocale } from "@/lib/i18n/ui";
 import { UiLocaleProvider, useUiLocale } from "@/components/ui-locale";
-
-const routeIcons: Record<string, LucideIcon> = {
-  "/dashboard": Gauge,
-  "/work-orders": ClipboardList,
-  "/inspections": ClipboardCheck,
-  "/estimates": FileText,
-  "/quality-campaigns": Megaphone,
-  "/appointments": CalendarDays,
-  "/customers": Users,
-  "/vehicles": CarFront,
-  "/inventory": Boxes,
-  "/stock-control": ArrowLeftRight,
-  "/purchasing": ShoppingCart,
-  "/invoices": CircleDollarSign,
-  "/finance-control": Banknote,
-  "/records": Paperclip,
-  "/reports": BarChart3,
-  "/catalog": BookOpenCheck,
-  "/governance": PlugZap,
-  "/branches": Building2,
-  "/staff": UserRoundCog,
-  "/settings/access": KeyRound,
-};
-
-const groupIcons: Record<(typeof navigationGroups)[number]["key"], LucideIcon> = {
-  overview: Sparkles,
-  reception: Users,
-  workshop: Wrench,
-  parts: PackageOpen,
-  commercial: Layers3,
-  administration: Settings2,
-};
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
@@ -77,6 +40,7 @@ function AppShellContent({ children, staff, branches }: AppShellProps) {
   const [branchError, setBranchError] = useState(false);
   const navigationRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   const groups = visibleNavigationGroups(staff.role, staff.permissionCodes);
   const visibleRoutes = new Set(groups.flatMap(group => group.items.map(item => item.href)));
   const canCreateOrder = staff.role === "admin" || staff.permissionCodes.includes("repair_order.manage");
@@ -89,6 +53,8 @@ function AppShellContent({ children, staff, branches }: AppShellProps) {
     const main = mainRef.current;
     if (!mobile.matches || !navigation || !main) return;
     main.inert = true;
+    const toolbar = toolbarRef.current;
+    if (toolbar) toolbar.inert = true;
     navigation.querySelector<HTMLButtonElement>(".sidebar-close")?.focus();
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setMenuOpen(false);
@@ -108,6 +74,7 @@ function AppShellContent({ children, staff, branches }: AppShellProps) {
       document.body.classList.remove("nav-open");
       mobile.removeEventListener("change", closeOnDesktop);
       main.inert = false;
+      if (toolbar) toolbar.inert = false;
       if (previouslyFocused?.isConnected) previouslyFocused.focus();
     };
   }, [menuOpen]);
@@ -133,53 +100,10 @@ function AppShellContent({ children, staff, branches }: AppShellProps) {
   return (
     <div className="app-frame">
       <a className="skip-content" href="#main-content">{t("Skip to content")}</a>
-      <button className={`nav-backdrop ${menuOpen ? "visible" : ""}`} type="button" tabIndex={-1} aria-hidden="true" aria-label={t("Close menu")} onClick={() => setMenuOpen(false)} />
-      <aside ref={navigationRef} className={`sidebar ${menuOpen ? "open" : ""}`} id="primary-navigation" role={menuOpen ? "dialog" : undefined} aria-modal={menuOpen ? true : undefined} aria-label={t("Service operations")}>
-        <div className="brand">
-          <div className="brand-mark" aria-hidden="true">ID</div>
-          <div className="brand-copy">
-            <div className="brand-name">IDstore</div>
-            <div className="brand-sub">{t("Service operations")}</div>
-          </div>
-          <button className="sidebar-close" type="button" aria-label={t("Close navigation")} onClick={() => setMenuOpen(false)}><X /></button>
-        </div>
-        <div className="energy-signature" aria-hidden="true"><span /><span /><span /><span /></div>
-        <div className="network-label">{t("MEB service network")}</div>
-
-        <nav className="grouped-navigation">
-          {groups.map((group, groupIndex) => {
-            const GroupIcon = groupIcons[group.key];
-            const containsActiveRoute = group.items.some((item) => pathname.startsWith(item.href));
-            return (
-              <details className={`nav-group ${containsActiveRoute ? "active-group" : ""}`} key={group.key} open={containsActiveRoute || groupIndex < 2 ? true : undefined}>
-                <summary><GroupIcon /><span>{t(group.label)}</span><b className="nav-group-count mono" aria-hidden="true">{group.items.length}</b><ChevronDown className="nav-chevron" /></summary>
-                <div className="nav-list">
-                  {group.items.map(({ href, label }) => {
-                    const Icon = routeIcons[href];
-                    const isActive = pathname.startsWith(href);
-                    return (
-                      <Link className={`nav-item ${isActive ? "active" : ""}`} aria-current={isActive ? "page" : undefined} href={href} key={href} onClick={() => setMenuOpen(false)}>
-                        <Icon aria-hidden="true" /><span>{t(label)}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </details>
-            );
-          })}
-        </nav>
-
-        <div className="sidebar-footer">
-          <div className="sidebar-account">
-            <div className="avatar" aria-hidden="true">{initials(staff.displayName)}</div>
-            <div className="user-copy"><strong>{staff.displayName}</strong><span>{t(staff.role === "admin" ? "Administrator" : "Staff")}</span></div>
-            <form action="/auth/signout" method="post"><button className="sidebar-signout" type="submit" aria-label={t("Sign out")}><LogOut /><span>{t("Sign out")}</span></button></form>
-          </div>
-        </div>
-      </aside>
-
-      <main ref={mainRef} className="app-main" id="main-content" tabIndex={-1}>
-        <header className="topbar">
+      <header className="app-header">
+        <button className={`nav-backdrop ${menuOpen ? "visible" : ""}`} type="button" tabIndex={-1} aria-hidden="true" aria-label={t("Close menu")} onClick={() => setMenuOpen(false)} />
+        <div ref={toolbarRef} className="topbar">
+          <div className="brand header-brand"><div className="brand-mark" aria-hidden="true">ID</div><div className="brand-copy"><div className="brand-name">IDstore</div><div className="brand-sub">{t("Service operations")}</div></div></div>
           <button className="icon-button mobile-menu" type="button" aria-label={t(menuOpen ? "Close navigation" : "Open navigation")} aria-controls="primary-navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)}>{menuOpen ? <X /> : <Menu />}</button>
           <div className="branch-select"><label htmlFor="branch">{t("Operating branch")}</label><select id="branch" value={staff.selectedBranchId ?? "all"} disabled={branchPending || !branches.length} onChange={(event) => void selectOperatingBranch(event.target.value)}><option value="all">{t(branches.length ? "All branches" : "No branches configured")}</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.city} · {branch.code}</option>)}</select></div>
           <form className="topbar-search" action="/search"><Search aria-hidden="true" /><input name="q" aria-label={t("Global search")} placeholder={t("Search VIN, RO, customer…")} /></form>
@@ -187,7 +111,32 @@ function AppShellContent({ children, staff, branches }: AppShellProps) {
           <button className="icon-button locale-button" type="button" aria-label={t(locale === "ar" ? "Change language to English" : "Change language to Arabic")} onClick={() => setLocale(locale === "ar" ? "en" : "ar")}>{locale === "ar" ? "EN" : "عربي"}</button>
           <div className="user-chip"><div className="avatar" aria-hidden="true">{initials(staff.displayName)}</div><div className="user-copy"><strong>{staff.displayName}</strong><span>{t(staff.role === "admin" ? "Administrator" : "Staff")}</span></div></div>
           <form className="topbar-signout-form" action="/auth/signout" method="post"><button className="icon-button signout-button" type="submit" title={t("Sign out")} aria-label={t("Sign out")}><LogOut /></button></form>
-        </header>
+        </div>
+        <aside ref={navigationRef} className={`sidebar ${menuOpen ? "open" : ""}`} id="primary-navigation" role={menuOpen ? "dialog" : undefined} aria-modal={menuOpen ? true : undefined} aria-label={t("Service operations")}>
+          <div className="brand">
+            <div className="brand-mark" aria-hidden="true">ID</div>
+            <div className="brand-copy">
+              <div className="brand-name">IDstore</div>
+              <div className="brand-sub">{t("Service operations")}</div>
+            </div>
+            <button className="sidebar-close" type="button" aria-label={t("Close navigation")} onClick={() => setMenuOpen(false)}><X /></button>
+          </div>
+          <div className="energy-signature" aria-hidden="true"><span /><span /><span /><span /></div>
+          <div className="network-label">{t("MEB service network")}</div>
+
+          <FolderNavigation groups={groups} pathname={pathname} translate={t} onNavigate={() => setMenuOpen(false)} />
+
+          <div className="sidebar-footer">
+            <div className="sidebar-account">
+              <div className="avatar" aria-hidden="true">{initials(staff.displayName)}</div>
+              <div className="user-copy"><strong>{staff.displayName}</strong><span>{t(staff.role === "admin" ? "Administrator" : "Staff")}</span></div>
+              <form action="/auth/signout" method="post"><button className="sidebar-signout" type="submit" aria-label={t("Sign out")}><LogOut /><span>{t("Sign out")}</span></button></form>
+            </div>
+          </div>
+        </aside>
+      </header>
+
+      <main ref={mainRef} className="app-main" id="main-content" tabIndex={-1}>
         {branchError ? <div className="branch-error" role="alert">{t("Could not change branch. Please try again.")}</div> : null}
         <div className="page-content" data-module={pageModule}>{children}</div>
         <nav className="touch-dock" aria-label={t("Quick navigation")}>

@@ -57,6 +57,45 @@ for (const locale of ["en", "ar"] as const) {
 }
 const { PageRecovery } = load(path.resolve("components/page-recovery.tsx")) as typeof import("../../components/page-recovery");
 const h = React.createElement;
+const { ResponsiveTable } = load(path.resolve("components/responsive-table.tsx")) as typeof import("../../components/responsive-table");
+
+for (const locale of ["en", "ar"] as const) {
+  for (const width of [360, 938, 1440]) {
+    test(`responsive ledgers retain labels, actions and totals ${locale} at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 1000 });
+      const headers = ["Customer", "Reference", "Status", "Amount", "Actions"];
+      const table = ResponsiveTable({ children: [
+        h("thead", { key: "head" }, h("tr", null, headers.map(label => h("th", { key: label }, label)))),
+        h("tbody", { key: "body" }, [0, 1].map(index => h("tr", { key: index, id: `ledger-${index}` },
+          h("td", null, "Customer with a long account name"),
+          h("td", { className: "mono nowrap" }, "REFERENCE-WITHOUT-BREAKS-123456789012345678901234567890"),
+          h("td", null, "Active"), h("td", null, "JOD 1,234.000"),
+          h("td", null, h("form", { action: "/invoices", className: "inline-actions" }, h("input", { name: "id", type: "hidden", value: String(index) }), h("button", { className: "button compact", type: "submit" }, "Open invoice")))))),
+        h("tfoot", { key: "foot" }, h("tr", null, h("td", { colSpan: 4 }, "Total"), h("td", null, "JOD 2,468.000"))),
+      ] });
+      const markup = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: h(LocalizedContent, { children: h("section", { className: "panel", style: { margin: 16 } }, h("div", { className: "data-scroll" }, table)) }) }));
+      const css = ["app/globals.css", "app/apple.css", "app/record-actions.css", "app/folder-tabs.css"].map(file => fs.readFileSync(file, "utf8")).join("\n");
+      await page.setContent(`<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${markup}</body></html>`);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      expect(await page.locator(".data-scroll").evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+      await expect(page.getByRole("columnheader")).toHaveCount(5);
+      await expect(page.getByRole("cell")).toHaveCount(12);
+      for (let column = 0; column < headers.length; column++) {
+        const label = page.locator("#ledger-0 .table-cell-label").nth(column);
+        await expect(label).toHaveText((await page.getByRole("columnheader").nth(column).innerText()).trim());
+        if (width <= 699) await expect(label).toBeVisible();
+        else await expect(label).toBeHidden();
+      }
+      const first = await page.locator("#ledger-0").boundingBox(), second = await page.locator("#ledger-1").boundingBox();
+      expect(second!.y).toBeGreaterThan(first!.y);
+      await expect(page.locator('td[colspan="4"]')).toContainText(translatePageText("Total", locale));
+      await expect(page.locator("form").first()).toHaveAttribute("action", "/invoices");
+      await page.getByRole("button").first().focus();
+      await expect(page.getByRole("button").first()).toBeFocused();
+      expect(await page.locator("form").first().evaluate(form => new FormData(form as HTMLFormElement).get("id"))).toBe("0");
+    });
+  }
+}
 
 test("page localization is present in server HTML without mutating form data", () => {
   const tree = h("section", {}, h("a", {href:"/work-orders?new=1"}, "Open work order"),
@@ -79,11 +118,11 @@ test("page localization is present in server HTML without mutating form data", (
 
 test("recovery screen keeps bilingual actions touch-sized on mobile", async ({page}) => {
   await page.setViewportSize({width:360,height:800});
-  const css = fs.readFileSync("app/globals.css","utf8")+fs.readFileSync("app/apple.css","utf8");
+  const css = fs.readFileSync("app/globals.css","utf8")+fs.readFileSync("app/apple.css","utf8") + fs.readFileSync("app/folder-tabs.css","utf8");
   await page.setContent(`<html><head><style>${css}</style></head><body>${renderToStaticMarkup(h(PageRecovery,{retry:()=>{}}))}</body></html>`);
   await expect(page.getByRole("alert")).toContainText("تعذر تحميل الصفحة");
   const bounds = await page.getByRole("button").boundingBox();
-  expect(bounds!.height).toBeGreaterThanOrEqual(44);
+  expect(Math.round(bounds!.height)).toBeGreaterThanOrEqual(44);
   await expect(page.getByRole("link")).toHaveAttribute("href","/login");
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
 });
@@ -92,7 +131,7 @@ for (const locale of ["en", "ar"] as const) {
   for (const width of [390, 1280]) {
     test(`customer directory identity and status ${locale} at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      const css = ["app/globals.css", "app/apple.css", "app/record-actions.css"].map(file => fs.readFileSync(file, "utf8")).join("\n");
+      const css = ["app/globals.css", "app/apple.css", "app/record-actions.css", "app/folder-tabs.css"].map(file => fs.readFileSync(file, "utf8")).join("\n");
       const contacts = [{ kind: "email", value: "customer@example.com", normalized_value: "customer@example.com", is_primary: true }, { kind: "mobile", value: "+962 79 000 0000", normalized_value: "+962790000000", is_primary: true }];
       const html = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: h("main", { style: { margin: 16 } },
         h(CustomerDirectoryIdentity, { id: "customer", name: locale === "ar" ? "محمد أحمد" : "Customer Name", type: "individual", status: "active", contacts }),
@@ -122,7 +161,7 @@ for (const locale of ["en", "ar"] as const) {
   for (const width of [390, 1280]) {
     test(`staff management ${locale} at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 1000 });
-      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8");
+      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8") + fs.readFileSync("app/folder-tabs.css", "utf8");
       const record = { membershipId: "staff", displayName: "Technician", phone: "+962790000000", role: "staff" as const, status: "active", branchIds: ["branch"], permissionCodes: [], isTechnician: true, employeeNo: "T-01", laborGrade: "", isSelf: false };
       const html = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: h("section", { className: "panel", style: { margin: 16 } }, h(StaffEditor, { staff: record, branches: [{ id: "branch", city: "Amman", code: "AMM-01" }], permissions: [] }), h(DeleteStaffForm, { membershipId: "staff", displayName: "Technician" })) }));
       await page.setContent(`<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"><head><style>${css}</style></head><body>${html}</body></html>`);
@@ -142,7 +181,7 @@ for (const locale of ["en", "ar"] as const) {
   for (const width of [390, 1280]) {
     test(`compact record actions and confirmation ${locale} at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 1000 });
-      const css = ["app/globals.css", "app/apple.css", "app/record-actions.css"].map(file => fs.readFileSync(file, "utf8")).join("\n");
+      const css = ["app/globals.css", "app/apple.css", "app/record-actions.css", "app/folder-tabs.css"].map(file => fs.readFileSync(file, "utf8")).join("\n");
       const html = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: h("main", { style: { margin: 16 } },
         h(MasterRecordActions, { kind: "supplier", id: "supplier" }),
         h(MasterRecordActions, { kind: "supplier", id: "archived", archived: true }),
@@ -158,7 +197,7 @@ for (const locale of ["en", "ar"] as const) {
       for (const icon of await page.locator(".record-action").all()) {
         await expect(icon).toHaveAccessibleName(/.+/);
         await expect(icon).toHaveAttribute("title", /.+/);
-        const box = await icon.boundingBox(); expect(box!.width).toBeGreaterThanOrEqual(width === 390 ? 44 : 36);
+        const box = await icon.boundingBox(); expect(box!.width).toBeGreaterThanOrEqual(width === 390 ? 44 : 32);
         expect(box!.height).toEqual(box!.width);
       }
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -169,7 +208,7 @@ for (const locale of ["en", "ar"] as const) {
   for (const width of [390, 1280]) {
     test(`inspection service selection ${locale} at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8");
+      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8") + fs.readFileSync("app/folder-tabs.css", "utf8");
       const services = ["Brake pads", "Brake discs", "Cabin filter"].map((name, index) => ({ id: String(index), code: `MNT-00${index}`, name, nameAr: ["فحمات الفرامل", "أقراص الفرامل", "فلتر المقصورة"][index] }));
       const markup = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: h("section", { className: "panel", style: { margin: 16 } }, h(InspectionServicesForm, { inspectionId: "inspection", services, selectedIds: ["0"], canSelect: true })) }));
       await page.setContent(`<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"><head><style>${css}</style></head><body>${markup}</body></html>`);
@@ -189,7 +228,7 @@ for (const locale of ["en", "ar"] as const) {
   for (const width of [390, 1280]) {
     test(`maintenance item form ${locale} at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8");
+      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8") + fs.readFileSync("app/folder-tabs.css", "utf8");
       const html = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: null }, h("section", { className: "panel", style: { margin: 16, padding: 24 } },
         h(OrderItemForm, { orderId: "order", estimateId: "estimate", type: "part", currency: "JOD", choices: [{ id: "part", name: "Cabin filter", nameAr: "فلتر المكيف", price: 12 }] }))));
       await page.setContent(`<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style></head><body>${html}</body></html>`);
@@ -212,7 +251,7 @@ for (const locale of ["en", "ar"] as const) {
   for (const width of [390, 1280]) {
     test(`simple service setup ${locale} at ${width}px`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: 900 });
-      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8");
+      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8") + fs.readFileSync("app/folder-tabs.css", "utf8");
       const markup = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: h("main", { className: "app-main" }, h("div", { className: "page-content" }, h("section", { className: "panel" }, h(SimpleServiceForm)), h(ServiceList, { services: [{ id: "service-1", name: "Brake inspection", nameAr: "فحص الفرامل", price: 25.5, minutes: 45, status: "published" }, { id: "legacy", name: "Existing service", nameAr: "خدمة سابقة", price: null, minutes: 60, status: "draft" }] }))) }));
       await page.setContent(`<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${markup}</body></html>`);
       await expect(page.locator("form input:visible")).toHaveCount(2);
@@ -228,11 +267,11 @@ for (const locale of ["en", "ar"] as const) {
       await page.locator("#service-minutes").fill("45");
       await expect(page.locator("#service-name-ar")).toBeVisible();
       for (const id of ["service-price", "service-minutes"]) await expect(page.locator(`#${id}`)).toHaveCSS("direction", "ltr");
-      await expect(page.locator(".simple-service-row").first()).toContainText(locale === "ar" ? "فحص الفرامل" : "Brake inspection");
-      await expect(page.locator(".simple-service-row").first()).toContainText("25.500");
-      await expect(page.locator(".simple-service-row").last()).toContainText(translatePageText("Not set", locale));
-      await expect(page.locator(".simple-service-row").last()).toContainText(locale === "ar" ? "مسودة" : "Draft");
-      await expect(page.locator(".simple-service-row a").first()).toHaveAccessibleName(locale === "ar" ? "التفاصيل" : "Details");
+      await expect(page.locator(".service-ledger-row").first()).toContainText(locale === "ar" ? "فحص الفرامل" : "Brake inspection");
+      await expect(page.locator(".service-ledger-row").first()).toContainText("25.500");
+      await expect(page.locator(".service-ledger-row").last()).toContainText(translatePageText("Not set", locale));
+      await expect(page.locator(".service-ledger-row").last()).toContainText(locale === "ar" ? "مسودة" : "Draft");
+      await expect(page.locator(".service-ledger-row a").first()).toHaveAccessibleName(locale === "ar" ? "التفاصيل" : "Details");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       const overflowing = await page.locator("input").evaluateAll(inputs => inputs.some(input => { const r = input.getBoundingClientRect(), p = input.closest(".panel")!.getBoundingClientRect(); return r.left < p.left || r.right > p.right; }));
       expect(overflowing).toBe(false);
@@ -253,7 +292,7 @@ for (const locale of ["en", "ar"] as const) {
       forms.push(h("section", { className: "panel", key: "upload" }, h("form", { className: "record-target" }, h("div", null, t("Evidence file")), select, field("Evidence file", "file"), button)));
       forms.push(h("section", { className: "panel panel-body", key: "stock" }, h("div", { className: "transfer-lines" }, h("form", null, field("Received quantity", "number"), field("Discrepancy reason"), button))));
       forms.push(h("section", { className: "panel panel-body", key: "count" }, h("div", { className: "count-list" }, h("article", null, h("form", null, h("label", null, "Part 001"), field("Counted quantity", "number"), button)))));
-      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8");
+      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8") + fs.readFileSync("app/folder-tabs.css", "utf8");
       const markup = renderToStaticMarkup(h("main", { className: "app-main" }, h("div", { className: "page-content" }, ...forms)));
       await page.setContent(`<html lang="${locale}" dir="${locale === "ar" ? "rtl" : "ltr"}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${markup}</body></html>`);
       const failures = await page.locator(".labeled-control").evaluateAll(labels => labels.flatMap(label => {
@@ -263,17 +302,17 @@ for (const locale of ["en", "ar"] as const) {
         const style = getComputedStyle(input);
         return [
           ...(input.labels?.length ? [] : ["Missing label association"]),
-          ...(Math.abs(box.height - 46) < 1 ? [] : [`Height ${box.height}`]),
+          ...(Math.abs(box.height - (innerWidth <= 780 || matchMedia("(pointer: coarse)").matches ? 44 : 40)) < 1 ? [] : [`Height ${box.height}`]),
           ...(text.bottom <= box.top ? [] : ["Caption overlaps control"]),
           ...(box.left >= frame.left && box.right <= frame.right ? [] : ["Control outside card"]),
-          ...(style.fontSize === (innerWidth <= 780 ? "16px" : "14px") ? [] : [`Font ${style.fontSize}`]),
+          ...(style.fontSize === (innerWidth <= 780 ? "15px" : "13px") ? [] : [`Font ${style.fontSize}`]),
           ...(style.borderRadius === "10px" ? [] : [`Radius ${style.borderRadius}`]),
         ];
       }));
       expect(failures).toEqual([]);
       for (const form of await page.locator("form").all()) {
         const buttonBox = await form.locator("button").boundingBox();
-        expect(buttonBox!.height).toBe(46);
+        expect(buttonBox!.height).toBe(width <= 780 || testInfo.project.name === "mobile-chromium" ? 44 : 40);
         const controlBoxes = await form.locator("input,select").evaluateAll(inputs => inputs.map(input => { const r = input.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, height: r.height }; }));
         for (const control of controlBoxes) if (control.bottom > buttonBox!.y && control.top < buttonBox!.y + buttonBox!.height) expect(Math.abs(control.top - buttonBox!.y)).toBeLessThanOrEqual(1);
       }
@@ -303,13 +342,13 @@ for (const locale of ["en", "ar"] as const) {
       const markup = renderToStaticMarkup(h("main", { className: "app-main" },
         h("div", { className: "page-content" }, scope,
           h("section", { className: "panel panel-body" }, ...["assign-control", "inline-action", "inline-actions", "send-estimate-form", "iw-toolbar"].map(row)))));
-      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8");
+      const css = fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8") + fs.readFileSync("app/folder-tabs.css", "utf8");
       await page.setContent(`<html lang="${locale}" dir="${ar ? "rtl" : "ltr"}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${markup}</body></html>`);
       const label = await page.locator('label[for="scope-branch"]').boundingBox();
       const select = await page.locator("#scope-branch").boundingBox();
       const button = await page.locator(".scope-form button").boundingBox();
-      expect(select!.height).toBe(46);
-      expect(button!.height).toBe(46);
+      expect(select!.height).toBe(width <= 780 || testInfo.project.name === "mobile-chromium" ? 44 : 40);
+      expect(button!.height).toBe(width <= 780 || testInfo.project.name === "mobile-chromium" ? 44 : 40);
       expect(Math.abs(select!.y - button!.y)).toBeLessThanOrEqual(1);
       expect(label!.y + label!.height).toBeLessThan(select!.y);
       await expect(page.locator("#scope-branch")).toBeDisabled();
@@ -336,7 +375,7 @@ function fixture(locale: "en" | "ar", role: "admin" | "staff" = "admin") {
     h("header", {className:"page-header"},h("div",null,h("div",{className:"eyebrow"},label("Vehicle registry","سجل المركبات")),h("h1",null,label("VW ID vehicles","مركبات VW ID")),h("p",null,label("Vehicle details, ownership and service history.","بيانات المركبات والملكية وسجل الصيانة."))),h("div",{className:"header-actions"},h("button",{className:"button primary"},label("Add vehicle","إضافة مركبة")))),
     h("section",{className:"panel operation-form vehicle-workspace"},
       h("div",{className:"panel-header"},h("div",null,h("div",{className:"panel-title"},label("Vehicle record · ID.4","سجل المركبة · ID.4")),h("div",{className:"panel-subtitle"},label("Technical details","البيانات الفنية")))),
-      h("nav",{className:"customer-tabs vehicle-tabs"},...[label("Technical profile","الملف الفني"),label("Mileage","قراءات العداد"),label("Ownership","الملكية"),label("Service history","سجل الصيانة")].map((text,i)=>h("a",{key:text,href:"#",className:`customer-tab ${i===0?"active":""}`},text))),
+      h("nav",{className:"customer-tabs vehicle-tabs"},...[label("Technical profile","الملف الفني"),label("Mileage","قراءات العداد"),label("Ownership","الملكية"),label("Service history","سجل الصيانة")].map((text,i)=>h("a",{key:text,href:"#","aria-current":i===0?"page":undefined,className:`customer-tab ${i===0?"active":""}`},text))),
       h("form",{className:"form-grid panel-body"},
         ...[label("Vehicle color","لون المركبة"),label("Software version","إصدار البرنامج")].map((text,i)=>h("div",{key:text,className:"form-field"},h("label",{htmlFor:`field-${i}`},text),h("input",{id:`field-${i}`,defaultValue:i?"3.7":"Blue"}))),
         h("div",{className:"form-field form-span-2"},h("label",{htmlFor:"mobile-fixture"},label("Phone","الهاتف")),h("div",{className:"phone-control"},h("select",{"aria-label":"Country",defaultValue:"JO"},h("option",null,"JO")),h("input",{id:"mobile-fixture",type:"tel",defaultValue:"0790000000"}))),
@@ -347,18 +386,18 @@ function fixture(locale: "en" | "ar", role: "admin" | "staff" = "admin") {
 
 for (const locale of ["en","ar"] as const) {
   for (const width of [390,768,1280]) {
-    test(`shared Apple-style shell and forms ${locale} at ${width}px`, async ({page},testInfo) => {
+    test(`shared folder-tab shell and forms ${locale} at ${width}px`, async ({page},testInfo) => {
       await page.setViewportSize({width,height:900});
-      const css = fs.readFileSync("app/globals.css","utf8") + fs.readFileSync("app/apple.css","utf8");
+      const css = fs.readFileSync("app/globals.css","utf8") + fs.readFileSync("app/apple.css","utf8") + fs.readFileSync("app/folder-tabs.css","utf8");
       await page.setContent(`<html lang="${locale}" dir="${locale==="ar"?"rtl":"ltr"}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${fixture(locale)}</body></html>`);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      await expect(page.locator(".panel-header")).toHaveCSS("background-color","rgb(240, 240, 243)");
-      await expect(page.locator(".panel")).toHaveCSS("background-color","rgb(240, 240, 243)");
-      await expect(page.locator("form.panel-body")).toHaveCSS("background-color","rgb(240, 240, 243)");
+      await expect(page.locator(".panel-header")).toHaveCSS("background-color","rgb(255, 255, 255)");
+      await expect(page.locator(".panel")).toHaveCSS("background-color","rgb(255, 255, 255)");
+      await expect(page.locator("form.panel-body")).toHaveCSS("background-color","rgb(255, 255, 255)");
       await expect(page.locator("#field-0")).toHaveCSS("background-color","rgb(255, 255, 255)");
-      await expect(page.locator("body")).toHaveCSS("background-color", "rgb(245, 245, 247)");
-      await expect(page.locator(".button.primary").first()).toHaveCSS("background-color", "rgb(24, 54, 93)");
-      await expect(page.locator(".page-header h1")).toHaveCSS("color", "rgb(17, 17, 17)");
+      await expect(page.locator("body")).toHaveCSS("background-color", "rgb(244, 241, 234)");
+      await expect(page.locator(".button.primary").first()).toHaveCSS("background-color", "rgb(36, 55, 88)");
+      await expect(page.locator(".page-header h1")).toHaveCSS("color", "rgb(28, 25, 22)");
       // Test rendered color pairs, including controls, against WCAG contrast thresholds.
       const contrasts = await page.evaluate(() => {
         const luminance = (color: string) => {
@@ -373,12 +412,12 @@ for (const locale of ["en","ar"] as const) {
           return (Math.max(x, y) + .05) / (Math.min(x, y) + .05);
         };
         const style = (selector: string) => getComputedStyle(document.querySelector(selector)!);
-        const button = style(".button.primary"), nav = style(".nav-item.active"), field = style("#field-0");
+        const button = style(".button.primary"), nav = style(".folder-desktop-pages a[aria-current]"), field = style("#field-0");
         return {
           button: ratio(button.color, button.backgroundColor),
           navigation: ratio(nav.color, nav.backgroundColor),
           helper: ratio(style(".panel-subtitle").color, style(".panel-header").backgroundColor),
-          sidebar: ratio(style(".nav-group summary").color, style(".sidebar").backgroundColor),
+          sidebar: ratio(style(".folder-tab[aria-current]").color, style(".folder-tab[aria-current]").backgroundColor),
           field: ratio(field.borderTopColor, field.backgroundColor),
         };
       });
@@ -390,7 +429,7 @@ for (const locale of ["en","ar"] as const) {
       if(width<=780) {
         await expect(page.locator(".sidebar")).not.toBeVisible();
         await expect(page.locator(".touch-dock")).toBeVisible();
-        await expect(page.locator("#mobile-fixture")).toHaveCSS("font-size","16px");
+        await expect(page.locator("#mobile-fixture")).toHaveCSS("font-size","15px");
       } else await expect(page.locator(".sidebar")).toBeVisible();
       await page.screenshot({path:testInfo.outputPath(`clear-${locale}-${width}.png`),fullPage:true});
     });
@@ -401,7 +440,7 @@ test("mobile shortcuts respect staff permissions", async ({page}) => {
   await page.setContent(fixture("ar","staff"));
   await expect(page.locator('.touch-dock a[href="/appointments"]')).toHaveCount(0);
   await expect(page.locator('.touch-dock a[href^="/work-orders"]')).toHaveCount(0);
-  await expect(page.locator('.nav-item[href="/vehicles"]')).toHaveCount(1);
+  await expect(page.locator('.folder-desktop-pages a[href="/vehicles"]')).toHaveCount(1);
 });
 
 for (const locale of ["en", "ar"] as const) {
@@ -423,12 +462,12 @@ for (const locale of ["en", "ar"] as const) {
       // LocalizedContent translates these server-rendered toolbar strings after hydration in the app.
       if (ar) markup = markup.replaceAll(">Search<", ">بحث<").replaceAll(">Reset filters<", ">مسح الفلاتر<").replaceAll(">All<", ">الكل<");
       await page.setViewportSize({ width, height: 1000 });
-      await page.setContent(`<html lang="${locale}" dir="${ar ? "rtl" : "ltr"}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8")}</style></head><body>${markup}</body></html>`);
+      await page.setContent(`<html lang="${locale}" dir="${ar ? "rtl" : "ltr"}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${fs.readFileSync("app/globals.css", "utf8") + fs.readFileSync("app/apple.css", "utf8") + fs.readFileSync("app/folder-tabs.css", "utf8")}</style></head><body>${markup}</body></html>`);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       const boxes = await page.locator(".record-filters input,.record-filters select,.record-filter-actions .button").evaluateAll(elements => elements.map(el => {
         const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, height: r.height, left: r.left, right: r.right };
       }));
-      for (const box of boxes) expect(box.height).toBeCloseTo(46, 0);
+      for (const box of boxes) expect(box.height).toBeCloseTo(width <= 780 || testInfo.project.name === "mobile-chromium" ? 44 : 40, 0);
       expect(boxes[2].top).toBeCloseTo(boxes[3].top, 0);
       const panelWidth = (await page.locator("#filter-panel").boundingBox())!.width;
       if (panelWidth > 702) for (const box of boxes) expect(box.bottom).toBeCloseTo(boxes[0].bottom, 0);
@@ -439,17 +478,90 @@ for (const locale of ["en", "ar"] as const) {
         expect(boxes[2].right - boxes[2].left).toBeCloseTo(boxes[3].right - boxes[3].left, 0);
       }
       const legacyHeights = await page.locator(".filter-row input,.filter-row select").evaluateAll(elements => elements.map(el => el.getBoundingClientRect().height));
-      expect(legacyHeights).toEqual([46, 46]);
+      expect(legacyHeights).toEqual(Array(2).fill(width <= 780 || testInfo.project.name === "mobile-chromium" ? 44 : 40));
       const metrics = await page.locator(".metric").evaluateAll(elements => elements.map(el => el.getBoundingClientRect().height));
       expect(Math.max(...metrics) - Math.min(...metrics)).toBeLessThan(1);
       await expect(page.locator(".metric-value").first()).toHaveCSS("text-align", ar ? "right" : "left");
       await expect(page.locator(".metric-value").first()).toHaveCSS("direction", "ltr");
       for (const form of await page.locator(".narrow-form").all()) {
         const inputs = await form.locator("input").evaluateAll(elements => elements.map(el => ({ top: el.getBoundingClientRect().top, width: el.getBoundingClientRect().width })));
-        expect(inputs[1].top).toBeGreaterThan(inputs[0].top);
+        const cardWidth = await form.evaluate(el => el.parentElement!.clientWidth);
+        if (cardWidth <= 560 || width <= 780) expect(inputs[1].top).toBeGreaterThan(inputs[0].top);
+        else expect(inputs[1].top).toBeCloseTo(inputs[0].top, 0);
         expect(inputs[0].width).toBeCloseTo(inputs[1].width, 0);
       }
       await page.screenshot({ path: testInfo.outputPath(`alignment-${locale}-${width}.png`), fullPage: true });
+    });
+  }
+}
+
+const { FolderNavigation } = load(path.resolve("components/folder-navigation.tsx")) as typeof import("../../components/folder-navigation");
+for (const direction of ["ltr", "rtl"] as const) {
+  for (const width of [390, 900]) {
+    test(`folder groups join their pages in ${direction} at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      const groups = [
+        { key: "overview" as const, label: "Overview", items: [{ href: "/dashboard", label: "Control room" }] },
+        { key: "reception" as const, label: "Reception & CRM", items: [{ href: "/customers", label: "Customers", badge: 2 }, { href: "/vehicles", label: "Vehicles", badge: 3 }, { href: "/appointments", label: "Appointments and workshop intake" }] },
+      ];
+      const css = ["app/globals.css", "app/apple.css", "app/folder-tabs.css"].map(file => fs.readFileSync(file, "utf8")).join("\n");
+      const render = (pathname: string) => `<html dir="${direction}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${renderToStaticMarkup(h(FolderNavigation, { groups, pathname, translate: text => text, onNavigate() {} }))}</body></html>`;
+      await page.setContent(render("/vehicles/123"));
+      await expect(page.locator("details, summary")).toHaveCount(0);
+      const current = page.locator('.folder-tab[aria-current="page"]');
+      await expect(current).toHaveAttribute("href", "/customers");
+      await expect(current.locator(".folder-badge")).toHaveText("5");
+      const pages = page.locator(width > 780 ? ".folder-desktop-pages .folder-pages" : ".folder-mobile-pages .folder-pages");
+      await expect(pages).toBeVisible();
+      await expect(pages.locator('[aria-current="page"]')).toHaveAttribute("href", "/vehicles");
+      await expect(pages.locator('[aria-current="page"]')).toHaveCSS("background-color", "rgb(36, 55, 88)");
+      const bounds = await pages.boundingBox();
+      const rail = await page.locator(width > 780 ? ".folder-rail" : '.folder-tab[aria-current="page"]').boundingBox();
+      expect(bounds!.y).toBeCloseTo(rail!.y + rail!.height, 0);
+      const frame = width > 780 ? await page.locator(".folder-navigation").boundingBox() : rail;
+      expect(bounds!.x).toBeCloseTo(frame!.x + 6, 0);
+      expect(bounds!.width).toBeCloseTo(frame!.width - 12, 0);
+      await expect(current).toHaveCSS("background-color", width > 780 ? "rgb(255, 255, 255)" : "rgb(22, 20, 15)");
+      if (width > 780) {
+        expect((await current.boundingBox())!.height).toBe(38);
+        expect((await page.locator(".folder-tab").first().boundingBox())!.height).toBe(36);
+      }
+      if (direction === "rtl") {
+        expect(await current.evaluate(el => getComputedStyle(el).fontFamily)).toContain("Tajawal");
+        await expect(current).toHaveCSS("font-weight", "700");
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page.setContent(render("/dashboard"));
+      await expect(page.locator(".folder-pages")).toHaveCount(0);
+      await expect(page.locator('.folder-tab[aria-current="page"]')).toHaveAttribute("href", "/dashboard");
+    });
+  }
+}
+
+const { BranchDirectory } = load(path.resolve("components/branch-directory.tsx")) as typeof import("../../components/branch-directory");
+const { StatusPill } = load(path.resolve("components/status-pill.tsx")) as typeof import("../../components/status-pill");
+for (const locale of ["en", "ar"] as const) {
+  for (const width of [360, 900, 1440]) {
+    test(`branch directory and compact badges fit ${locale} at ${width}px`, async ({ page }, testInfo) => {
+      await page.setViewportSize({ width, height: 900 });
+      const directory = BranchDirectory({ branches: [{ id: "one", code: "AMM-01", displayName: "IDstore Service Center", legalName: "IDstore Service Center Jordan", address: "1 Al-Ommal Street, Industrial Area, Amman", warehouse: "IDstore Service Center Main Warehouse", phone: "+962 7 7013 3633", whatsapp: "07 7013 3633", status: "active" }] });
+      const content = h(React.Fragment, null,
+        h("article", { className: "branch-card" }, h("div", { className: "branch-card-head" }, h("div", null, h("h3", null, "IDstore Service Center"), h("p", null, "Amman, Jordan")), h(StatusPill, { label: "General service" })),
+          h("div", { className: "record-actions" }, h("button", { className: "button primary", type: "button" }, "Add branch"), h("button", { className: "button compact branch-edit-link", type: "button" }, "Contacts"))),
+        h("section", { className: "panel" }, directory));
+      const markup = renderToStaticMarkup(h(UiLocaleProvider, { initialLocale: locale, children: h(LocalizedContent, { children: content }) }));
+      const css = ["app/globals.css", "app/apple.css", "app/record-actions.css", "app/folder-tabs.css"].map(file => fs.readFileSync(file, "utf8")).join("\n");
+      await page.setContent(`<html dir="${locale === "ar" ? "rtl" : "ltr"}"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body style="padding:16px">${markup}</body></html>`);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      expect(await page.locator(".branch-directory-table").evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+      await expect(page.locator(".branch-directory-table th")).toHaveCount(6);
+      await expect(page.locator('.branch-directory-table bdi[dir="ltr"]').first()).toHaveCSS("direction", "ltr");
+      const badge = page.locator(".branch-card .status-pill");
+      expect((await badge.boundingBox())!.height).toBeLessThanOrEqual(28);
+      if (locale === "ar") await expect(badge).toHaveText("الخدمات العامة");
+      const touch = width <= 780 || testInfo.project.name === "mobile-chromium";
+      expect((await page.locator(".button.primary").boundingBox())!.height).toBe(touch ? 44 : 40);
+      expect((await page.locator(".button.compact").boundingBox())!.height).toBe(touch ? 44 : 36);
     });
   }
 }

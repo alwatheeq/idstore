@@ -1,3 +1,5 @@
+import { ResponsiveTable } from "@/components/responsive-table";
+import { readAll } from "@/lib/supabase/read-all";
 import { LocalizedContent } from "@/components/localized-content";
 import { RecordAction } from "@/components/record-action";
 import Link from "next/link";
@@ -26,18 +28,18 @@ export default async function StaffPage({ searchParams }: { searchParams: Promis
   if (current.role !== "admin") redirect("/dashboard");
   const supabase = await createClient();
   const [{ data: branches, error: branchesError }, { data: permissions, error: permissionsError }, { data: memberships, error }] = await Promise.all([
-    supabase.from("branches").select("id, code, city").eq("organization_id", current.organizationId).eq("status", "active").order("city"),
-    supabase.from("permissions").select("code, description").neq("code", "hv_permit.authorize").order("code"),
-    supabase.from("memberships").select("id, user_id, role, all_branches, status, created_at").eq("organization_id", current.organizationId).order("created_at"),
+    readAll(supabase.from("branches").select("id, code, city").eq("organization_id", current.organizationId).eq("status", "active").order("city")),
+    readAll(supabase.from("permissions").select("code, description").neq("code", "hv_permit.authorize").order("code"), "code"),
+    readAll(supabase.from("memberships").select("id, user_id, role, all_branches, status, created_at").eq("organization_id", current.organizationId).order("created_at")),
   ]);
 
   const userIds = (memberships ?? []).map((membership) => membership.user_id);
   const membershipIds = (memberships ?? []).map((membership) => membership.id);
   const [{ data: profiles, error: profilesError }, { data: branchAccess, error: branchAccessError }, { data: permissionAccess, error: permissionAccessError }, { data: technicians, error: techniciansError }] = userIds.length ? await Promise.all([
-    supabase.from("profiles").select("user_id, display_name, phone, status").in("user_id", userIds),
+    readAll(supabase.from("profiles").select("user_id, display_name, phone, status").in("user_id", userIds), "user_id"),
     membershipIds.length ? supabase.from("membership_branches").select("membership_id, branch_id, branch:branches(code, city)").in("membership_id", membershipIds) : Promise.resolve({ data: [], error: null }),
     membershipIds.length ? supabase.from("membership_permissions").select("membership_id, permission_code, allowed").neq("permission_code", "hv_permit.authorize").in("membership_id", membershipIds) : Promise.resolve({ data: [], error: null }),
-    supabase.from("technician_profiles").select("id, user_id, employee_no, labor_grade, active").eq("organization_id", current.organizationId),
+    readAll(supabase.from("technician_profiles").select("id, user_id, employee_no, labor_grade, active").eq("organization_id", current.organizationId)),
   ]) : [{ data: [], error: null }, { data: [], error: null }, { data: [], error: null }, { data: [], error: null }];
 
   const profileByUser = new Map((profiles ?? []).map((profile) => [profile.user_id, profile]));
@@ -56,7 +58,7 @@ export default async function StaffPage({ searchParams }: { searchParams: Promis
       {branches?.length ? <Link className="button primary" href="/staff?new=1#new-staff"><Plus /> Add staff account</Link> : <Link className="button primary" href="/branches?new=1#new-branch"><Plus /> Create a branch first</Link>}
     </PageHeader>
     <RecordFeedback created={query.created} error={query.error ?? (loadError ? "Staff records could not be loaded." : undefined)} />
-    <nav className="settings-tabs" aria-label="Staff list"><Link href="/staff" className={query.show !== "deleted" ? "active" : ""}>Staff</Link><Link href="/staff?show=deleted" className={query.show === "deleted" ? "active" : ""}>Deleted staff</Link></nav>
+    <nav className="settings-tabs" aria-label="Staff list"><Link href="/staff" aria-current={query.show !== "deleted" ? "page" : undefined} className={query.show !== "deleted" ? "active" : ""}>Staff</Link><Link href="/staff?show=deleted" aria-current={query.show === "deleted" ? "page" : undefined} className={query.show === "deleted" ? "active" : ""}>Deleted staff</Link></nav>
     {selected && query.edit && selectedProfile ? <section className="panel operation-form" id="edit-staff"><div className="panel-header"><div className="panel-title">Edit staff</div><RecordAction kind="close" label="Close" href="/staff" /></div>
       <StaffEditor key={selected.id} staff={{ membershipId: selected.id, displayName: selectedProfile.display_name, phone: selectedProfile.phone ?? "", role: selected.role, status: selected.status, branchIds: (branchAccess ?? []).filter(item => item.membership_id === selected.id).map(item => item.branch_id), permissionCodes: (permissionAccess ?? []).filter(item => item.membership_id === selected.id && item.allowed).map(item => item.permission_code), isTechnician: Boolean(selectedTech?.active), employeeNo: selectedTech?.employee_no ?? "", laborGrade: selectedTech?.labor_grade ?? "", isSelf: selected.user_id === current.userId }} branches={branches ?? []} permissions={permissions ?? []} />
     </section> : null}
@@ -88,14 +90,14 @@ export default async function StaffPage({ searchParams }: { searchParams: Promis
 
     {!memberships?.length ? <EmptyState icon={UserRoundCog} title="No staff memberships" description="Add the first staff account and assign its operating branches." action={branches?.length ? <Link className="button primary" href="/staff?new=1#new-staff">Add staff account</Link> : undefined} /> : <section className="panel">
       <div className="panel-header"><div><div className="panel-title">Access roster</div><div className="panel-subtitle">Live roles, branch assignments and explicit capability grants</div></div></div>
-      <div className="data-scroll"><table className="data-table"><thead><tr><th>Staff member</th><th>Role</th><th>Branch access</th><th>Capabilities</th><th>Technician profile</th><th>Status</th><th>Actions</th></tr></thead><tbody>{visibleMemberships.map((membership) => {
+      <div className="data-scroll"><ResponsiveTable className="data-table"><thead><tr><th>Staff member</th><th>Role</th><th>Branch access</th><th>Capabilities</th><th>Technician profile</th><th>Status</th><th>Actions</th></tr></thead><tbody>{visibleMemberships.map((membership) => {
         const profile = profileByUser.get(membership.user_id);
         const assignedBranches = (branchAccess ?? []).filter((item) => item.membership_id === membership.id).map((item) => item.branch ? `${item.branch.city} · ${item.branch.code}` : null).filter(Boolean);
         const grants = (permissionAccess ?? []).filter((item) => item.membership_id === membership.id && item.allowed);
         const technician = technicianByUser.get(membership.user_id);
         const displayName = profile?.display_name ?? "Unlinked profile";
         return <tr key={membership.id}><td><div style={{ display: "flex", alignItems: "center", gap: 10 }}><div className="avatar">{initials(displayName)}</div><div><div className="cell-main">{displayName}</div><div className="cell-sub mono">{profile?.phone ?? membership.user_id.slice(0, 8)}</div></div></div></td><td><StatusPill label={membership.role} tone={membership.role === "admin" ? "blue" : "gray"} /></td><td>{membership.all_branches ? "All branches" : assignedBranches.join(", ") || "No branch"}</td><td>{membership.role === "admin" ? "All capabilities" : `${grants.length} granted`}</td><td>{technician ? <><div className="cell-main">{technician.labor_grade ?? "Technician"}</div><div className="cell-sub">{technician.employee_no ?? "—"}</div></> : "—"}</td><td><StatusPill label={membership.status} tone={membership.status === "active" && profile?.status === "active" ? "green" : "amber"} /></td><td><div className="inline-actions"><RecordAction kind={membership.status === "revoked" ? "restore" : "edit"} href={`/staff?edit=${membership.id}#edit-staff`} />{membership.user_id !== current.userId && membership.status !== "revoked" ? <RecordAction kind="delete" label="Delete" href={`/staff?delete=${membership.id}#delete-staff`} /> : null}</div></td></tr>;
-      })}</tbody></table></div>
+      })}</tbody></ResponsiveTable></div>
     </section>}
   </>}</LocalizedContent>;
 }

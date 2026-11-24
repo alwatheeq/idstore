@@ -14,87 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      work_order_service_choices: {
-        Row: {
-          branch_id: string
-          created_at: string
-          description_ar: string | null
-          description_en: string
-          id: string
-          inspection_id: string
-          note: string | null
-          organization_id: string
-          repair_order_id: string
-          selected_by: string
-          service_code: string
-          service_version_id: string
-        }
-        Insert: {
-          branch_id: string
-          created_at?: string
-          description_ar?: string | null
-          description_en: string
-          id?: string
-          inspection_id: string
-          note?: string | null
-          organization_id: string
-          repair_order_id: string
-          selected_by: string
-          service_code: string
-          service_version_id: string
-        }
-        Update: {
-          branch_id?: string
-          created_at?: string
-          description_ar?: string | null
-          description_en?: string
-          id?: string
-          inspection_id?: string
-          note?: string | null
-          organization_id?: string
-          repair_order_id?: string
-          selected_by?: string
-          service_code?: string
-          service_version_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "work_order_service_choices_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "work_order_service_choices_inspection_id_fkey"
-            columns: ["inspection_id"]
-            isOneToOne: false
-            referencedRelation: "inspections"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "work_order_service_choices_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "work_order_service_choices_repair_order_id_fkey"
-            columns: ["repair_order_id"]
-            isOneToOne: false
-            referencedRelation: "repair_orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "work_order_service_choices_service_version_id_fkey"
-            columns: ["service_version_id"]
-            isOneToOne: false
-            referencedRelation: "service_template_versions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       appointment_service_items: {
         Row: {
           appointment_id: string
@@ -1679,6 +1598,8 @@ export type Database = {
         Row: {
           approval_group: string | null
           branch_id: string
+          catalog_part_id: string | null
+          catalog_service_version_id: string | null
           catalog_unit_price: number | null
           created_at: string
           description_snapshot: string
@@ -1701,6 +1622,8 @@ export type Database = {
         Insert: {
           approval_group?: string | null
           branch_id: string
+          catalog_part_id?: string | null
+          catalog_service_version_id?: string | null
           catalog_unit_price?: number | null
           created_at?: string
           description_snapshot: string
@@ -1723,6 +1646,8 @@ export type Database = {
         Update: {
           approval_group?: string | null
           branch_id?: string
+          catalog_part_id?: string | null
+          catalog_service_version_id?: string | null
           catalog_unit_price?: number | null
           created_at?: string
           description_snapshot?: string
@@ -1748,6 +1673,20 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimate_lines_catalog_part_id_fkey"
+            columns: ["catalog_part_id"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimate_lines_catalog_service_version_id_fkey"
+            columns: ["catalog_service_version_id"]
+            isOneToOne: false
+            referencedRelation: "service_template_versions"
             referencedColumns: ["id"]
           },
           {
@@ -2699,6 +2638,8 @@ export type Database = {
       invoice_lines: {
         Row: {
           branch_id: string
+          catalog_part_id: string | null
+          catalog_service_version_id: string | null
           created_at: string
           description_snapshot: string
           discount_amount: number
@@ -2709,6 +2650,7 @@ export type Database = {
           line_type: string
           organization_id: string
           quantity: number
+          source_estimate_line_id: string | null
           source_id: string | null
           source_type: string | null
           tax_amount: number
@@ -2717,6 +2659,8 @@ export type Database = {
         }
         Insert: {
           branch_id: string
+          catalog_part_id?: string | null
+          catalog_service_version_id?: string | null
           created_at?: string
           description_snapshot: string
           discount_amount?: number
@@ -2727,6 +2671,7 @@ export type Database = {
           line_type: string
           organization_id: string
           quantity: number
+          source_estimate_line_id?: string | null
           source_id?: string | null
           source_type?: string | null
           tax_amount?: number
@@ -2735,6 +2680,8 @@ export type Database = {
         }
         Update: {
           branch_id?: string
+          catalog_part_id?: string | null
+          catalog_service_version_id?: string | null
           created_at?: string
           description_snapshot?: string
           discount_amount?: number
@@ -2745,6 +2692,7 @@ export type Database = {
           line_type?: string
           organization_id?: string
           quantity?: number
+          source_estimate_line_id?: string | null
           source_id?: string | null
           source_type?: string | null
           tax_amount?: number
@@ -2760,6 +2708,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "invoice_lines_catalog_part_id_fkey"
+            columns: ["catalog_part_id"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_lines_catalog_service_version_id_fkey"
+            columns: ["catalog_service_version_id"]
+            isOneToOne: false
+            referencedRelation: "service_template_versions"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "invoice_lines_invoice_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
@@ -2771,6 +2733,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_lines_source_estimate_line_id_fkey"
+            columns: ["source_estimate_line_id"]
+            isOneToOne: true
+            referencedRelation: "estimate_lines"
             referencedColumns: ["id"]
           },
         ]
@@ -3150,6 +3119,7 @@ export type Database = {
           rework_kind: string | null
           rework_reason: string | null
           safety_class: string
+          source_estimate_line_id: string | null
           started_at: string | null
           status: string
           updated_at: string
@@ -3173,6 +3143,7 @@ export type Database = {
           rework_kind?: string | null
           rework_reason?: string | null
           safety_class?: string
+          source_estimate_line_id?: string | null
           started_at?: string | null
           status?: string
           updated_at?: string
@@ -3196,6 +3167,7 @@ export type Database = {
           rework_kind?: string | null
           rework_reason?: string | null
           safety_class?: string
+          source_estimate_line_id?: string | null
           started_at?: string | null
           status?: string
           updated_at?: string
@@ -3235,6 +3207,13 @@ export type Database = {
             columns: ["repair_order_id"]
             isOneToOne: false
             referencedRelation: "repair_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_source_estimate_line_id_fkey"
+            columns: ["source_estimate_line_id"]
+            isOneToOne: true
+            referencedRelation: "estimate_lines"
             referencedColumns: ["id"]
           },
         ]
@@ -3686,6 +3665,77 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_stock: {
+        Row: {
+          branch_id: string
+          created_at: string
+          id: string
+          idempotency_key: string
+          organization_id: string
+          quantity: number
+          repair_order_id: string
+          returned_quantity: number
+          status: string
+          stock_balance_id: string
+          version: number
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          id?: string
+          idempotency_key: string
+          organization_id: string
+          quantity: number
+          repair_order_id: string
+          returned_quantity?: number
+          status?: string
+          stock_balance_id: string
+          version?: number
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          id?: string
+          idempotency_key?: string
+          organization_id?: string
+          quantity?: number
+          repair_order_id?: string
+          returned_quantity?: number
+          status?: string
+          stock_balance_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_stock_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_stock_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_stock_repair_order_id_fkey"
+            columns: ["repair_order_id"]
+            isOneToOne: false
+            referencedRelation: "repair_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_stock_stock_balance_id_fkey"
+            columns: ["stock_balance_id"]
+            isOneToOne: false
+            referencedRelation: "stock_balances"
             referencedColumns: ["id"]
           },
         ]
@@ -4429,6 +4479,7 @@ export type Database = {
           job_id: string | null
           notes: string | null
           organization_id: string
+          release_revision: number
           repair_order_id: string
           result: string
           signed_at: string
@@ -4442,6 +4493,7 @@ export type Database = {
           job_id?: string | null
           notes?: string | null
           organization_id: string
+          release_revision?: number
           repair_order_id: string
           result: string
           signed_at?: string
@@ -4455,6 +4507,7 @@ export type Database = {
           job_id?: string | null
           notes?: string | null
           organization_id?: string
+          release_revision?: number
           repair_order_id?: string
           result?: string
           signed_at?: string
@@ -4564,6 +4617,7 @@ export type Database = {
           order_type: string
           organization_id: string
           promised_at: string | null
+          release_revision: number
           risk_state: string
           ro_number: string
           state_of_charge: number | null
@@ -4586,6 +4640,7 @@ export type Database = {
           order_type?: string
           organization_id: string
           promised_at?: string | null
+          release_revision?: number
           risk_state?: string
           ro_number: string
           state_of_charge?: number | null
@@ -4608,6 +4663,7 @@ export type Database = {
           order_type?: string
           organization_id?: string
           promised_at?: string | null
+          release_revision?: number
           risk_state?: string
           ro_number?: string
           state_of_charge?: number | null
@@ -6251,11 +6307,11 @@ export type Database = {
           description: string
           due_date: string | null
           due_odometer_km: number | null
-          source_task_id: string | null
           finding_id: string | null
           id: string
           organization_id: string
           severity: string
+          source_task_id: string | null
           status: string
           updated_at: string
           vehicle_id: string
@@ -6266,11 +6322,11 @@ export type Database = {
           description: string
           due_date?: string | null
           due_odometer_km?: number | null
-          source_task_id?: string | null
           finding_id?: string | null
           id?: string
           organization_id: string
           severity: string
+          source_task_id?: string | null
           status?: string
           updated_at?: string
           vehicle_id: string
@@ -6281,11 +6337,11 @@ export type Database = {
           description?: string
           due_date?: string | null
           due_odometer_km?: number | null
-          source_task_id?: string | null
           finding_id?: string | null
           id?: string
           organization_id?: string
           severity?: string
+          source_task_id?: string | null
           status?: string
           updated_at?: string
           vehicle_id?: string
@@ -6310,6 +6366,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_recommendations_source_task_id_fkey"
+            columns: ["source_task_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_checklist_tasks"
             referencedColumns: ["id"]
           },
           {
@@ -6466,83 +6529,98 @@ export type Database = {
           },
         ]
       }
+      work_order_service_choices: {
+        Row: {
+          branch_id: string
+          created_at: string
+          description_ar: string | null
+          description_en: string
+          id: string
+          inspection_id: string
+          note: string | null
+          organization_id: string
+          repair_order_id: string
+          selected_by: string
+          service_code: string
+          service_version_id: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          description_ar?: string | null
+          description_en: string
+          id?: string
+          inspection_id: string
+          note?: string | null
+          organization_id: string
+          repair_order_id: string
+          selected_by: string
+          service_code: string
+          service_version_id: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          description_ar?: string | null
+          description_en?: string
+          id?: string
+          inspection_id?: string
+          note?: string | null
+          organization_id?: string
+          repair_order_id?: string
+          selected_by?: string
+          service_code?: string
+          service_version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_service_choices_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_service_choices_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_service_choices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_service_choices_repair_order_id_fkey"
+            columns: ["repair_order_id"]
+            isOneToOne: false
+            referencedRelation: "repair_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_service_choices_service_version_id_fkey"
+            columns: ["service_version_id"]
+            isOneToOne: false
+            referencedRelation: "service_template_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      discard_draft_document: { Args: { p_organization_id: string; p_kind: string; p_id: string; p_updated_at: string; p_reason: string }; Returns: undefined };
-      retire_catalog_service: { Args: { p_organization_id: string; p_version_id: string; p_reason: string }; Returns: undefined };
-      cancel_inspection_record: { Args: { p_organization_id: string; p_inspection_id: string; p_updated_at: string; p_reason: string }; Returns: undefined };
-      manage_directory_record: {
-        Args: { p_organization_id: string; p_kind: string; p_id: string; p_mode: string; p_updated_at: string; p_changes: Json; p_reason: string };
-        Returns: undefined;
-      };
-      manage_staff: {
-        Args: { p_organization_id: string; p_membership_id: string; p_action: string; p_details?: Json }
-        Returns: undefined
-      }
-      create_workshop_order: {
-        Args: {
-          p_branch_id: string
-          p_customer_concern?: string
-          p_customer_id: string
-          p_odometer_km?: number
-          p_order_type: string
-          p_organization_id: string
-          p_promised_at?: string
-          p_state_of_charge?: number
-          p_vehicle_id: string
-        }
-        Returns: {
-          appointment_id: string | null
-          branch_id: string
-          closed_at: string | null
-          created_at: string
-          created_by: string | null
-          customer_concern: string | null
-          customer_id: string
-          id: string
-          odometer_km: number | null
-          opened_at: string
-          order_type: string
-          organization_id: string
-          promised_at: string | null
-          risk_state: string
-          ro_number: string
-          state_of_charge: number | null
-          status: string
-          updated_at: string
-          vehicle_id: string
-          version: number
-        }
-        SetofOptions: {
-          from: "*"
-          to: "repair_orders"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
-      save_workshop_service: {
-        Args: {
-          p_minutes: number | null
-          p_name: string
-          p_name_ar: string
-          p_order_type: string
-          p_organization_id: string
-          p_price: number | null
-          p_template_id: string | null
-        }
-        Returns: string
-      }
-      select_inspection_services: {
-        Args: {
-          p_inspection_id: string
-          p_note?: string
-          p_service_ids: string[]
-        }
-        Returns: number
-      }
+      save_notification_webhook: { Args: { p_organization_id: string; p_endpoint: string; p_secret: string; p_enabled: boolean; p_version: number }; Returns: undefined }
+      notification_webhook_settings: { Args: { p_organization_id: string }; Returns: Json }
+      notification_webhook_status: { Args: { p_organization_id: string }; Returns: boolean }
+      test_notification_webhook: { Args: { p_organization_id: string; p_version: number }; Returns: string }
+      retry_notification_webhook: { Args: { p_delivery_id: string }; Returns: undefined }
+
       add_customer_address: {
         Args: {
           p_address_line1: string
@@ -6618,6 +6696,8 @@ export type Database = {
         Returns: {
           approval_group: string | null
           branch_id: string
+          catalog_part_id: string | null
+          catalog_service_version_id: string | null
           catalog_unit_price: number | null
           created_at: string
           description_snapshot: string
@@ -6693,6 +6773,8 @@ export type Database = {
         }
         Returns: {
           branch_id: string
+          catalog_part_id: string | null
+          catalog_service_version_id: string | null
           created_at: string
           description_snapshot: string
           discount_amount: number
@@ -6703,6 +6785,7 @@ export type Database = {
           line_type: string
           organization_id: string
           quantity: number
+          source_estimate_line_id: string | null
           source_id: string | null
           source_type: string | null
           tax_amount: number
@@ -6715,6 +6798,19 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      add_order_catalog_item: {
+        Args: {
+          p_catalog_id: string
+          p_invoice_version: number | null
+          p_item_type: string
+          p_ledger_id: string
+          p_order_id: string
+          p_price: number
+          p_quantity: number
+          p_tax: number
+        }
+        Returns: Json
       }
       add_purchase_order_line: {
         Args: {
@@ -6868,6 +6964,8 @@ export type Database = {
         Returns: {
           approval_group: string | null
           branch_id: string
+          catalog_part_id: string | null
+          catalog_service_version_id: string | null
           catalog_unit_price: number | null
           created_at: string
           description_snapshot: string
@@ -6948,6 +7046,28 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      book_waitlist_entry: {
+        Args: {
+          p_advisor_user_id?: string | null
+          p_end_at: string
+          p_promised_at?: string | null
+          p_resource_id?: string | null
+          p_service_version_ids: string[]
+          p_start_at: string
+          p_waitlist_id: string
+        }
+        Returns: string
+      }
+      branch_report: { Args: { p_organization_id: string }; Returns: Json }
+      cancel_inspection_record: {
+        Args: {
+          p_inspection_id: string
+          p_organization_id: string
+          p_reason: string
+          p_updated_at: string
+        }
+        Returns: undefined
       }
       close_cash_session: {
         Args: { p_counted_close: number; p_session_id: string }
@@ -7066,6 +7186,15 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      complete_vehicle_identity: {
+        Args: {
+          p_branch_id: string
+          p_registration_no: string
+          p_vehicle_id: string
+          p_vin: string
+        }
+        Returns: string
       }
       configure_inspection_check: {
         Args: { p_data: Json; p_organization_id: string }
@@ -7411,6 +7540,7 @@ export type Database = {
           rework_kind: string | null
           rework_reason: string | null
           safety_class: string
+          source_estimate_line_id: string | null
           started_at: string | null
           status: string
           updated_at: string
@@ -7534,8 +7664,10 @@ export type Database = {
           id: string
           odometer_km: number | null
           opened_at: string
+          order_type: string
           organization_id: string
           promised_at: string | null
+          release_revision: number
           risk_state: string
           ro_number: string
           state_of_charge: number | null
@@ -7602,6 +7734,7 @@ export type Database = {
           rework_kind: string | null
           rework_reason: string | null
           safety_class: string
+          source_estimate_line_id: string | null
           started_at: string | null
           status: string
           updated_at: string
@@ -7679,11 +7812,11 @@ export type Database = {
       }
       create_simple_service: {
         Args: {
-          p_organization_id: string
-          p_name: string
-          p_name_ar: string
           p_customer_price: number
           p_estimated_minutes: number
+          p_name: string
+          p_name_ar: string
+          p_organization_id: string
         }
         Returns: string
       }
@@ -7788,10 +7921,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      complete_vehicle_identity: {
-        Args: { p_vehicle_id: string; p_branch_id: string; p_vin: string; p_registration_no: string }
-        Returns: string
-      }
       create_vehicle: {
         Args: {
           p_battery_kwh?: number
@@ -7856,6 +7985,7 @@ export type Database = {
           id: string
           organization_id: string
           severity: string
+          source_task_id: string | null
           status: string
           updated_at: string
           vehicle_id: string
@@ -7906,6 +8036,58 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      create_workshop_order: {
+        Args: {
+          p_branch_id: string
+          p_customer_concern?: string
+          p_customer_id: string
+          p_odometer_km?: number
+          p_order_type: string
+          p_organization_id: string
+          p_promised_at?: string
+          p_state_of_charge?: number
+          p_vehicle_id: string
+        }
+        Returns: {
+          appointment_id: string | null
+          branch_id: string
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          customer_concern: string | null
+          customer_id: string
+          id: string
+          odometer_km: number | null
+          opened_at: string
+          order_type: string
+          organization_id: string
+          promised_at: string | null
+          release_revision: number
+          risk_state: string
+          ro_number: string
+          state_of_charge: number | null
+          status: string
+          updated_at: string
+          vehicle_id: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "repair_orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      discard_draft_document: {
+        Args: {
+          p_id: string
+          p_kind: string
+          p_organization_id: string
+          p_reason: string
+          p_updated_at: string
+        }
+        Returns: undefined
       }
       end_vehicle_ownership: {
         Args: {
@@ -7972,6 +8154,7 @@ export type Database = {
           rework_kind: string | null
           rework_reason: string | null
           safety_class: string
+          source_estimate_line_id: string | null
           started_at: string | null
           status: string
           updated_at: string
@@ -8051,6 +8234,7 @@ export type Database = {
           rework_kind: string | null
           rework_reason: string | null
           safety_class: string
+          source_estimate_line_id: string | null
           started_at: string | null
           status: string
           updated_at: string
@@ -8062,6 +8246,35 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      invoice_balance_summary: {
+        Args: { p_organization_id: string }
+        Returns: Json
+      }
+      manage_directory_record: {
+        Args: {
+          p_changes: Json
+          p_id: string
+          p_kind: string
+          p_mode: string
+          p_organization_id: string
+          p_reason: string
+          p_updated_at: string
+        }
+        Returns: undefined
+      }
+      manage_order_stock: {
+        Args: { p_action: string; p_data: Json; p_order_id: string }
+        Returns: Json
+      }
+      manage_staff: {
+        Args: {
+          p_action: string
+          p_details?: Json
+          p_membership_id: string
+          p_organization_id: string
+        }
+        Returns: undefined
       }
       match_vehicle_campaign: {
         Args: {
@@ -8088,6 +8301,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      materialize_approved_estimate: {
+        Args: { p_estimate_id: string; p_target: string }
+        Returns: string
       }
       open_cash_session: {
         Args: {
@@ -8130,8 +8347,10 @@ export type Database = {
           id: string
           odometer_km: number | null
           opened_at: string
+          order_type: string
           organization_id: string
           promised_at: string | null
+          release_revision: number
           risk_state: string
           ro_number: string
           state_of_charge: number | null
@@ -8861,6 +9080,7 @@ export type Database = {
           rework_kind: string | null
           rework_reason: string | null
           safety_class: string
+          source_estimate_line_id: string | null
           started_at: string | null
           status: string
           updated_at: string
@@ -8945,6 +9165,7 @@ export type Database = {
           job_id: string | null
           notes: string | null
           organization_id: string
+          release_revision: number
           repair_order_id: string
           result: string
           signed_at: string
@@ -9050,6 +9271,42 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      release_inspection_hold: {
+        Args: {
+          p_expected_version: number
+          p_reason: string
+          p_repair_order_id: string
+        }
+        Returns: {
+          appointment_id: string | null
+          branch_id: string
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          customer_concern: string | null
+          customer_id: string
+          id: string
+          odometer_km: number | null
+          opened_at: string
+          order_type: string
+          organization_id: string
+          promised_at: string | null
+          release_revision: number
+          risk_state: string
+          ro_number: string
+          state_of_charge: number | null
+          status: string
+          updated_at: string
+          vehicle_id: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "repair_orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       remove_estimate_line: {
         Args: { p_estimate_line_id: string }
         Returns: {
@@ -9139,6 +9396,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      reschedule_vehicle_followup: {
+        Args: { p_due_date: string | null; p_id: string; p_updated_at: string }
+        Returns: Json
+      }
       resume_job: {
         Args: { p_expected_version: number; p_job_id: string }
         Returns: {
@@ -9159,6 +9420,7 @@ export type Database = {
           rework_kind: string | null
           rework_reason: string | null
           safety_class: string
+          source_estimate_line_id: string | null
           started_at: string | null
           status: string
           updated_at: string
@@ -9170,6 +9432,72 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      retire_catalog_service: {
+        Args: {
+          p_organization_id: string
+          p_reason: string
+          p_version_id: string
+        }
+        Returns: undefined
+      }
+      review_job_quality: {
+        Args: {
+          p_expected_version: number
+          p_job_id: string
+          p_note: string
+          p_result: string
+        }
+        Returns: {
+          branch_id: string
+          cause_text: string | null
+          completed_at: string | null
+          correction_text: string | null
+          created_at: string
+          description_snapshot: string
+          estimate_line_id: string | null
+          id: string
+          operation_code: string | null
+          organization_id: string
+          original_job_id: string | null
+          planned_minutes: number
+          repair_order_id: string
+          required_qualification_code: string | null
+          rework_kind: string | null
+          rework_reason: string | null
+          safety_class: string
+          source_estimate_line_id: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      save_workshop_service: {
+        Args: {
+          p_minutes: number | null
+          p_name: string
+          p_name_ar: string
+          p_order_type: string
+          p_organization_id: string
+          p_price: number | null
+          p_template_id: string | null
+        }
+        Returns: string
+      }
+      select_inspection_services: {
+        Args: {
+          p_inspection_id: string
+          p_note?: string
+          p_service_ids: string[]
+        }
+        Returns: number
       }
       send_estimate: {
         Args: { p_estimate_id: string; p_valid_days: number }
@@ -9277,6 +9605,7 @@ export type Database = {
           rework_kind: string | null
           rework_reason: string | null
           safety_class: string
+          source_estimate_line_id: string | null
           started_at: string | null
           status: string
           updated_at: string
@@ -9442,8 +9771,10 @@ export type Database = {
           id: string
           odometer_km: number | null
           opened_at: string
+          order_type: string
           organization_id: string
           promised_at: string | null
+          release_revision: number
           risk_state: string
           ro_number: string
           state_of_charge: number | null
@@ -9504,10 +9835,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      reschedule_vehicle_followup: {
-        Args: { p_id: string; p_due_date: string | null; p_updated_at: string }
-        Returns: Json
-      }
       transition_vehicle_recommendation: {
         Args: { p_recommendation_id: string; p_to_status: string }
         Returns: {
@@ -9520,6 +9847,7 @@ export type Database = {
           id: string
           organization_id: string
           severity: string
+          source_task_id: string | null
           status: string
           updated_at: string
           vehicle_id: string
@@ -9627,18 +9955,6 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      update_vehicle_service_profile: {
-        Args: {
-          p_vehicle_id: string
-          p_branch_id: string
-          p_drive_unit: string
-          p_connectivity_status: string
-          p_software_version: string
-          p_first_registration_date: string | null
-          p_color: string
-        }
-        Returns: string
-      }
       update_vehicle_profile: {
         Args: {
           p_branch_id: string
@@ -9682,6 +9998,18 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      update_vehicle_service_profile: {
+        Args: {
+          p_branch_id: string
+          p_color: string
+          p_connectivity_status: string
+          p_drive_unit: string
+          p_first_registration_date: string | null
+          p_software_version: string
+          p_vehicle_id: string
+        }
+        Returns: string
       }
       upsert_branch_holiday: {
         Args: {

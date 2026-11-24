@@ -1,3 +1,5 @@
+import { ResponsiveTable } from "@/components/responsive-table";
+import { readAll } from "@/lib/supabase/read-all";
 import { LocalizedContent } from "@/components/localized-content";
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, Banknote, Boxes, Building2, CalendarClock, CircleDollarSign, ClipboardCheck, Clock3, Gauge, Plus, TimerReset, Wrench } from "lucide-react";
@@ -45,6 +47,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const query = await searchParams;
   const staff = await getCurrentStaff();
   const supabase = await createClient();
+  const balanceResult = await supabase.rpc("invoice_balance_summary", { p_organization_id: staff.organizationId });
+  if (balanceResult.error || !balanceResult.data || typeof balanceResult.data !== "object") throw new Error("Invoice balances could not be loaded.");
+  const netBalances = balanceResult.data as Record<string, number>;
+  const balanceDue = (invoice: { id: string }) => { const value = netBalances[invoice.id]; if (typeof value !== "number") throw new Error("Invoice balance unavailable."); return value; };
+
   const { data: branches, error: branchError } = await supabase.from("branches").select("id, code, city, display_name").eq("organization_id", staff.organizationId).eq("status", "active").order("city");
   const selectedBranch = branches?.find((branch) => branch.id === (query.branch ?? staff.selectedBranchId));
   const selectedBranchId = selectedBranch?.id;
@@ -74,8 +81,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   }
 
   const [ordersResult, jobsResult, appointmentsResult, invoicesResult, paymentsResult, balancesResult, resourcesResult, partsResult] = await Promise.all([
-    orderQuery, jobQuery, appointmentQuery, invoiceQuery, paymentQuery, balanceQuery, resourceQuery,
-    supabase.from("parts").select("id, part_number, description_en").eq("organization_id", staff.organizationId).eq("status", "active").order("part_number"),
+    readAll(orderQuery), readAll(jobQuery), readAll(appointmentQuery), readAll(invoiceQuery), readAll(paymentQuery), readAll(balanceQuery), readAll(resourceQuery),
+    readAll(supabase.from("parts").select("id, part_number, description_en").eq("organization_id", staff.organizationId).eq("status", "active").order("part_number")),
   ]);
   const orders = ordersResult.data ?? [];
   const jobs = jobsResult.data ?? [];
@@ -90,7 +97,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const activeTimers = jobs.reduce((total, job) => total + job.labor_entries.filter((entry) => entry.ended_at === null).length, 0);
   const todayAppointments = appointments.filter((appointment) => dayKey.format(new Date(appointment.start_at)) === today);
   const arrivalsToday = todayAppointments.filter((appointment) => ["confirmed", "checked_in"].includes(appointment.status)).length;
-  const receivables = invoices.filter((invoice) => ["posted", "partially_paid"].includes(invoice.status)).reduce((total, invoice) => total + Number(invoice.grand_total) - Number(invoice.paid_total), 0);
+  const receivables = invoices.filter((invoice) => ["posted", "partially_paid"].includes(invoice.status) && balanceDue(invoice) > 0).reduce((total, invoice) => total + balanceDue(invoice), 0);
   const collectedToday = payments.reduce((total, payment) => total + Number(payment.amount), 0);
   const postedThisMonth = invoices.filter((invoice) => invoice.posted_at && invoice.posted_at >= monthStart).reduce((total, invoice) => total + Number(invoice.grand_total), 0);
   const jobsByOrder = new Map<string, typeof jobs>();
@@ -117,7 +124,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     const activeJobs = branchJobs.filter((job) => !finishedJobStatuses.includes(job.status)).length;
     const bays = resources.filter((resource) => resource.branch_id === branch.id).length;
     const saturation = bays ? Math.min(100, Math.round(activeJobs / bays * 100)) : null;
-    const branchReceivables = invoices.filter((invoice) => invoice.branch_id === branch.id && ["posted", "partially_paid"].includes(invoice.status)).reduce((total, invoice) => total + Number(invoice.grand_total) - Number(invoice.paid_total), 0);
+    const branchReceivables = invoices.filter((invoice) => invoice.branch_id === branch.id && ["posted", "partially_paid"].includes(invoice.status) && balanceDue(invoice) > 0).reduce((total, invoice) => total + balanceDue(invoice), 0);
     return { ...branch, orders: branchOrders.length, activeJobs, bays, saturation, receivables: branchReceivables, today: todayAppointments.filter((appointment) => appointment.branch_id === branch.id).length };
   });
 
@@ -167,7 +174,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       </aside>
     </div>
 
-    <section className="panel branch-board"><div className="panel-header"><div><div className="panel-title">Branch operating board</div><div className="panel-subtitle">Comparable workload, capacity and cash exposure by city</div></div><Link className="panel-link" href="/branches">Manage network →</Link></div><div className="data-scroll"><table className="data-table branch-dashboard-table"><thead><tr><th>Branch</th><th>Active orders</th><th>Open jobs</th><th>Today</th><th>Bay / lift load</th><th className="align-right">Receivables</th></tr></thead><tbody>{branchRows.map((branch) => <tr key={branch.id}><td><div className="cell-main">{branch.display_name}</div><div className="cell-sub mono">{branch.city} · {branch.code}</div></td><td className="mono">{branch.orders}</td><td className="mono">{branch.activeJobs}</td><td className="mono">{branch.today} visits</td><td><div className="capacity-copy"><span>{branch.bays ? `${branch.activeJobs} jobs / ${branch.bays} resources` : "Capacity not configured"}</span>{branch.saturation !== null ? <strong className="mono">{branch.saturation}%</strong> : null}</div><div className="util-track"><div className={`util-fill ${(branch.saturation ?? 0) > 85 ? "hot" : ""}`} style={{ width: `${branch.saturation ?? 0}%` }} /></div></td><td className="align-right cell-main mono">{money.format(branch.receivables)}</td></tr>)}</tbody></table></div></section>
+    <section className="panel branch-board"><div className="panel-header"><div><div className="panel-title">Branch operating board</div><div className="panel-subtitle">Comparable workload, capacity and cash exposure by city</div></div><Link className="panel-link" href="/branches">Manage network →</Link></div><div className="data-scroll"><ResponsiveTable className="data-table branch-dashboard-table"><thead><tr><th>Branch</th><th>Active orders</th><th>Open jobs</th><th>Today</th><th>Bay / lift load</th><th className="align-right">Receivables</th></tr></thead><tbody>{branchRows.map((branch) => <tr key={branch.id}><td><div className="cell-main">{branch.display_name}</div><div className="cell-sub mono">{branch.city} · {branch.code}</div></td><td className="mono">{branch.orders}</td><td className="mono">{branch.activeJobs}</td><td className="mono">{branch.today} visits</td><td><div className="capacity-copy"><span>{branch.bays ? `${branch.activeJobs} jobs / ${branch.bays} resources` : "Capacity not configured"}</span>{branch.saturation !== null ? <strong className="mono">{branch.saturation}%</strong> : null}</div><div className="util-track"><div className={`util-fill ${(branch.saturation ?? 0) > 85 ? "hot" : ""}`} style={{ width: `${branch.saturation ?? 0}%` }} /></div></td><td className="align-right cell-main mono">{money.format(branch.receivables)}</td></tr>)}</tbody></ResponsiveTable></div></section>
 
     <div className="dashboard-lower-grid">
       <section className="panel"><div className="panel-header"><div><div className="panel-title">Next arrivals</div><div className="panel-subtitle">Upcoming seven-day reception queue</div></div><Link className="panel-link" href="/appointments">Full schedule →</Link></div>{appointments.length ? <div className="arrival-list">{appointments.slice(0, 6).map((appointment) => <article className="arrival-row" key={appointment.id}><div className="arrival-time"><strong>{clockTime.format(new Date(appointment.start_at))}</strong><span>{appointmentDate.format(new Date(appointment.start_at))}</span></div><div className="arrival-identity"><strong>{appointment.vehicle?.model?.name ?? "Volkswagen ID"} · {appointment.vehicle?.registration_no ?? appointment.vehicle?.vin}</strong><span>{appointment.customer?.display_name ?? "Unknown customer"} · {appointment.branch?.city}</span></div><StatusPill label={appointment.status} tone={statusTone(appointment.status)} /></article>)}</div> : <div className="panel-empty compact-empty"><CalendarClock /><strong>No arrivals in the next seven days</strong><Link className="panel-link" href="/appointments?new=1#new-appointment">Book a visit →</Link></div>}</section>

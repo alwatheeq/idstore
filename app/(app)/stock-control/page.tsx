@@ -1,3 +1,4 @@
+import { readAll } from "@/lib/supabase/read-all";
 import { LocalizedContent } from "@/components/localized-content";
 import { SubmissionKey } from "@/components/submission-key";
 import Link from "next/link";
@@ -19,11 +20,11 @@ const next: Record<string, string[]> = { draft: ["requested", "cancelled"], requ
 export default async function StockControlPage({ searchParams }: { searchParams: Promise<PageQuery> }) {
   const query = await searchParams; const staff = await getCurrentStaff(); const supabase = await createClient();
   const [{ data: branches }, { data: parts }, { data: bins }, { data: transfers, error }, { data: counts }] = await Promise.all([
-    supabase.from("branches").select("id, code, city").eq("organization_id", staff.organizationId).eq("status", "active").order("city"),
-    supabase.from("parts").select("id, part_number, description_en, tracking").eq("organization_id", staff.organizationId).eq("status", "active").order("part_number"),
-    supabase.from("bins").select("id, code, branch_id, bin_type, branch:branches(code, city)").eq("organization_id", staff.organizationId).eq("status", "active").order("code"),
-    supabase.from("stock_transfers").select("id, transfer_number, source_branch_id, destination_branch_id, status, created_at, dispatched_at, received_at, source:branches!stock_transfers_source_branch_id_fkey(code, city), destination:branches!stock_transfers_destination_branch_id_fkey(code, city), stock_transfer_lines(id, part_id, source_bin_id, destination_bin_id, requested_quantity, shipped_quantity, received_quantity, receiving_closed, discrepancy_reason, part:parts(part_number, description_en), source_bin:bins!stock_transfer_lines_source_bin_id_fkey(code), destination_bin:bins!stock_transfer_lines_destination_bin_id_fkey(code))").eq("organization_id", staff.organizationId).order("created_at", { ascending: false }),
-    supabase.from("stock_counts").select("id, count_number, status, snapshot_at, posted_at, bin:bins(code), branch:branches(code, city), stock_count_lines(id, expected_quantity, counted_quantity, variance, part:parts(part_number, description_en))").eq("organization_id", staff.organizationId).order("created_at", { ascending: false }),
+    readAll(supabase.from("branches").select("id, code, city").eq("organization_id", staff.organizationId).eq("status", "active").order("city")),
+    readAll(supabase.from("parts").select("id, part_number, description_en, tracking").eq("organization_id", staff.organizationId).eq("status", "active").order("part_number")),
+    readAll(supabase.from("bins").select("id, code, branch_id, bin_type, branch:branches(code, city)").eq("organization_id", staff.organizationId).eq("status", "active").order("code")),
+    readAll(supabase.from("stock_transfers").select("id, transfer_number, source_branch_id, destination_branch_id, status, created_at, dispatched_at, received_at, source:branches!stock_transfers_source_branch_id_fkey(code, city), destination:branches!stock_transfers_destination_branch_id_fkey(code, city), stock_transfer_lines(id, part_id, source_bin_id, destination_bin_id, requested_quantity, shipped_quantity, received_quantity, receiving_closed, discrepancy_reason, part:parts(part_number, description_en), source_bin:bins!stock_transfer_lines_source_bin_id_fkey(code), destination_bin:bins!stock_transfer_lines_destination_bin_id_fkey(code))").eq("organization_id", staff.organizationId).order("created_at", { ascending: false })),
+    readAll(supabase.from("stock_counts").select("id, count_number, status, snapshot_at, posted_at, bin:bins(code), branch:branches(code, city), stock_count_lines(id, expected_quantity, counted_quantity, variance, part:parts(part_number, description_en))").eq("organization_id", staff.organizationId).order("created_at", { ascending: false })),
   ]);
   const selected = transfers?.find((item) => item.id === query.transfer) ?? transfers?.find((item) => item.status === "draft");
   const inTransit = (transfers ?? []).filter((item) => ["dispatched", "partially_received"].includes(item.status));

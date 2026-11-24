@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { uiLocaleCookie, type UiLocale } from "@/lib/i18n/ui";
-import "@fontsource/ibm-plex-sans/400.css";
-import "@fontsource/ibm-plex-sans/500.css";
-import "@fontsource/ibm-plex-sans/600.css";
-import "@fontsource/ibm-plex-sans/700.css";
-import "@fontsource/ibm-plex-sans-arabic/400.css";
-import "@fontsource/ibm-plex-sans-arabic/500.css";
-import "@fontsource/ibm-plex-sans-arabic/600.css";
-import "@fontsource/ibm-plex-sans-arabic/700.css";
+import "@fontsource/tajawal/400.css";
+import "@fontsource/tajawal/500.css";
+import "@fontsource/tajawal/700.css";
+import "@fontsource/tajawal/800.css";
+import "@fontsource/tajawal/900.css";
 import "./globals.css";
 import "./apple.css";
 import "./record-actions.css";
+import "./folder-tabs.css";
 
 export const metadata: Metadata = {
   title: "IDstore Service Operations",

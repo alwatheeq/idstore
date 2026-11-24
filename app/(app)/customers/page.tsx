@@ -1,3 +1,5 @@
+import { ResponsiveTable } from "@/components/responsive-table";
+import { readAll } from "@/lib/supabase/read-all";
 import { LocalizedContent } from "@/components/localized-content";
 import { CustomerDirectoryIdentity, CustomerDirectoryStatus } from "@/components/customer-directory-identity";
 import { RecordAction } from "@/components/record-action";
@@ -31,11 +33,11 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const supabase = await createClient();
   const [branches, { data: customers, error }] = await Promise.all([
     getActiveBranches(staff.organizationId),
-    supabase
+    readAll(supabase
       .from("customers")
       .select("id, display_name, customer_type, tax_number, status, created_at, preferred_branch:branches(display_name, city), customer_contacts(kind, value, normalized_value, is_primary), customer_addresses(id, address_type, country_code, admin_area, city, address_line1, address_line2, postal_code, is_primary), consents(purpose, channel, state, policy_version, source, recorded_at), vehicle_ownerships(id, relationship, valid_from, valid_to, verified_at, vehicle:vehicles(id, registration_no, vin, model:vehicle_models(name))), invoices(grand_total, created_at), customer_accounts(status)")
       .eq("organization_id", staff.organizationId)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })),
   ]);
 
   const visibleCustomers = (customers ?? []).filter(customer =>
@@ -155,10 +157,10 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
 
     {duplicateGroups.length ? <section className="panel"><div className="panel-header"><div><div className="panel-title"><AlertTriangle size={17}/> Duplicate identity review</div><div className="panel-subtitle">Shared contact or tax identifiers need staff review before another customer is created.</div></div><span className="status-pill amber">{duplicateGroups.length} match{duplicateGroups.length === 1 ? "" : "es"}</span></div><div className="consent-ledger">{duplicateGroups.map(([key, names])=><article key={key}><div><strong>{key.startsWith("tax:") ? "Tax number" : "Contact"} match</strong><span>{[...new Set(names)].join(" · ")}</span></div><span>Review</span></article>)}</div></section> : null}
 
-    {!customers?.length ? <EmptyState icon={Users} title="No customers yet" description={branches?.length ? "Add the first customer to start a vehicle and service history." : "Create a branch first, then add customers for that location."} action={branches?.length ? <Link className="button primary" href="/customers?new=1#new-customer">Add first customer</Link> : <Link className="button" href="/branches?new=1#new-branch">Set up branches</Link>} /> : <section className="panel"><div className="panel-body"><RecordFilters action="/customers" query={query.q} facet={query.filter} label="Customer type" placeholder="Search name, mobile or account…" options={[{ value: "individual", label: "Individual" }, { value: "company", label: "Company / fleet" }]}/>{customers.length >= 1000 ? <p className="field-help">Search covers the first 1,000 loaded records.</p> : null}{!visibleCustomers.length ? <p role="status">No matching records.</p> : null}</div><div className="data-scroll"><table className="data-table customer-directory-table"><thead><tr><th>Customer</th><th>City</th><th>Vehicles</th><th>Portal</th><th className="align-right">Lifetime value</th>{staff.role === "admin" ? <th>Actions</th> : null}</tr></thead><tbody>{visibleCustomers.map((customer) => {
+    {!customers?.length ? <EmptyState icon={Users} title="No customers yet" description={branches?.length ? "Add the first customer to start a vehicle and service history." : "Create a branch first, then add customers for that location."} action={branches?.length ? <Link className="button primary" href="/customers?new=1#new-customer">Add first customer</Link> : <Link className="button" href="/branches?new=1#new-branch">Set up branches</Link>} /> : <section className="panel"><div className="panel-body"><RecordFilters action="/customers" query={query.q} facet={query.filter} label="Customer type" placeholder="Search name, mobile or account…" options={[{ value: "individual", label: "Individual" }, { value: "company", label: "Company / fleet" }]}/>{customers.length >= 1000 ? <p className="field-help">Search covers the first 1,000 loaded records.</p> : null}{!visibleCustomers.length ? <p role="status">No matching records.</p> : null}</div><div className="data-scroll"><ResponsiveTable className="data-table customer-directory-table"><thead><tr><th>Customer</th><th>City</th><th>Vehicles</th><th>Portal</th><th className="align-right">Lifetime value</th>{staff.role === "admin" ? <th>Actions</th> : null}</tr></thead><tbody>{visibleCustomers.map((customer) => {
       const city = customer.customer_addresses.find((address) => address.is_primary)?.city ?? customer.preferred_branch?.city;
       const lifetimeValue = customer.invoices.reduce((total, invoice) => total + Number(invoice.grand_total), 0);
       return <tr key={customer.id}><td><CustomerDirectoryIdentity id={customer.id} name={customer.display_name} type={customer.customer_type} status={customer.status} contacts={customer.customer_contacts} /></td><td>{city ?? "—"}</td><td>{customer.vehicle_ownerships.length ? customer.vehicle_ownerships.map((ownership) => <div className="cell-sub" key={ownership.id}>{ownership.vehicle?.model?.name ?? "VW ID"} · {ownership.vehicle?.registration_no ?? ownership.vehicle?.vin ?? "No plate / VIN"}</div>) : "—"}</td><td className="customer-directory-portal"><CustomerDirectoryStatus active={customer.status === "active" && customer.customer_accounts.some(account => account.status === "active")} href={customer.status === "active" && !customer.customer_accounts.some(account => account.status === "active") ? `/customers?portal=${customer.id}#portal-access` : undefined} /></td><td className="align-right cell-main mono">{money.format(lifetimeValue)}</td>{staff.role === "admin" && customer.status !== "anonymized" ? <td className="record-action-cell"><MasterRecordActions kind="customer" id={customer.id} archived={customer.status === "archived"} /></td> : staff.role === "admin" ? <td>—</td> : null}</tr>;
-    })}</tbody></table></div></section>}
+    })}</tbody></ResponsiveTable></div></section>}
   </>}</LocalizedContent>;
 }

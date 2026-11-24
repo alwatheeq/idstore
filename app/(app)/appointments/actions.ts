@@ -38,7 +38,17 @@ export async function createAppointment(formData: FormData) {
     if (!["workshop", "mobile"].includes(serviceMode) || !["customer_dropoff", "wait_on_site", "pickup_return", "loan_vehicle"].includes(transportMode) || !Number.isSafeInteger(recurrenceCount) || recurrenceCount < 1 || recurrenceCount > 12 || serviceVersionIds.length < 1 || serviceVersionIds.length > 10) {
       throw new Error("Appointment service choices are invalid.");
     }
-    const { error } = await supabase.rpc("create_catalog_appointments", {
+    const waitlistId = formText(formData, "waitlistId");
+    if (waitlistId) {
+      const { data: request, error } = await supabase.from("appointment_waitlist").select("branch_id,customer_id,vehicle_id").eq("id", waitlistId).eq("organization_id", staff.organizationId).single();
+      if (error || !request || request.branch_id !== branchId || request.customer_id !== customerId || request.vehicle_id !== vehicleId) throw new Error("Use the branch, customer and vehicle from the waitlist request.");
+    }
+    const { error } = waitlistId ? await supabase.rpc("book_waitlist_entry", {
+      p_waitlist_id: waitlistId, p_start_at: startAt, p_end_at: endAt,
+      p_service_version_ids: serviceVersionIds, p_resource_id: optionalText(formData, "resourceId") ?? null,
+      p_advisor_user_id: optionalText(formData, "advisorUserId") ?? null,
+      p_promised_at: promisedLocal ? zonedLocalToIso(promisedLocal, branch.timezone) : null,
+    }) : await supabase.rpc("create_catalog_appointments", {
       p_organization_id: staff.organizationId,
       p_branch_id: branchId,
       p_customer_id: customerId,
@@ -96,11 +106,13 @@ export async function openWorkOrderFromCheckin(formData: FormData) {
   if (!appointmentId) redirect(routeMessage("/appointments", "error", "The checked-in appointment is invalid."));
 
   let orderNumber = "";
+  let orderId = "";
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.rpc("open_repair_order_from_checkin", { p_appointment_id: appointmentId });
     if (error || !data) throw error ?? new Error("Repair order was not created.");
     orderNumber = data.ro_number;
+    orderId = data.id;
   } catch (error) {
     redirect(routeMessage("/appointments", "error", operationError(error, "The checked-in appointment could not be moved into the workshop.")));
   }
@@ -108,7 +120,7 @@ export async function openWorkOrderFromCheckin(formData: FormData) {
   revalidatePath("/appointments");
   revalidatePath("/work-orders");
   revalidatePath("/dashboard");
-  redirect(routeMessage("/work-orders", "created", `Work order ${orderNumber} opened from signed check-in.`));
+  redirect(`/work-orders?order=${encodeURIComponent(orderId)}&created=${encodeURIComponent(`Work order ${orderNumber} opened from signed check-in.`)}#work-order-workspace`);
 }
 
 export async function createWaitlistEntry(formData: FormData) {

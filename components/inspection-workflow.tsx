@@ -106,7 +106,7 @@ function Workflow({ data }: { data: InspectionWorkspace }) {
   const [step, setStep] = useState<Key>(i.status === "completed" ? "review" : i.checklist_generated_at ? "record" : Object.keys(i.assignment).length ? "select" : "assign");
   const unreviewed = i.completed_at && data.tasks.some(task => task.attempts.some(a => new Date(a.recorded_at) > new Date(i.completed_at!)));
   return <div className="iw-workflow">
-    <nav className="iw-steps" aria-label={t("catalog")}>{(["assign", "select", "record", "review"] as const).map((key, index) => <button key={key} type="button" aria-current={step === key ? "step" : undefined} onClick={() => setStep(key)}><span dir="ltr">{index + 1}</span>{t(key)}</button>)}</nav>
+    <nav className="iw-steps" aria-label={t("catalog")}>{(["assign", "select", "record", "review"] as const).map((key, index) => <button key={key} type="button" aria-current={step === key ? "page" : undefined} onClick={() => setStep(key)}><span dir="ltr">{index + 1}</span>{t(key)}</button>)}</nav>
     {data.tasks.length ? <div className="iw-progress"><strong>{t("completed")}: <bdi>{progress.completed} / {progress.total}</bdi></strong><progress aria-label={t("completed")} max={progress.total} value={progress.completed} /><span>{t("outstanding")}: <bdi>{progress.outstanding.length}</bdi></span></div> : null}
     {step === "assign" ? <Assignment key={i.checklist_generated_at ?? "draft"} data={data} onSaved={() => setStep("select")} /> : null}
     {step === "select" ? <Selection data={data} onSaved={() => setStep("record")} /> : null}

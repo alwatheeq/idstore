@@ -1,6 +1,7 @@
 export type NavigationItem = {
   href: string;
   label: string;
+  badge?: number;
   permissionAny?: string[];
   adminOnly?: boolean;
 };
@@ -29,7 +30,7 @@ export const navigationGroups: NavigationGroup[] = [
       { href: "/work-orders", label: "Work orders", permissionAny: ["repair_order.manage", "workshop.dispatch", "job.perform"] },
       { href: "/inspections", label: "Inspections", permissionAny: ["inspection.perform"] },
       { href: "/estimates", label: "Estimates", permissionAny: ["estimate.manage"] },
-      { href: "/quality-campaigns", label: "Quality & campaigns", permissionAny: ["inspection.perform", "report.operations.read"] },
+      { href: "/quality-campaigns", label: "Quality & campaigns", permissionAny: ["repair_order.manage", "branch.manage", "crm.manage", "report.operations.read"] },
     ],
   },
   {
@@ -58,6 +59,7 @@ export const navigationGroups: NavigationGroup[] = [
       { href: "/branches", label: "Branches", permissionAny: ["branch.manage"] },
       { href: "/staff", label: "Staff accounts", permissionAny: ["staff.manage"], adminOnly: true },
       { href: "/settings/access", label: "Roles & permissions", adminOnly: true },
+      { href: "/settings/notifications", label: "Customer notifications", adminOnly: true },
       { href: "/catalog", label: "Catalog & capacity", permissionAny: ["branch.manage"] },
       { href: "/governance", label: "Integrations & audit", permissionAny: ["integration.manage", "audit.read"] },
     ],
@@ -73,4 +75,10 @@ export function visibleNavigationGroups(role: "admin" | "staff", permissionCodes
       items: group.items.filter((item) => !item.adminOnly && (!item.permissionAny || item.permissionAny.some((code) => permissions.has(code)))),
     }))
     .filter((group) => group.items.length > 0);
+}
+
+/** Match a route segment, then prefer its most specific permitted destination. */
+export function currentNavigationHref(pathname: string, items: Pick<NavigationItem, "href">[]) {
+  return items.filter(({ href }) => pathname === href || pathname.startsWith(`${href}/`))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 }

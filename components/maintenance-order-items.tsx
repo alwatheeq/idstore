@@ -1,28 +1,31 @@
+import { getCurrentStaff } from "@/lib/auth/session";
+import { readAll } from "@/lib/supabase/read-all";
 import { RecordAction } from "@/components/record-action";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { servicePrice } from "@/lib/service-catalog";
 import { isMaintenanceTask } from "@/lib/maintenance-order";
 import { OrderItemForm } from "@/components/order-item-form";
-import { prepareOrderItems, removeOrderItem } from "@/app/(app)/work-orders/item-actions";
+import { materializeApprovedEstimate, prepareOrderItems, removeOrderItem } from "@/app/(app)/work-orders/item-actions";
 import { StatusPill } from "@/components/status-pill";
 
 export async function MaintenanceOrderItems({ orderId, organizationId, status, branchLocked, orderType = "maintenance" }: {
   orderId: string; organizationId: string; status: string; branchLocked: boolean; orderType?: string;
 }) {
   const supabase = await createClient();
+  const staff = await getCurrentStaff();
   const { data: estimates, error } = await supabase.from("estimate_versions")
     .select("id, version_no, status, currency, subtotal, discount_total, tax_total, grand_total, estimate_lines(id, line_no, line_type, description_snapshot, quantity, unit_price, line_total)")
     .eq("organization_id", organizationId).eq("repair_order_id", orderId).order("version_no", { ascending: false }).limit(1);
   if (error) return <section className="panel panel-body" role="alert">Order items could not be loaded. Refresh and try again.</section>;
   // Older orders may have been invoiced directly, without an estimate.
   // Reuse that ledger rather than inventing a second price list.
-  const { data: invoices, error: invoiceError } = !estimates?.length ? await supabase.from("invoices")
+  const { data: invoices, error: invoiceError } = await supabase.from("invoices")
     .select("id, version, status, currency, subtotal, discount_total, tax_total, grand_total, invoice_lines(id, line_no, line_type, description_snapshot, quantity, unit_price, line_total)")
-    .eq("organization_id", organizationId).eq("repair_order_id", orderId).order("created_at", { ascending: false }).limit(1) : { data: null, error: null };
+    .eq("organization_id", organizationId).eq("repair_order_id", orderId).order("created_at", { ascending: false }).limit(1);
   if (invoiceError) return <section className="panel panel-body" role="alert">Order items could not be loaded. Refresh and try again.</section>;
   const invoice = invoices?.[0];
-  const estimate = estimates?.[0] ?? (invoice ? { ...invoice, estimate_lines: invoice.invoice_lines } : undefined);
+  const estimate = invoice ? { ...invoice, estimate_lines: invoice.invoice_lines } : estimates?.[0];
   const closed = ["delivered", "closed", "cancelled"].includes(status);
   const editable = !closed && !branchLocked && estimate?.status === "draft";
   const recommendations = editable ? await supabase.from("work_order_service_choices").select("service_version_id, description_en, description_ar").eq("organization_id", organizationId).eq("repair_order_id", orderId) : { data: [], error: null };
@@ -31,13 +34,14 @@ export async function MaintenanceOrderItems({ orderId, organizationId, status, b
     selectedServiceIds.size ? supabase.from("service_template_versions").select("id, applicability_json, template:service_templates!inner(name_en, name_ar, work_order_type), service_template_tasks(result_schema)")
       .eq("template.work_order_type", orderType)
       .eq("organization_id", organizationId).in("status", ["published", "retired"]).in("id", [...selectedServiceIds]) : Promise.resolve({ data: [], error: null }),
-    supabase.from("parts").select("id, part_number, description_en, description_ar, sale_price").eq("organization_id", organizationId).eq("status", "active").order("part_number"),
+    readAll(supabase.from("parts").select("id, part_number, description_en, description_ar, sale_price").eq("organization_id", organizationId).eq("status", "active").order("part_number")),
   ]) : [{ data: null, error: null }, { data: null, error: null }];
   const lines = [...(estimate?.estimate_lines ?? [])].sort((a, b) => a.line_no - b.line_no);
   const money = (value: number) => `${estimate?.currency ?? ""} ${value.toFixed(3)}`;
   return <section className="panel" id="order-items">
     <div className="panel-header"><div><div className="panel-title">Services & spare parts</div><div className="panel-subtitle">One order, with quantities, prices and a clear total.</div></div>{estimate ? <StatusPill label={estimate.status} tone={estimate.status === "draft" ? "gray" : "blue"} /> : null}</div>
     <div className="panel-body stack">
+      {!branchLocked && !closed && estimates?.[0] && ["approved", "partially_approved"].includes(estimates[0].status) ? <div className="inline-actions">{["jobs", "invoice"].filter(target => staff.role === "admin" || staff.permissionCodes.includes(target === "jobs" ? "workshop.dispatch" : "invoice.post")).map(target => <form action={materializeApprovedEstimate} key={target}><input type="hidden" name="repairOrderId" value={orderId}/><input type="hidden" name="estimateId" value={estimates[0].id}/><input type="hidden" name="target" value={target}/><button className="button" type="submit">{target === "jobs" ? "Create jobs from approved items" : "Copy approved items to invoice"}</button></form>)}</div> : null}
       {branchLocked ? <p className="field-help">{"Select this order's branch to make changes."}</p> : null}
       {!estimate ? <><p>No services or spare parts added yet.</p>{!closed && !branchLocked && ["checked_in", "diagnosis", "approved", "on_hold", "in_progress", "qc", "ready"].includes(status) ? <form action={prepareOrderItems}><input type="hidden" name="repairOrderId" value={orderId} /><button className="button primary" type="submit">Prepare order</button></form> : null}</> : <>
         {invoice ? <p className="field-help">These items use the existing invoice. Posted invoices cannot be changed here.</p> : !editable ? <p className="field-help">This price list is read-only. Manage approval or revisions in Estimates.</p> : null}
@@ -68,7 +72,7 @@ export async function MaintenanceOrderItems({ orderId, organizationId, status, b
           <div><dt>Tax</dt><dd dir="ltr">{money(estimate.tax_total)}</dd></div>
           <div className="order-grand-total"><dt>Total</dt><dd dir="ltr">{money(estimate.grand_total)}</dd></div>
         </dl>
-        <p className="field-help">Adding a spare part prices it only. Stock is issued separately from inventory.</p>
+        <p className="field-help">Adding a spare part prices it only. Reserve and issue stock in Workshop stock below.</p>
         <div className="inline-actions"><Link className="button" href={invoice ? `/invoices?line=${invoice.id}#${invoice.status === "draft" ? "add-line" : `invoice-${invoice.id}`}` : `/estimates?estimate=${estimate.id}#estimate-workspace`}>Approval & billing</Link><Link className="button" href="/inventory">Inventory</Link></div>
       </>}
     </div>

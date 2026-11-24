@@ -263,3 +263,27 @@ export async function createReworkJob(formData: FormData) {
   revalidatePath("/work-orders");
   redirect(routeMessage("/work-orders", "created", `${reworkKind === "comeback" ? "Comeback" : "Rework"} job created.`));
 }
+
+export async function releaseInspectionHold(form: FormData) {
+  await getCurrentStaff();
+  const id = formText(form, "repairOrderId");
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("release_inspection_hold", { p_repair_order_id: id, p_expected_version: Number(formText(form, "version")), p_reason: formText(form, "reason") });
+    if (error) throw error;
+  } catch (error) { redirect(`/work-orders?order=${encodeURIComponent(id)}&error=${encodeURIComponent(operationError(error, "The safety hold could not be released."))}`); }
+  revalidatePath("/", "layout");
+  redirect(`/work-orders?order=${encodeURIComponent(id)}&created=${encodeURIComponent("Safety hold released with review evidence.")}`);
+}
+
+export async function reviewJobQuality(form: FormData) {
+  await getCurrentStaff();
+  const orderId = formText(form, "repairOrderId");
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("review_job_quality", { p_job_id: formText(form, "jobId"), p_expected_version: Number(formText(form, "version")), p_result: formText(form, "result"), p_note: formText(form, "note") });
+    if (error) throw error;
+  } catch (error) { redirect(`/work-orders?view=advanced&order=${encodeURIComponent(orderId)}&error=${encodeURIComponent(operationError(error, "The quality review could not be saved."))}`); }
+  revalidatePath("/work-orders"); revalidatePath("/quality-campaigns");
+  redirect(`/work-orders?view=advanced&order=${encodeURIComponent(orderId)}&created=${encodeURIComponent("Job quality review recorded.")}`);
+}

@@ -1,3 +1,4 @@
+import { readAll } from "@/lib/supabase/read-all";
 import { LocalizedContent } from "@/components/localized-content";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -54,9 +55,9 @@ export default async function AccessSettingsPage({ searchParams }: { searchParam
 
   const supabase = await createClient();
   const [{ data: branches }, { data: permissions }, { data: memberships, error }] = await Promise.all([
-    supabase.from("branches").select("id, code, city, display_name").eq("organization_id", current.organizationId).eq("status", "active").order("city"),
-    supabase.from("permissions").select("code, description").neq("code", "hv_permit.authorize").order("code"),
-    supabase.from("memberships").select("id, user_id, role, all_branches, status, created_at").eq("organization_id", current.organizationId).order("created_at"),
+    readAll(supabase.from("branches").select("id, code, city, display_name").eq("organization_id", current.organizationId).eq("status", "active").order("city")),
+    readAll(supabase.from("permissions").select("code, description").neq("code", "hv_permit.authorize").order("code"), "code"),
+    readAll(supabase.from("memberships").select("id, user_id, role, all_branches, status, created_at").eq("organization_id", current.organizationId).order("created_at")),
   ]);
 
   const membershipIds = (memberships ?? []).map((membership) => membership.id);

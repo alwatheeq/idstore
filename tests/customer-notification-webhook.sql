@@ -1,0 +1,95 @@
+-- Run only with the offline net.http_post shim; this test never uses a real endpoint.
+begin;
+do $$
+declare org uuid:=gen_random_uuid(); other_org uuid:=gen_random_uuid(); admin_user uuid:=gen_random_uuid(); outsider uuid:=gen_random_uuid(); staff_user uuid:=gen_random_uuid();
+ customer uuid; branch uuid:=gen_random_uuid(); msg public.messages%rowtype; delivery integration.notification_deliveries%rowtype;
+ key text:=repeat('x',32); result jsonb; test_id uuid; body jsonb; headers jsonb; before_count integer;
+begin
+ if not exists(select 1 from information_schema.columns where table_schema='net' and table_name='http_request_queue' and column_name='body' and data_type='jsonb') then raise exception 'Offline HTTP shim required; refusing live network test'; end if;
+ insert into auth.users(id) values(admin_user),(outsider),(staff_user);
+ insert into public.profiles(user_id,display_name) values(admin_user,'Webhook admin'),(outsider,'Other admin'),(staff_user,'Webhook staff') on conflict(user_id) do nothing;
+ insert into public.organizations(id,legal_name,display_name) values(org,'Webhook test','Webhook test'),(other_org,'Other webhook test','Other webhook test');
+ insert into public.branches(id,organization_id,code,legal_name,display_name,city) values(branch,org,'WH','Webhook','Webhook','Amman');
+ insert into public.memberships(organization_id,user_id,role) values(org,admin_user,'admin'),(other_org,outsider,'admin'),(org,staff_user,'staff');
+ insert into public.customers(organization_id,display_name) values(org,'Synthetic recipient') returning id into customer;
+ insert into public.customer_contacts(organization_id,customer_id,kind,value,normalized_value,is_primary) values(org,customer,'email','test@example.com','test@example.com',true);
+ insert into public.consents(organization_id,customer_id,purpose,channel,state,policy_version,source) values(org,customer,'service_updates','email','granted','TEST','test');
+ perform set_config('request.jwt.claim.sub',admin_user::text,true);
+ perform public.save_notification_webhook(org,'https://notify.acme.com/webhook',key,false,0);
+ result:=public.notification_webhook_settings(org);
+ if result::text like '%'||key||'%' then raise exception 'Secret exposed'; end if;
+ if public.notification_webhook_status(org) then raise exception 'New webhook enabled unexpectedly'; end if;
+ begin perform public.save_notification_webhook(org,'http://localhost',key,true,1); raise exception 'Unsafe URL accepted'; exception when invalid_parameter_value then null; end;
+ begin perform public.save_notification_webhook(org,'https://127.0.0.1/webhook',key,true,1); raise exception 'IP URL accepted'; exception when invalid_parameter_value then null; end;
+ begin perform public.save_notification_webhook(org,'https://notify.acme.com/webhook',key,true,0); raise exception 'Stale config accepted'; exception when serialization_failure then null; end;
+ perform set_config('request.jwt.claim.sub',staff_user::text,true);
+ begin perform public.notification_webhook_settings(org); raise exception 'Staff read settings'; exception when insufficient_privilege then null; end;
+ begin perform public.save_notification_webhook(org,'https://notify.acme.com/webhook',key,true,1); raise exception 'Staff saved settings'; exception when insufficient_privilege then null; end;
+ perform set_config('request.jwt.claim.sub',outsider::text,true);
+ begin perform public.notification_webhook_settings(org); raise exception 'Other tenant read settings'; exception when insufficient_privilege then null; end;
+ perform set_config('request.jwt.claim.sub',admin_user::text,true);
+ test_id:=public.test_notification_webhook(org,1);
+ perform app_private.dispatch_customer_notifications();
+ select * into delivery from integration.notification_deliveries where id=test_id;
+ if delivery.state<>'sending' then raise exception 'Paused test not dispatched'; end if;
+ select q.body,q.headers into body,headers from net.http_request_queue q where q.id=delivery.request_id;
+ if body->>'event_type'<>'notification.test' or body::text like '%test@example.com%' then raise exception 'Test leaked customer data'; end if;
+ if headers->>'X-IDstore-Signature' is distinct from 'sha256='||encode(extensions.hmac(convert_to((headers->>'X-IDstore-Timestamp')||'.'||body::text,'UTF8'),convert_to(key,'UTF8'),'sha256'),'hex') then raise exception 'Signature mismatch'; end if;
+ insert into net._http_response(id,status_code,timed_out) values(delivery.request_id,202,false);
+ perform app_private.dispatch_customer_notifications();
+ if (select state from integration.notification_deliveries where id=test_id)<>'accepted' then raise exception 'Test acceptance missing'; end if;
+ msg:=public.queue_customer_message(customer,branch,'vehicle_ready',1,'email','webhook-notice');
+ insert into integration.outbox_events(organization_id,event_type,aggregate_type,aggregate_id,payload,idempotency_key) values(org,'invoice.posted','invoice',gen_random_uuid(),'{}','never-financial');
+ perform app_private.dispatch_customer_notifications();
+ if exists(select 1 from integration.notification_deliveries where organization_id=org and not is_test) then raise exception 'Paused delivery sent'; end if;
+ perform public.save_notification_webhook(org,'https://notify.acme.com/webhook','',true,1);
+ perform app_private.dispatch_customer_notifications();
+ select d.* into delivery from integration.notification_deliveries d join integration.outbox_events e on e.id=d.event_id where e.aggregate_id=msg.id;
+ if delivery.state is distinct from 'sending' then raise exception 'Notification not dispatched'; end if;
+ select q.body into body from net.http_request_queue q where q.id=delivery.request_id;
+ if body->'data'->>'recipient'<>'test@example.com' or body->'data'->>'template_code'<>'VEHICLE_READY' then raise exception 'Notification payload incomplete'; end if;
+ if exists(select 1 from integration.notification_deliveries d join integration.outbox_events e on e.id=d.event_id where e.event_type='invoice.posted') then raise exception 'Financial event dispatched'; end if;
+ select count(*) into before_count from net.http_request_queue;
+ perform app_private.dispatch_customer_notifications();
+ if (select count(*) from net.http_request_queue)<>before_count then raise exception 'In-flight request duplicated'; end if;
+ insert into net._http_response(id,status_code,timed_out) values(delivery.request_id,500,false);
+ perform app_private.dispatch_customer_notifications();
+ if (select state from integration.notification_deliveries where id=delivery.id)<>'retry' then raise exception 'Retry not scheduled'; end if;
+ update integration.notification_deliveries set next_attempt_at=clock_timestamp()-interval '1 second' where id=delivery.id;
+ perform app_private.dispatch_customer_notifications();
+ select * into delivery from integration.notification_deliveries where id=delivery.id;
+ if delivery.attempts<>2 then raise exception 'Retry attempt missing'; end if;
+ insert into net._http_response(id,status_code,timed_out) values(delivery.request_id,200,false);
+ perform app_private.dispatch_customer_notifications();
+ if (select status from public.messages where id=msg.id)<>'sent' or not exists(select 1 from integration.outbox_events where id=delivery.event_id and published_at is not null) then raise exception 'Acknowledgment not recorded'; end if;
+ if (select status from public.messages where id=msg.id)='delivered' then raise exception 'Webhook acceptance presented as customer delivery'; end if;
+ -- A withdrawal after queueing must prevent contact data being sent.
+ msg:=public.queue_customer_message(customer,branch,'vehicle_ready',1,'email','withdrawn-notice');
+ insert into public.consents(organization_id,customer_id,purpose,channel,state,policy_version,source,recorded_at) values(org,customer,'service_updates','email','withdrawn','TEST','test',clock_timestamp()+interval '1 second');
+ select count(*) into before_count from net.http_request_queue;
+ perform app_private.dispatch_customer_notifications();
+ if (select status from public.messages where id=msg.id)<>'suppressed' or (select count(*) from net.http_request_queue)<>before_count then raise exception 'Withdrawn consent ignored'; end if;
+
+ -- Exhausting retries stops requests; a manual retry is explicit and permission checked.
+ insert into public.consents(organization_id,customer_id,purpose,channel,state,policy_version,source,recorded_at) values(org,customer,'service_updates','email','granted','TEST','test',clock_timestamp()+interval '2 seconds');
+ msg:=public.queue_customer_message(customer,branch,'vehicle_ready',1,'email','failing-notice');
+ perform app_private.dispatch_customer_notifications();
+ for attempt in 1..5 loop
+  select nd.* into delivery from integration.notification_deliveries nd join integration.outbox_events ev on ev.id=nd.event_id where ev.aggregate_id=msg.id;
+  insert into net._http_response(id,status_code,timed_out) values(delivery.request_id,503,false);
+  perform app_private.dispatch_customer_notifications();
+  if attempt<5 then
+   update integration.notification_deliveries set next_attempt_at=clock_timestamp()-interval '1 second' where id=delivery.id;
+   perform app_private.dispatch_customer_notifications();
+  end if;
+ end loop;
+ if (select state from integration.notification_deliveries where id=delivery.id)<>'failed' or (select status from public.messages where id=msg.id)<>'failed' then raise exception 'Exhausted retries not stopped'; end if;
+ perform set_config('request.jwt.claim.sub',outsider::text,true);
+ begin perform public.retry_notification_webhook(delivery.id); raise exception 'Other tenant retried delivery'; exception when insufficient_privilege then null; end;
+ perform set_config('request.jwt.claim.sub',admin_user::text,true);
+ perform public.retry_notification_webhook(delivery.id);
+ if (select state from integration.notification_deliveries where id=delivery.id)<>'retry' or (select status from public.messages where id=msg.id)<>'queued' then raise exception 'Manual retry failed'; end if;
+ if has_table_privilege('authenticated','integration.customer_webhooks','select') or has_function_privilege('authenticated','app_private.dispatch_customer_notifications()','execute') then raise exception 'Private transport exposed'; end if;
+end; $$;
+select 'Notification settings, authorization, signatures, event filtering, pause, retries, acceptance and consent tests passed' as result;
+rollback;

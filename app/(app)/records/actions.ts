@@ -120,5 +120,5 @@ export async function queueCustomerMessage(formData: FormData) {
     redirect(routeMessage("/records", "error", operationError(error, "The customer message could not be queued.")));
   }
   revalidatePath("/records");
-  redirect(routeMessage("/records", "created", "Customer message queued with an idempotent delivery event."));
+  redirect(routeMessage("/records", "created", "Message queued. Delivery follows the customer notification settings."));
 }

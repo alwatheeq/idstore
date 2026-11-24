@@ -63,19 +63,20 @@ test("order item quantities and money use bounded decimal validation", () => {
 test("staff adds catalog parts to the existing pricing ledger, without issuing stock", async () => {
   const f = fixture();
   expect(await f.addOrderItem({ error: "" }, form())).toEqual({ error: "" });
-  expect(f.calls).toEqual([{ name: "add_estimate_line", args: {
-    p_estimate_id: "estimate", p_line_type: "part", p_description: "SKU-1 · Filter / فلتر",
-    p_quantity: 2, p_unit_price: 10.25, p_tax_rate: 16, p_discount_amount: 0, p_approval_group: "General", p_finding_id: null,
+  expect(f.calls).toEqual([{ name: "add_order_catalog_item", args: {
+    p_order_id: "order", p_ledger_id: "estimate", p_invoice_version: null, p_item_type: "part", p_catalog_id: "part",
+    p_quantity: 2, p_price: 10.25, p_tax: 16,
   } }]);
   for (const query of f.queries) expect(query.filters).toContainEqual(["organization_id", "org"]);
   expect(f.queries.find(query => query.table === "estimate_versions")?.filters).toContainEqual(["repair_order_id", "order"]);
 });
-test("service names come from the catalog and draft preparation does not transition the order", async () => {
+test("service identities are passed to the trusted catalog command and draft preparation does not transition the order", async () => {
   const f = fixture();
   expect(await f.addOrderItem({ error: "" }, form({ ...valid, lineType: "labor" }))).toEqual({ error: "" });
-  expect(f.calls[0].args.p_description).toBe("Brake inspection / فحص الفرامل");
+  expect(f.calls[0].args).toMatchObject({ p_catalog_id: "part", p_item_type: "labor", p_order_id: "order" });
+  expect(f.calls[0].args).not.toHaveProperty("p_description");
   await expect(f.prepareOrderItems(form())).rejects.toThrow("#order-items");
-  expect(f.calls.map(call => call.name)).toEqual(["add_estimate_line", "create_estimate_from_repair_order"]);
+  expect(f.calls.map(call => call.name)).toEqual(["add_order_catalog_item", "create_estimate_from_repair_order"]);
 });
 test("branch mismatch, closed orders, locked prices and unavailable items block writes", async () => {
   for (const options of [{ branch: "other" }, { orderStatus: "closed" }, { estimateStatus: "approved" }, { estimateStatus: "sent" }, { missingItem: true }]) {
@@ -125,7 +126,7 @@ test("legacy draft invoices reuse the invoice ledger with optimistic version che
   const f = fixture();
   const data = form(); data.set("invoiceId", "invoice"); data.set("version", "3");
   expect(await f.addOrderItem({ error: "" }, data)).toEqual({ error: "" });
-  expect(f.calls[0]).toMatchObject({ name: "add_invoice_line", args: { p_invoice_id: "invoice", p_expected_version: 3, p_quantity: 2, p_unit_price: 10.25 } });
+  expect(f.calls[0]).toMatchObject({ name: "add_order_catalog_item", args: { p_ledger_id: "invoice", p_invoice_version: 3, p_quantity: 2, p_price: 10.25 } });
   data.set("ledger", "invoice"); data.set("lineId", "line");
   await expect(f.removeOrderItem(data)).rejects.toThrow("#order-items");
   expect(f.calls[1]).toEqual({ name: "remove_invoice_line", args: { p_invoice_line_id: "line", p_expected_version: 3 } });

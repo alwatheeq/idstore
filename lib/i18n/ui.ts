@@ -523,6 +523,7 @@ const pageArabic: Record<string, string> = {
 };
 
 const statusArabic: Record<string, string> = {
+  general_service: "الخدمات العامة",
   active: "نشط", inactive: "غير نشط", admin: "مدير", staff: "موظف", suspended: "موقوف", draft: "مسودة", published: "منشور",
   requested: "مطلوب", confirmed: "مؤكد", checked_in: "تم الاستقبال", completed: "مكتمل",
   cancelled: "ملغي", no_show: "لم يحضر", diagnosis: "قيد التشخيص", awaiting_approval: "بانتظار الموافقة",

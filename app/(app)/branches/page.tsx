@@ -1,11 +1,14 @@
+import { ResponsiveTable } from "@/components/responsive-table";
+import { readAll } from "@/lib/supabase/read-all";
 import { LocalizedContent } from "@/components/localized-content";
 import { RecordAction } from "@/components/record-action";
 import { MasterRecordActions } from "@/components/master-record-actions"; import Link from "next/link";
-import { Building2, MapPin, MessageCircle, Pencil, Phone, Plus } from "lucide-react";
+import { Building2, Pencil, Plus } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { RecordFeedback } from "@/components/record-feedback";
 import { StatusPill } from "@/components/status-pill";
+import { BranchDirectory } from "@/components/branch-directory";
 import { getCurrentStaff } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { createBranch, updateBranchContacts } from "./actions";
@@ -23,16 +26,16 @@ export default async function BranchesPage({ searchParams }: { searchParams: Pro
   const staff = await getCurrentStaff();
   const supabase = await createClient();
   const [{ data: branches, error: branchError }, { data: activeOrders }] = await Promise.all([
-    supabase
+    readAll(supabase
       .from("branches")
       .select("id, code, legal_name, display_name, city, address_json, phone, whatsapp, email, status, warehouses(name)")
       .eq("organization_id", staff.organizationId)
-      .order("city"),
-    supabase
+      .order("city")),
+    readAll(supabase
       .from("repair_orders")
       .select("branch_id")
       .eq("organization_id", staff.organizationId)
-      .not("status", "in", '("delivered","closed","cancelled")'),
+      .not("status", "in", '("delivered","closed","cancelled")')),
   ]);
 
   const orderCounts = new Map<string, number>();
@@ -75,12 +78,8 @@ export default async function BranchesPage({ searchParams }: { searchParams: Pro
     </section> : null}
 
     {!branches?.length ? <EmptyState icon={Building2} title="No branches yet" description="Create the first service center before adding customers, vehicles or work orders." action={staff.role === "admin" ? <Link className="button primary" href="/branches?new=1#new-branch">Create first branch</Link> : undefined} /> : <>
-      <div className="cards-grid">{branches.map((branch, index) => {
-        return <article className={`branch-card ${index === 0 ? "selected" : ""}`} key={branch.id}><div className="branch-card-head"><div><div className="branch-code">{branch.code}</div><h3>{branch.display_name}</h3><p>{branch.city}, Jordan</p></div><StatusPill label="General service" tone="gray" /></div><div className="branch-contact-list"><span><MapPin /> {branchAddress(branch.address_json) || "Address required"}</span><span><Phone /> {branch.phone || "Phone required"}</span><span><MessageCircle /> {branch.whatsapp || "WhatsApp required"}</span></div><div className="branch-stats"><div><span>Active jobs</span><strong className="mono">{orderCounts.get(branch.id) ?? 0}</strong></div><div><span>Status</span><strong style={{ fontSize: 14 }}>{branch.status}</strong></div></div>{staff.role === "admin" ? <div className="record-actions"><MasterRecordActions kind="branch" id={branch.id} archived={branch.status === "archived"} /><Link className="branch-edit-link" href={`/branches?edit=${branch.id}#branch-contacts`}><Pencil /> Contacts</Link></div> : null}</article>;
-      })}</div>
-      <section className="panel" style={{ marginTop: 20 }}><div className="panel-header"><div><div className="panel-title">Network configuration</div><div className="panel-subtitle">Live branch contacts and warehouse readiness</div></div></div><div className="data-scroll"><table className="data-table branch-directory"><thead><tr><th>Branch</th><th>Address</th><th>Warehouse</th><th>Phone</th><th>WhatsApp</th><th>Status</th></tr></thead><tbody>{branches.map((branch) => {
-        return <tr key={branch.id}><td><div className="cell-main">{branch.display_name}</div><div className="cell-sub">{branch.code} · {branch.legal_name}</div></td><td>{branchAddress(branch.address_json) || "Required"}</td><td>{branch.warehouses[0]?.name ?? "Not configured"}</td><td className="mono">{branch.phone ?? "Required"}</td><td className="mono">{branch.whatsapp ?? "Required"}</td><td><StatusPill label={branch.status} tone={branch.status === "active" ? "green" : "gray"} /></td></tr>;
-      })}</tbody></table></div></section>
+      <section className="panel"><div className="data-scroll"><ResponsiveTable><thead><tr><th>Branch</th><th>City</th><th>Service</th><th>Active jobs</th><th>Status</th><th>Actions</th></tr></thead><tbody>{branches.map(branch => <tr key={branch.id}><td><strong>{branch.display_name}</strong><div className="cell-sub"><bdi>{branch.code}</bdi></div></td><td>{branch.city}, Jordan</td><td><StatusPill label="General service" tone="gray" /></td><td className="mono">{orderCounts.get(branch.id) ?? 0}</td><td><StatusPill label={branch.status} tone={branch.status === "active" ? "green" : "gray"} /></td><td>{staff.role === "admin" ? <div className="record-actions"><MasterRecordActions kind="branch" id={branch.id} archived={branch.status === "archived"} /><Link className="button compact branch-edit-link" href={`/branches?edit=${branch.id}#branch-contacts`}><Pencil /> Contacts</Link></div> : "—"}</td></tr>)}</tbody></ResponsiveTable></div></section>
+      <section className="panel" style={{ marginTop: 20 }}><div className="panel-header"><div><div className="panel-title">Network configuration</div><div className="panel-subtitle">Live branch contacts and warehouse readiness</div></div></div><BranchDirectory branches={branches.map(branch => ({ id: branch.id, code: branch.code, displayName: branch.display_name, legalName: branch.legal_name, address: branchAddress(branch.address_json), warehouse: branch.warehouses[0]?.name ?? "", phone: branch.phone, whatsapp: branch.whatsapp, status: branch.status }))} /></section>
     </>}
   </>}</LocalizedContent>;
 }
